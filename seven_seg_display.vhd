@@ -2,26 +2,30 @@
 
 library IEEE;
 use		IEEE.std_logic_1164.all;
-
-
+use		IEEE.math_real.all;
+use		IEEE.numeric_std.all;
 
 entity seven_seg_display is
+	generic
+	(
+		f_clock			: real		:= 100_000_000.0;
+		num_of_digits	: integer	:= 8;
+		dim_top			: integer	:= 3;
+
+		-- bit values for segment on
+		-- Nexys 4's anodes are active low (have transistors for amplification)
+		anode_on		: std_logic	:= '0';
+		-- Nexys 4's cathodes have A on right and inverted, but our seven_seg_digit has A on the left
+		cathode_on		: std_logic	:= '0'
+	);
 	Port
 	(
 		clock_i			: in	std_logic;
 		reset_i			: in	std_logic;
-		sig_cycle_i		: in	std_logic;
 
-		bcd0_i			: in	std_logic_vector (3 downto 0);
-		bcd1_i			: in	std_logic_vector (3 downto 0);
-		bcd2_i			: in	std_logic_vector (3 downto 0);
-		bcd3_i			: in	std_logic_vector (3 downto 0);
-		bcd4_i			: in	std_logic_vector (3 downto 0);
-		bcd5_i			: in	std_logic_vector (3 downto 0);
-		bcd6_i			: in	std_logic_vector (3 downto 0);
-		bcd7_i			: in	std_logic_vector (3 downto 0);
+		bcd_digits_i	: in	std_logic_vector (num_of_digits*4 - 1 downto 0);
 
-		anodes_o		: out	std_logic_vector (7 downto 0);
+		anodes_o		: out	std_logic_vector (num_of_digits - 1 downto 0);
 		cathodes_o		: out	std_logic_vector (6 downto 0)
 	);
 end seven_seg_display;
@@ -30,70 +34,102 @@ end seven_seg_display;
 
 architecture Behavioral of seven_seg_display is
 
-	COMPONENT seven_seg_digit
-	PORT
-	(
-		bcd_i			: in	std_logic_vector (3 downto 0);
-		segment_o		: out	std_logic_vector (6 downto 0)
-	);
-	end COMPONENT;
+	constant anode_off			: std_logic := not anode_on;
+	constant cathode_off		: std_logic := not cathode_on;
 
+	constant prescaler_divisor	: real		:= f_clock / 1000.0; -- 1 milisekunda
+	constant prescaler_top		: integer	:= integer (FLOOR(prescaler_divisor)) - 1;
+	constant prescaler_width	: integer	:= integer (CEIL(LOG2( real(prescaler_top) ) ) );
+	signal   prescaler_count	: std_logic_vector(prescaler_width - 1 downto 0);
+	signal   prescaler_overflow	: std_logic;
 
+	signal   bcd				: std_logic_vector(3 downto 0);
+	signal   cathodes			: std_logic_vector(6 downto 0);
+	signal   anodes				: std_logic_vector(num_of_digits - 1 downto 0) := (0 => anode_on, others => anode_off);
 
-
-	signal bcd				: std_logic_vector(3 downto 0);
-
-	signal cathodes			: std_logic_vector(6 downto 0);
-	signal anodes			: std_logic_vector(7 downto 0);
+	constant dim_width			: integer	:= integer (CEIL(LOG2( real(dim_top + 1) ) ) );
+	signal   dim_count			: std_logic_vector(dim_width - 1 downto 0);
+	signal   dim_overflow		: std_logic;
 
 begin
 
-	anodes_o				<= anodes;
-	cathodes_o				<= cathodes;
+	-- invert cathodes if needed
+	with cathode_on select cathodes_o <=
+		not cathodes when '0',
+		cathodes     when others;
 
-	Inst_seven_seg_digit:	seven_seg_digit
+	Inst_seven_seg_digit:	entity work.seven_seg_digit
 	PORT MAP
 	(
 		bcd_i				=> bcd,
 		segment_o			=> cathodes
 	);
 
+	-- display toggle signal prescaler
+	inst_prescaler:			entity work.counter_until
+	GENERIC MAP				( width	=> prescaler_width)
+	PORT MAP
+	(
+		clock_i				=> clock_i,
+		reset_i				=> reset_i,
+		reset_when_i		=> std_logic_vector(to_unsigned(prescaler_top, prescaler_width)),
+		count_enable_i		=> '1',
+		count_o				=> prescaler_count,
+		overflow_o			=> prescaler_overflow
+	);
 
+	--dim_enable				<= prescaler_count(ceil(prescaler_width / 2)e_off) and prescaler_overflow;
+	-- display dimming counter
+	inst_dimmer:			entity work.counter_until
+	GENERIC MAP				( width	=> dim_width)
+	PORT MAP
+	(
+		clock_i				=> clock_i,
+		reset_i				=> reset_i,
+		reset_when_i		=> std_logic_vector(to_unsigned(dim_top, dim_width)),
+		count_enable_i		=> '1',
+		count_o				=> dim_count,
+		overflow_o			=> dim_overflow
+	);
+
+	with dim_overflow select anodes_o <=
+		anodes when '1', --std_logic_vector(to_unsigned(0, dim_width)),
+		(others => anode_off) when others;
+
+
+	-- digit selector
 	process (clock_i)
 	begin
-		if clock_i'event and clock_i = '1' then
-			if sig_cycle_i = '1' then
-				case anodes is
-				when "10000000" =>
-					anodes	<= "00000001";
-					bcd		<= bcd0_i;
-				when "00000001" =>
-					anodes	<= "00000010";
-					bcd		<= bcd1_i;
-				when "00000010" =>
-					anodes	<= "00000100";
-					bcd		<= bcd2_i;
-				when "00000100" =>
-					anodes	<= "00001000";
-					bcd		<= bcd3_i;
-				when "00001000" =>
-					anodes	<= "00010000";
-					bcd		<= bcd4_i;
-				when "00010000" =>
-					anodes	<= "00100000";
-					bcd		<= bcd5_i;
-				when "00100000" =>
-					anodes	<= "01000000";
-					bcd		<= bcd6_i;
-				when "01000000" =>
-					anodes	<= "10000000";
-					bcd		<= bcd7_i;
-				when others =>
-					anodes	<= "00000001";
-					bcd		<= bcd0_i;
-				end case;
+		if rising_edge (clock_i) then
+			if reset_i = '1' then
+				anodes <= (0 => anode_on, others => anode_off);
+			elsif prescaler_overflow = '1' then
+				-- starting (loop around)
+				anodes(0) <= anodes(num_of_digits - 1);
+				-- remaining ones
+				for i in 1 to num_of_digits - 1 loop
+					anodes(i) <= anodes(i - 1);
+				end loop;
 			end if;
 		end if;
 	end process;
+
+
+	-- combinatorial selector for which of the incoming digits goes onto the
+	-- decoder and subsequently on the display
+	process (bcd_digits_i, anodes)
+	begin
+		bcd	<= (others => '0');
+
+		for i in 0 to num_of_digits - 1 loop
+			if anodes(i) = anode_on then
+				bcd(0) <= bcd_digits_i(4 * i);
+				bcd(1) <= bcd_digits_i(4 * i + 1);
+				bcd(2) <= bcd_digits_i(4 * i + 2);
+				bcd(3) <= bcd_digits_i(4 * i + 3);
+			end if;
+		end loop;
+	end process;
+
 
 end Behavioral;
