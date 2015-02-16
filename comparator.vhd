@@ -4,14 +4,10 @@ use		IEEE.std_logic_1164.all;
 
 
 entity comparator is
-	generic
+	port
 	(
-		width			: integer := 9
-	);
-	Port
-	(
-		a_i				: in	std_logic_vector (width - 1 downto 0);
-		b_i				: in	std_logic_vector (width - 1 downto 0);
+		a_i				: in	std_logic_vector;
+		b_i				: in	std_logic_vector;
 		eq_o			: out	std_logic
 	);
 end comparator;
