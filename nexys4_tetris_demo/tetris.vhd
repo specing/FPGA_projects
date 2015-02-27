@@ -83,10 +83,6 @@ architecture Behavioral of tetris is
 	signal vga_enable_draw				: std_logic;
 	signal vga_screen_end				: std_logic;
 		
-	signal vga_red						: std_logic_vector (vga_red_width   - 1 downto 0);
-	signal vga_green					: std_logic_vector (vga_green_width - 1 downto 0);
-	signal vga_blue						: std_logic_vector (vga_blue_width  - 1 downto 0);
-	
 	-- pipeline stuff
 	signal on_tetris_surface			: std_logic;
 	signal pipe_enable					: std_logic;
@@ -386,53 +382,50 @@ begin
 		data_o			=> line_bottom
 	);
 
-	-- actual display value selection
-	process (stage4_vga_column, stage4_vga_row, on_tetris_surface,
+	-- main draw multiplexer
+	process
+	(
+		stage4_vga_enable_draw,	stage4_vga_column, stage4_vga_row,
 		line_left, line_right, line_top, line_bottom,
-		stage4_block_red, stage4_block_green, stage4_block_blue)
+		on_tetris_surface, stage4_block_red, stage4_block_green, stage4_block_blue
+	)
 	begin
-		if stage4_vga_column = std_logic_vector(to_unsigned(256, stage4_vga_column'length)) -- right of tetris
+		-- check if we are on display surface
+		if stage4_vga_enable_draw = '0' then
+			vga_red_o				<= "0000";
+			vga_green_o				<= "0000";
+			vga_blue_o				<= "0000";
+		-- check if we have to draw static lines
+		elsif stage4_vga_column = std_logic_vector(to_unsigned(256, stage4_vga_column'length)) -- right of tetris
 		or stage4_vga_column = std_logic_vector(to_unsigned(0,   stage4_vga_column'length))
 		or stage4_vga_column = std_logic_vector(to_unsigned(639, stage4_vga_column'length))
 		or stage4_vga_row    = std_logic_vector(to_unsigned(0,   stage4_vga_row'length))
 		or stage4_vga_row    = std_logic_vector(to_unsigned(479, stage4_vga_row'length))
 		then
-			vga_red					<= "1000";
-			vga_green				<= "0000";
-			vga_blue				<= "0100";
+			vga_red_o				<= "1000";
+			vga_green_o				<= "0000";
+			vga_blue_o				<= "0100";
+		-- check if we have to draw dynamic (for testing) lines
 		elsif stage4_vga_column = line_left   -- 0
 		or    stage4_vga_column = line_right  -- 638
 		or    stage4_vga_row    = line_top	  -- 5
 		or    stage4_vga_row    = line_bottom -- 478
 		then
-			vga_red					<= "0011";
-			vga_green				<= "1000";
-			vga_blue				<= "0100";
+			vga_red_o				<= "0011";
+			vga_green_o				<= "1000";
+			vga_blue_o				<= "0100";
+		-- check if we are on the tetris block surface
 		elsif on_tetris_surface = '1' then
-			vga_red					<= stage4_block_red;
-			vga_green				<= stage4_block_green;
-			vga_blue				<= stage4_block_blue;
-		else
-			vga_red					<= "0000";
-			vga_green				<= "0000";
-			vga_blue				<= "0000";
-		end if;
-	end process;
-
-	process(stage4_vga_enable_draw, vga_red, vga_green, vga_blue)
-	begin
-		if stage4_vga_enable_draw = '1' then
-			vga_red_o				<= vga_red;
-			vga_green_o				<= vga_green;
-			vga_blue_o				<= vga_blue;
+			vga_red_o				<= stage4_block_red;
+			vga_green_o				<= stage4_block_green;
+			vga_blue_o				<= stage4_block_blue;
+		-- else don't draw anything.
 		else
 			vga_red_o				<= "0000";
 			vga_green_o				<= "0000";
 			vga_blue_o				<= "0000";
 		end if;
 	end process;
-
-
 
 --	GENERIC MAP (width => 16) PORT MAP
 --	(
