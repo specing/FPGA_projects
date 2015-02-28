@@ -144,5 +144,8 @@ begin
 
 	anode_o					<= (others => '1');
 	cathode_o				<= (others => '0');
+
+	-- silence warnings
+	led						<= switches_i;
 	
 end Behavioral;
