@@ -67,10 +67,6 @@ architecture Behavioral of tetris is
 
 	constant line_remove_counter_width	: integer := 5;
 	
-	signal btnL							: std_logic;
-	signal btnR							: std_logic;
-	signal btnU							: std_logic;
-	signal btnD							: std_logic;
 	signal line_left					: std_logic_vector (vga_column_width - 1 downto 0);
 	signal line_right					: std_logic_vector (vga_column_width - 1 downto 0);
 	signal line_top						: std_logic_vector (vga_row_width - 1 downto 0);
@@ -267,28 +263,6 @@ begin
 	-- ==========================
 	-- figure out what to display
 	-- ==========================
-	buttons_logic: block
-		signal buttons_pulse	: std_logic_vector(num_of_buttons - 1 downto 0);
-	begin
-
-		-- sync & rising edge detectors on input buttons
-		Inst_button_input:	entity work.button_input
-		generic map			( num_of_buttons => 4 )
-		port map
-		(
-			clock_i			=> clock_i,
-			reset_i			=> reset_i,
-			buttons_i		=> btnL_i & btnR_i & btnU_i & btnD_i,
-			buttons_pulse_o	=> buttons_pulse
-		);
-			
-		btnL	<= buttons_pulse(3);
-		btnR	<= buttons_pulse(2);
-		btnU	<= buttons_pulse(1);
-		btnD	<= buttons_pulse(0);
-
-		
-	end block;
 
 	-- 4 registers, each for the corresponding line
 	Inst_GR_line_left:	entity work.generic_register
@@ -300,7 +274,7 @@ begin
 	(
 		clock_i			=> clock_i,
 		reset_i			=> reset_i,
-		clock_enable_i	=> btnL,
+		clock_enable_i	=> btnL_i,
 		data_i			=> switches_i (vga_column_width - 1 downto 0),
 		data_o			=> line_left
 	);
@@ -314,7 +288,7 @@ begin
 	(
 		clock_i			=> clock_i,
 		reset_i			=> reset_i,
-		clock_enable_i	=> btnR,
+		clock_enable_i	=> btnR_i,
 		data_i			=> switches_i (vga_column_width - 1 downto 0),
 		data_o			=> line_right
 	);
@@ -328,7 +302,7 @@ begin
 	(
 		clock_i			=> clock_i,
 		reset_i			=> reset_i,
-		clock_enable_i	=> btnU,
+		clock_enable_i	=> btnU_i,
 		data_i			=> switches_i (vga_row_width - 1 downto 0),
 		data_o			=> line_top
 	);
@@ -342,7 +316,7 @@ begin
 	(
 		clock_i			=> clock_i,
 		reset_i			=> reset_i,
-		clock_enable_i	=> btnD,
+		clock_enable_i	=> btnD_i,
 		data_i			=> switches_i (vga_row_width - 1 downto 0),
 		data_o			=> line_bottom
 	);

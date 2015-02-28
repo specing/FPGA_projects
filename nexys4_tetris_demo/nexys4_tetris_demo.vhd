@@ -52,11 +52,41 @@ architecture Behavioral of nexys4_tetris_demo is
 
 	signal led				: std_logic_vector(15 downto 0);
 	signal pwm_count		: std_logic;
+
+	signal buttons			: std_logic_vector(3 downto 0);
+	signal buttons_pulse	: std_logic_vector(3 downto 0);
+	signal button_left		: std_logic;
+	signal button_right		: std_logic;
+	signal button_up		: std_logic;
+	signal button_down		: std_logic;
 begin
 	-- board reset is active low
 	reset_i					<= not reset_low_i;
 
+	-------------------------------------------------------
+	------------------------ INPUT ------------------------
+	-------------------------------------------------------
 
+	buttons					<= btnL_i & btnR_i & btnU_i & btnD_i;
+	-- sync & rising edge detectors on input buttons
+	Inst_button_input:	entity work.button_input
+	generic map			( num_of_buttons => 4 )
+	port map
+	(
+		clock_i				=> clock_i,
+		reset_i				=> reset_i,
+		buttons_i			=> buttons,
+		buttons_pulse_o		=> buttons_pulse
+	);
+
+	button_left				<= buttons_pulse(3);
+	button_right			<= buttons_pulse(2);
+	button_up				<= buttons_pulse(1);
+	button_down				<= buttons_pulse(0);
+
+	-------------------------------------------------------
+	----------------------- SCREEN ------------------------
+	-------------------------------------------------------
 	-- prescale the main clock to obtain the "pixel clock"
 	-- /4 for nexys 4
 	Inst_counter_pixelclockprescale: entity work.counter_until
@@ -91,10 +121,10 @@ begin
 		vga_blue_o			=> vga_blue_o,
 		
 		switches_i			=> switches_i,
-		btnL_i				=> btnL_i,
-		btnR_i				=> btnR_i,
-		btnU_i				=> btnU_i,
-		btnD_i				=> btnD_i
+		btnL_i				=> button_left,
+		btnR_i				=> button_right,
+		btnU_i				=> button_up,
+		btnD_i				=> button_down
 	);
 	
 	-- dim LEDs
