@@ -171,7 +171,9 @@ begin
 
 		block_descriptor_o			=> stage1_block_descriptor,
 		block_row_i					=> stage1_vga_row (8 downto 4),
-		block_column_i				=> stage1_vga_column (7 downto 4)
+		block_column_i				=> stage1_vga_column (7 downto 4),
+
+		screen_finished_render_i	=> vga_screen_end
 	);
 
 	-- Stage2: save row, column, hsync, vsync, en_draw + block desc, line remove
@@ -183,7 +185,7 @@ begin
 			stage2_vga_column		<= stage1_vga_column;
 			stage2_vga_row			<= stage1_vga_row;
 			stage2_vga_enable_draw	<= stage1_vga_enable_draw;
-		stage2_block_descriptor	<= stage1_block_descriptor;
+			stage2_block_descriptor	<= stage1_block_descriptor;
 		end if;
 	end process;
 
