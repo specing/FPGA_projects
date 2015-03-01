@@ -81,7 +81,6 @@ architecture Behavioral of tetris is
 		
 	-- pipeline stuff
 	signal on_tetris_surface			: std_logic;
-	signal pipe_enable					: std_logic;
 
 	signal stage1_vga_hsync				: std_logic;
 	signal stage1_vga_vsync				: std_logic;
