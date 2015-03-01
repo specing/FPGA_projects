@@ -268,7 +268,7 @@ begin
 	Inst_GR_line_left:	entity work.generic_register
 	GENERIC MAP
 	(
-		reset_value		=> std_logic_vector(to_unsigned(100, vga_column_width))
+		reset_value		=> 100
 	)
 	PORT MAP
 	(
@@ -282,7 +282,7 @@ begin
 	Inst_GR_line_right:	entity work.generic_register
 	GENERIC MAP
 	(
-		reset_value		=> std_logic_vector(to_unsigned(539, vga_column_width))
+		reset_value		=> 539
 	)
 	PORT MAP
 	(
@@ -296,7 +296,7 @@ begin
 	Inst_GR_line_top:	entity work.generic_register
 	GENERIC MAP
 	(
-		reset_value		=> std_logic_vector(to_unsigned(100, vga_row_width))
+		reset_value		=> 100
 	)
 	PORT MAP
 	(
@@ -310,7 +310,7 @@ begin
 	Inst_GR_line_bottom:entity work.generic_register
 	GENERIC MAP
 	(
-		reset_value		=> std_logic_vector(to_unsigned(379, vga_row_width))
+		reset_value		=> 379
 	)
 	PORT MAP
 	(
