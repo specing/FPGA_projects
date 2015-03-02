@@ -16,7 +16,8 @@ entity tetris_block is
 	(
 		clock_i						: in	std_logic;
 		reset_i						: in	std_logic;
-		
+
+		row_elim_data_out			: out	std_logic_vector(4 downto 0);
 		block_descriptor_o			: out	std_logic_vector(2 downto 0);
 		block_row_i					: in	std_logic_vector(integer(CEIL(LOG2(real(number_of_rows    - 1)))) - 1 downto 0);
 		block_column_i				: in	std_logic_vector(integer(CEIL(LOG2(real(number_of_columns - 1)))) - 1 downto 0);
@@ -127,6 +128,12 @@ architecture Behavioral of tetris_block is
 	(
 		state_start,
 
+		state_check_block,
+		state_check_block_increment_column,
+		state_check_block_increment_column_til_end,
+		state_increment_row_elim,
+		state_check_block_decrement_row,
+
 		state_pre_decrement_row,
 
 		state_move_block_down,
@@ -136,7 +143,7 @@ architecture Behavioral of tetris_block is
 	);
 	signal state, next_state			: fsm_states := state_start;
 
-	constant refresh_count_top			: integer := 59;
+	constant refresh_count_top			: integer := 59; --255;
 	constant refresh_count_width		: integer := integer(CEIL(LOG2(real(refresh_count_top))));
 --	signal refresh_count_enable			: std_logic;
 	signal refresh_count				: std_logic_vector (refresh_count_width - 1 downto 0);
@@ -181,7 +188,7 @@ architecture Behavioral of tetris_block is
 		"00000",
 		"00000",
 
-		"11111",
+		"00000",
 		"00000",
 		"00000",
 		"00000",
@@ -212,6 +219,16 @@ begin
 
 	row_elim_read_data		<= RAM_ROW_ELIM (conv_integer(row_elim_read_address));
 	row_elim_write_data		<= row_elim_read_data + '1';
+
+	row_elim_data_out		<= row_elim_read_data;
+
+	-- bound to the same addresses.
+	with ram_read_address_mux select row_elim_read_address <=
+		block_row_i			when MUXSEL_RENDER,
+		row_count			when MUXSEL_ROW_ELIM,
+		"00000"				when others;
+
+	row_elim_write_address	<= row_count;
 
 
 	-- process for RAM for blocks
@@ -281,7 +298,7 @@ begin
 		data_o				=> row_count_old
 	);
 
-	Inst_column_counter:	entity work.counter_until
+	Inst_column_counter:	entity work.counter_until_new
 	generic map				(width => column_width)
 	port map
 	(
@@ -319,10 +336,26 @@ begin
 		column_count_enable			<= '0';
 		row_count_enable			<= '0';
 
+		row_elim_write_enable		<= '0';
+
 		case state is
 		when state_start =>
 			ram_read_address_mux		<= MUXSEL_RENDER;
 
+		-- logic that increments block removal counters (row_elim)
+		when state_check_block =>
+			null;
+		when state_check_block_increment_column =>
+			column_count_enable		<= '1';
+		when state_check_block_increment_column_til_end =>
+			column_count_enable		<= '1';
+		when state_increment_row_elim =>
+			row_elim_write_enable	<= '1';
+		when state_check_block_decrement_row =>
+			row_count_enable		<= '1';
+
+
+		-- logic that moves blocks down by one
 		when state_pre_decrement_row =>
 			row_count_enable			<= '1';
 
@@ -331,10 +364,10 @@ begin
 			ram_write_enable		<= '1';
 			-- activate counter
 			column_count_enable		<= '1';
-
 		when state_decrement_row =>
 			row_count_enable		<= '1';
 
+		-- finaly zero upper row
 		when state_zero_upper_row =>
 			-- enable writes
 			ram_write_enable		<= '1';
@@ -349,6 +382,7 @@ begin
 
 	-- FSM next state
 	process (state,
+		ram_read_data,
 		screen_finished_render_i, refresh_count_overflow,
 		row_count_overflow, column_count_overflow)
 	begin
@@ -357,9 +391,38 @@ begin
 		case state is
 		when state_start =>
 			if refresh_count_overflow = '1' then
-				next_state <= state_pre_decrement_row;
+				next_state <= state_check_block;
+--				next_state <= state_pre_decrement_row;
 			end if;
 
+		-- logic that increments block removal counters (row_elim)
+		when state_check_block =>
+			if ram_read_data = "000" then
+				next_state <= state_check_block_increment_column_til_end;
+			else
+				next_state <= state_check_block_increment_column;
+			end if;
+		when state_check_block_increment_column_til_end =>
+			if column_count_overflow = '1' then
+				next_state <= state_check_block_decrement_row;
+			end if;
+		when state_check_block_increment_column =>
+			if column_count_overflow = '1' then
+				next_state <= state_increment_row_elim;
+			else
+				next_state <= state_check_block;
+			end if;
+		when state_increment_row_elim =>
+			next_state <= state_check_block_decrement_row;
+		when state_check_block_decrement_row =>
+			if row_count_overflow = '1' then
+--				next_state <= state_pre_decrement_row;
+				next_state <= state_start;
+			else
+				next_state <= state_check_block;
+			end if;
+
+		-- logic that moves blocks down by one
 		when state_pre_decrement_row =>
 			next_state <= state_move_block_down;
 

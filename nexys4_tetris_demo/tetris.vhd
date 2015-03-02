@@ -78,6 +78,7 @@ architecture Behavioral of tetris is
 	signal vga_row						: std_logic_vector (vga_row_width    - 1 downto 0);
 	signal vga_enable_draw				: std_logic;
 	signal vga_screen_end				: std_logic;
+	signal vga_off_screen				: std_logic;
 		
 	-- pipeline stuff
 	signal on_tetris_surface			: std_logic;
@@ -87,7 +88,9 @@ architecture Behavioral of tetris is
 	signal stage1_vga_column			: std_logic_vector (vga_column_width - 1 downto 0);
 	signal stage1_vga_row				: std_logic_vector (vga_row_width    - 1 downto 0);
 	signal stage1_vga_enable_draw		: std_logic;
+	signal stage1_vga_off_screen		: std_logic;
 	signal stage1_block_descriptor		: std_logic_vector (block_descriptor_width - 1 downto 0);
+	signal stage1_row_elim_data_out		: std_logic_vector (4 downto 0);
 	signal stage1_line_remove_counter	: std_logic_vector (line_remove_counter_width - 1 downto 0);
 
 	signal stage2_vga_hsync				: std_logic;
@@ -96,6 +99,7 @@ architecture Behavioral of tetris is
 	signal stage2_vga_row				: std_logic_vector (vga_row_width    - 1 downto 0);
 	signal stage2_vga_enable_draw		: std_logic;
 	signal stage2_block_descriptor		: std_logic_vector (block_descriptor_width - 1 downto 0);
+	signal stage2_row_elim_data_out		: std_logic_vector (4 downto 0);
 	signal stage2_line_remove_counter	: std_logic_vector (line_remove_counter_width - 1 downto 0);
 	signal stage2_block_red				: std_logic_vector (vga_red_width   - 1 downto 0);
 	signal stage2_block_green			: std_logic_vector (vga_green_width - 1 downto 0);
@@ -107,10 +111,14 @@ architecture Behavioral of tetris is
 	signal stage3_vga_row				: std_logic_vector (vga_row_width    - 1 downto 0);
 	signal stage3_vga_enable_draw		: std_logic;
 	signal stage3_block_descriptor		: std_logic_vector (block_descriptor_width - 1 downto 0);
+	signal stage3_row_elim_data_out		: std_logic_vector (4 downto 0);
 	signal stage3_line_remove_counter	: std_logic_vector (line_remove_counter_width - 1 downto 0);
 	signal stage3_block_red				: std_logic_vector (vga_red_width   - 1 downto 0);
 	signal stage3_block_green			: std_logic_vector (vga_green_width - 1 downto 0);
 	signal stage3_block_blue			: std_logic_vector (vga_blue_width  - 1 downto 0);
+	signal stage3_block_final_red		: std_logic_vector (vga_red_width   - 1 downto 0);
+	signal stage3_block_final_green		: std_logic_vector (vga_green_width - 1 downto 0);
+	signal stage3_block_final_blue		: std_logic_vector (vga_blue_width  - 1 downto 0);
 	
 	signal stage4_vga_hsync				: std_logic;
 	signal stage4_vga_vsync				: std_logic;
@@ -143,7 +151,8 @@ begin
 		row_o				=> vga_row,
 		en_draw_o			=> vga_enable_draw,
 
-		screen_end_o		=> vga_screen_end
+		screen_end_o		=> vga_screen_end,
+		off_screen_o		=> vga_off_screen
 	);
 
 
@@ -159,6 +168,7 @@ begin
 			stage1_vga_column		<= vga_column;
 			stage1_vga_row			<= vga_row;
 			stage1_vga_enable_draw	<= vga_enable_draw;
+			stage1_vga_off_screen	<= vga_off_screen;
 		end if;
 	end process;
 
@@ -169,11 +179,12 @@ begin
 		clock_i						=> clock_i,
 		reset_i						=> reset_i,
 
+		row_elim_data_out			=> stage1_row_elim_data_out,
 		block_descriptor_o			=> stage1_block_descriptor,
 		block_row_i					=> stage1_vga_row (8 downto 4),
 		block_column_i				=> stage1_vga_column (7 downto 4),
 
-		screen_finished_render_i	=> vga_screen_end
+		screen_finished_render_i	=> stage1_vga_off_screen
 	);
 
 	-- Stage2: save row, column, hsync, vsync, en_draw + block desc, line remove
@@ -186,6 +197,7 @@ begin
 			stage2_vga_row			<= stage1_vga_row;
 			stage2_vga_enable_draw	<= stage1_vga_enable_draw;
 			stage2_block_descriptor	<= stage1_block_descriptor;
+			stage2_row_elim_data_out<= stage1_row_elim_data_out;
 		end if;
 	end process;
 
@@ -228,12 +240,18 @@ begin
 			stage3_vga_row			<= stage2_vga_row;
 			stage3_vga_enable_draw	<= stage2_vga_enable_draw;
 
+			stage3_row_elim_data_out<= stage2_row_elim_data_out;
 			stage3_block_descriptor	<= stage2_block_descriptor;
 			stage3_block_red		<= stage2_block_red;
 			stage3_block_green		<= stage2_block_green;
 			stage3_block_blue		<= stage2_block_blue;
 		end if;
 	end process;
+
+	stage3_block_final_red			<= stage3_block_red   or stage3_row_elim_data_out(4 downto 1);
+	stage3_block_final_green		<= stage3_block_green or stage3_row_elim_data_out(4 downto 1);
+	stage3_block_final_blue			<= stage3_block_blue  or stage3_row_elim_data_out(4 downto 1);
+
 
 	-- Stage4: save row, column, hsync, vsync and en_draw + block desc, final RGB of block, line remove
 	process (clock_i)
@@ -246,9 +264,9 @@ begin
 			stage4_vga_enable_draw	<= stage3_vga_enable_draw;
 
 			stage4_block_descriptor	<= stage3_block_descriptor;
-			stage4_block_red		<= stage3_block_red;
-			stage4_block_green		<= stage3_block_green;
-			stage4_block_blue		<= stage3_block_blue;
+			stage4_block_red		<= stage3_block_final_red;
+			stage4_block_green		<= stage3_block_final_green;
+			stage4_block_blue		<= stage3_block_final_blue;
 		end if;
 	end process;
 
