@@ -92,19 +92,19 @@ architecture Behavioral of tetris_block is
 		"000", "000", "001", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000",
 		"000", "000", "010", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000",
 		"000", "000", "011", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000",
-		"000", "000", "100", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000",
+		"001", "001", "111", "111", "111", "010", "010", "010", "110", "010", "001", "010", "011", "101", "010", "010",
 		"000", "000", "101", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000",
 		"000", "000", "110", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000",
-		"000", "000", "111", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000",
+		"001", "001", "111", "111", "111", "010", "010", "010", "110", "010", "001", "010", "011", "101", "010", "010",
 
 		"111", "011", "101", "100", "111", "010", "110", "110", "001", "010", "100", "001", "100", "001", "100", "001",
 		"000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000",
-		"000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000",
+		"000", "010", "000", "000", "000", "000", "000", "010", "010", "010", "001", "100", "001", "010", "001", "000",
 		"000", "000", "000", "000", "000", "000", "000", "100", "000", "000", "000", "000", "000", "000", "000", "000",
 		"000", "000", "000", "000", "000", "000", "000", "001", "010", "100", "001", "001", "100", "010", "010", "000",
-		"000", "010", "000", "000", "000", "000", "000", "010", "010", "010", "001", "100", "001", "010", "001", "000",
+		"001", "001", "111", "111", "111", "010", "010", "010", "110", "010", "001", "010", "011", "101", "010", "010",
 		"000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000",
-		"000", "000", "000", "000", "000", "000", "000", "010", "000", "000", "000", "000", "000", "000", "000", "000"
+		"000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000"
 	);
 
 	signal ram_write_enable				: std_logic;
@@ -134,8 +134,10 @@ architecture Behavioral of tetris_block is
 		state_increment_row_elim,
 		state_check_block_decrement_row,
 
-		state_pre_decrement_row,
+		state_check_row,
+		state_check_row_decrement_row,
 
+		state_pre_decrement_row,
 		state_move_block_down,
 		state_decrement_row,
 
@@ -198,6 +200,13 @@ architecture Behavioral of tetris_block is
 		"00000"
 	);
 
+	type row_elim_mode_enum is (
+		MUXSEL_ROW_ELIM_RENDER,
+		MUXSEL_ROW_ELIM_INCREMENT,
+		MUXSEL_ROW_ELIM_MOVE_DOWN,
+		MUXSEL_ROW_ELIM_ZERO
+	);
+	signal row_elim_mode				: row_elim_mode_enum;
 	signal row_elim_read_address		: std_logic_vector (row_width - 1 downto 0);
 	signal row_elim_read_data			: std_logic_vector (4 downto 0);
 
@@ -218,17 +227,28 @@ begin
 	end process;
 
 	row_elim_read_data		<= RAM_ROW_ELIM (conv_integer(row_elim_read_address));
-	row_elim_write_data		<= row_elim_read_data + '1';
-
 	row_elim_data_out		<= row_elim_read_data;
 
-	-- bound to the same addresses.
-	with ram_read_address_mux select row_elim_read_address <=
-		block_row_i			when MUXSEL_RENDER,
-		row_count			when MUXSEL_ROW_ELIM,
-		"00000"				when others;
+	with row_elim_mode select row_elim_write_data <=
+		"00000"						when MUXSEL_ROW_ELIM_RENDER, -- N/A
+		row_elim_read_data + '1'	when MUXSEL_ROW_ELIM_INCREMENT,
+		row_elim_read_data			when MUXSEL_ROW_ELIM_MOVE_DOWN,
+		"00000"						when MUXSEL_ROW_ELIM_ZERO,
+		"00000"						when others;
 
-	row_elim_write_address	<= row_count;
+	with row_elim_mode select row_elim_read_address <=
+		block_row_i					when MUXSEL_ROW_ELIM_RENDER,
+		row_count					when MUXSEL_ROW_ELIM_INCREMENT,
+		row_count					when MUXSEL_ROW_ELIM_MOVE_DOWN,
+		"00000"						when MUXSEL_ROW_ELIM_ZERO, -- N/A
+		"00000"						when others;
+
+	with row_elim_mode select row_elim_write_address <=
+		"00000"						when MUXSEL_ROW_ELIM_RENDER, -- N/A
+		row_count					when MUXSEL_ROW_ELIM_INCREMENT,
+		row_count_old				when MUXSEL_ROW_ELIM_MOVE_DOWN,
+		row_count_old				when MUXSEL_ROW_ELIM_ZERO,
+		"00000"						when others;
 
 
 	-- process for RAM for blocks
@@ -336,11 +356,12 @@ begin
 		column_count_enable			<= '0';
 		row_count_enable			<= '0';
 
+		row_elim_mode				<= MUXSEL_ROW_ELIM_RENDER;
 		row_elim_write_enable		<= '0';
 
 		case state is
 		when state_start =>
-			ram_read_address_mux		<= MUXSEL_RENDER;
+			ram_read_address_mux	<= MUXSEL_RENDER;
 
 		-- logic that increments block removal counters (row_elim)
 		when state_check_block =>
@@ -350,14 +371,21 @@ begin
 		when state_check_block_increment_column_til_end =>
 			column_count_enable		<= '1';
 		when state_increment_row_elim =>
+			row_elim_mode			<= MUXSEL_ROW_ELIM_INCREMENT;
 			row_elim_write_enable	<= '1';
 		when state_check_block_decrement_row =>
 			row_count_enable		<= '1';
 
+		-- logic that finds what row we have to remove and then fires
+		-- removal down below
+		when state_check_row =>
+			row_elim_mode			<= MUXSEL_ROW_ELIM_INCREMENT; -- same r addr
+		when state_check_row_decrement_row =>
+			row_count_enable		<= '1';
 
 		-- logic that moves blocks down by one
 		when state_pre_decrement_row =>
-			row_count_enable			<= '1';
+			row_count_enable		<= '1';
 
 		when state_move_block_down =>
 			-- enable writes
@@ -365,10 +393,14 @@ begin
 			-- activate counter
 			column_count_enable		<= '1';
 		when state_decrement_row =>
+			row_elim_mode			<= MUXSEL_ROW_ELIM_MOVE_DOWN;
+			row_elim_write_enable	<= '1';
 			row_count_enable		<= '1';
 
 		-- finaly zero upper row
 		when state_zero_upper_row =>
+			row_elim_mode			<= MUXSEL_ROW_ELIM_ZERO;
+			row_elim_write_enable	<= '1';
 			-- enable writes
 			ram_write_enable		<= '1';
 			ram_write_data_mux		<= MUXSEL_ZERO;
@@ -382,7 +414,7 @@ begin
 
 	-- FSM next state
 	process (state,
-		ram_read_data,
+		ram_read_data, row_elim_read_data,
 		screen_finished_render_i, refresh_count_overflow,
 		row_count_overflow, column_count_overflow)
 	begin
@@ -392,7 +424,6 @@ begin
 		when state_start =>
 			if refresh_count_overflow = '1' then
 				next_state <= state_check_block;
---				next_state <= state_pre_decrement_row;
 			end if;
 
 		-- logic that increments block removal counters (row_elim)
@@ -416,10 +447,25 @@ begin
 			next_state <= state_check_block_decrement_row;
 		when state_check_block_decrement_row =>
 			if row_count_overflow = '1' then
---				next_state <= state_pre_decrement_row;
-				next_state <= state_start;
+				-- start row check passes
+				next_state <= state_check_row;
 			else
 				next_state <= state_check_block;
+			end if;
+
+		-- logic that finds what row we have to remove and then fires
+		-- removal down below
+		when state_check_row =>
+			if row_elim_read_data = "11111" then
+				next_state <= state_pre_decrement_row;
+			else
+				next_state <= state_check_row_decrement_row;
+			end if;
+		when state_check_row_decrement_row =>
+			if row_count_overflow = '1' then
+				next_state <= state_start;
+			else
+				next_state <= state_check_row;
 			end if;
 
 		-- logic that moves blocks down by one
@@ -440,7 +486,9 @@ begin
 
 		when state_zero_upper_row =>
 			if column_count_overflow = '1' then
-				next_state <= state_start;
+				-- TODO: jump back to check row
+--				next_state <= state_start;
+				next_state <= state_check_row;
 			end if;
 		when others =>
 			next_state <= state_start;
