@@ -17,7 +17,7 @@ entity tetris_block is
 		clock_i						: in	std_logic;
 		reset_i						: in	std_logic;
 
-		row_elim_data_out			: out	std_logic_vector(4 downto 0);
+		row_elim_data_o				: out	std_logic_vector(4 downto 0);
 		block_descriptor_o			: out	std_logic_vector(2 downto 0);
 		block_row_i					: in	std_logic_vector(integer(CEIL(LOG2(real(number_of_rows    - 1)))) - 1 downto 0);
 		block_column_i				: in	std_logic_vector(integer(CEIL(LOG2(real(number_of_columns - 1)))) - 1 downto 0);
@@ -60,15 +60,11 @@ architecture Behavioral of tetris_block is
 	-- ##
 	constant block_descriptor_square		: std_logic_vector := std_logic_vector(to_unsigned(7, block_descriptor_width));
 
-
-	constant line_remove_counter_width	: integer := 5;
-	
 	-------------------------------------------------------
 	----------------- Tetris Active Data ------------------
 	-------------------------------------------------------
 	-- 30x16x(block_descriptor_width) RAM for storing block descriptors
 	type ram_blocks_type is array (0 to ram_size - 1) of std_logic_vector (0 to block_descriptor_width - 1);
-
 	signal RAM : ram_blocks_type := (
 		"011", "001", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "100",
 		"000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000",
@@ -107,151 +103,55 @@ architecture Behavioral of tetris_block is
 		"000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000"
 	);
 
-	signal ram_write_enable				: std_logic;
-	signal ram_write_address			: std_logic_vector (ram_width - 1 downto 0);
-	type ram_write_data_mux_enum is (
-		MUXSEL_MOVE_DOWN,
-		MUXSEL_ZERO
-	);
-	signal ram_write_data_mux			: ram_write_data_mux_enum;
-	signal ram_write_data				: std_logic_vector (block_descriptor_width - 1 downto 0);
-
-	type ram_read_address_mux_enum is (
+	type ram_access_mux_enum is
+	(
 		MUXSEL_RENDER,
 		MUXSEL_ROW_ELIM
 	);
-	signal ram_read_address_mux			: ram_read_address_mux_enum;
-	signal ram_read_address				: std_logic_vector (ram_width - 1 downto 0);
-	signal ram_read_data				: std_logic_vector (block_descriptor_width - 1 downto 0);
+	signal ram_access_mux					: ram_access_mux_enum;
+
+	signal ram_write_enable					: std_logic;
+	signal ram_write_address				: std_logic_vector (ram_width - 1 downto 0);
+	signal ram_write_data					: std_logic_vector (block_descriptor_width - 1 downto 0);
+
+	signal ram_read_address					: std_logic_vector (ram_width - 1 downto 0);
+	signal ram_read_data					: std_logic_vector (block_descriptor_width - 1 downto 0);
+
 
 	type fsm_states is
 	(
 		state_start,
 
-		state_check_block,
-		state_check_block_increment_column,
-		state_check_block_increment_column_til_end,
-		state_increment_row_elim,
-		state_check_block_decrement_row,
-
-		state_check_row,
-		state_check_row_decrement_row,
-
-		state_pre_decrement_row,
-		state_move_block_down,
-		state_decrement_row,
-
-		state_zero_upper_row
+		state_full_row_elim,
+		state_full_row_elim_wait
 	);
-	signal state, next_state			: fsm_states := state_start;
+	signal state, next_state				: fsm_states := state_start;
 
-	constant refresh_count_top			: integer := 59; --255;
-	constant refresh_count_width		: integer := integer(CEIL(LOG2(real(refresh_count_top))));
---	signal refresh_count_enable			: std_logic;
-	signal refresh_count				: std_logic_vector (refresh_count_width - 1 downto 0);
-	signal refresh_count_overflow		: std_logic;
+	constant refresh_count_top				: integer := 59; --255;
+	constant refresh_count_width			: integer := integer(CEIL(LOG2(real(refresh_count_top))));
+--	signal refresh_count_enable				: std_logic;
+	signal refresh_count					: std_logic_vector (refresh_count_width - 1 downto 0);
+	signal refresh_count_overflow			: std_logic;
 
-	signal row_count_enable				: std_logic;
-	signal row_count					: std_logic_vector (row_width - 1 downto 0);
-	signal row_count_old				: std_logic_vector (row_width - 1 downto 0);
-	signal row_count_overflow			: std_logic;
+	signal row_elim_read_data				: std_logic_vector (block_descriptor_width - 1 downto 0);
+	signal row_elim_read_row				: std_logic_vector (row_width - 1 downto 0);
+	signal row_elim_read_column				: std_logic_vector (column_width - 1 downto 0);
+	signal row_elim_write_data				: std_logic_vector (block_descriptor_width - 1 downto 0);
+	signal row_elim_write_enable			: std_logic;
+	signal row_elim_write_row				: std_logic_vector (row_width - 1 downto 0);
+	signal row_elim_write_column			: std_logic_vector (column_width - 1 downto 0);
 
-	signal column_count_enable			: std_logic;
-	signal column_count					: std_logic_vector (column_width - 1 downto 0);
-	signal column_count_overflow		: std_logic;
-
-	type ram_row_elim_type is array (0 to 31) of std_logic_vector (0 to 4);
-	signal RAM_ROW_ELIM					: ram_row_elim_type :=
-	(
-		"00000",
-		"00000",
-		"00000",
-		"00000",
-		"00000",
-		"00000",
-		"00000",
-		"00000",
-
-		"00000",
-		"00000",
-		"00000",
-		"00000",
-		"00000",
-		"00000",
-		"00000",
-		"00000",
-
-		"00000",
-		"00000",
-		"00000",
-		"00000",
-		"00000",
-		"00000",
-		"00000",
-		"00000",
-
-		"00000",
-		"00000",
-		"00000",
-		"00000",
-		"00000",
-		"00000",
-		"00000",
-		"00000"
-	);
-
-	type row_elim_mode_enum is (
-		MUXSEL_ROW_ELIM_RENDER,
-		MUXSEL_ROW_ELIM_INCREMENT,
-		MUXSEL_ROW_ELIM_MOVE_DOWN,
-		MUXSEL_ROW_ELIM_ZERO
-	);
-	signal row_elim_mode				: row_elim_mode_enum;
-	signal row_elim_read_address		: std_logic_vector (row_width - 1 downto 0);
-	signal row_elim_read_data			: std_logic_vector (4 downto 0);
-
-	signal row_elim_write_enable		: std_logic;
-	signal row_elim_write_address		: std_logic_vector (row_width - 1 downto 0);
-	signal row_elim_write_data			: std_logic_vector (4 downto 0);
+	signal row_elim_start					: std_logic;
+	signal row_elim_ready					: std_logic;
 
 begin
 
-	-- process for RAM for line elimination
-	process (clock_i)
-	begin
-		if rising_edge (clock_i) then
-			if row_elim_write_enable = '1' then
-				RAM_ROW_ELIM (conv_integer(row_elim_write_address)) <= row_elim_write_data;
-			end if;
-		end if;
-	end process;
+	block_descriptor_o						<= ram_read_data;
 
-	row_elim_read_data		<= RAM_ROW_ELIM (conv_integer(row_elim_read_address));
-	row_elim_data_out		<= row_elim_read_data;
+	-------------------------------------------------------
+	--------------- logic for RAM for blocks --------------
+	-------------------------------------------------------
 
-	with row_elim_mode select row_elim_write_data <=
-		"00000"						when MUXSEL_ROW_ELIM_RENDER, -- N/A
-		row_elim_read_data + '1'	when MUXSEL_ROW_ELIM_INCREMENT,
-		row_elim_read_data			when MUXSEL_ROW_ELIM_MOVE_DOWN,
-		"00000"						when MUXSEL_ROW_ELIM_ZERO,
-		"00000"						when others;
-
-	with row_elim_mode select row_elim_read_address <=
-		block_row_i					when MUXSEL_ROW_ELIM_RENDER,
-		row_count					when MUXSEL_ROW_ELIM_INCREMENT,
-		row_count					when MUXSEL_ROW_ELIM_MOVE_DOWN,
-		"00000"						when MUXSEL_ROW_ELIM_ZERO, -- N/A
-		"00000"						when others;
-
-	with row_elim_mode select row_elim_write_address <=
-		"00000"						when MUXSEL_ROW_ELIM_RENDER, -- N/A
-		row_count					when MUXSEL_ROW_ELIM_INCREMENT,
-		row_count_old				when MUXSEL_ROW_ELIM_MOVE_DOWN,
-		row_count_old				when MUXSEL_ROW_ELIM_ZERO,
-		"00000"						when others;
-
-
-	-- process for RAM for blocks
 	process (clock_i)
 	begin
 		if rising_edge (clock_i) then
@@ -261,22 +161,64 @@ begin
 		end if;
 	end process;
 
-	ram_read_data			<= RAM (conv_integer(ram_read_address));
+	ram_read_data								<= RAM (conv_integer(ram_read_address));
 
-	with ram_write_data_mux select ram_write_data <=
-		ram_read_data	when MUXSEL_MOVE_DOWN,
-		"000"			when others;
+	-- figure out who has access to it
+	with ram_access_mux							select ram_write_data <=
+		"000"										when MUXSEL_RENDER,
+		row_elim_write_data							when MUXSEL_ROW_ELIM,
+		"000"										when others;
 
-	with ram_read_address_mux select ram_read_address <=
-		block_row_i & block_column_i		when MUXSEL_RENDER,
-		row_count & column_count			when MUXSEL_ROW_ELIM,
-		"00000" & "0000"					when others;
+	with ram_access_mux							select ram_write_address <=
+		"00000"            & "0000"					when MUXSEL_RENDER,
+		row_elim_write_row & row_elim_write_column	when MUXSEL_ROW_ELIM,
+		"00000"            & "0000"					when others;
 
-	ram_write_address		<= row_count_old & column_count;
+	with ram_access_mux							select ram_write_enable <=
+		'0'											when MUXSEL_RENDER,
+		row_elim_write_enable						when MUXSEL_ROW_ELIM,
+		'0'											when others;
+
+	with ram_access_mux							select ram_read_address <=
+		block_row_i       & block_column_i			when MUXSEL_RENDER,
+		row_elim_read_row & row_elim_read_column	when MUXSEL_ROW_ELIM,
+		"00000"           & "0000"					when others;
 
 
-	block_descriptor_o		<= ram_read_data;
+	-------------------------------------------------------
+	--------------------- sub modules ---------------------
+	-------------------------------------------------------
 
+	Inst_tetris_row_elim:					entity work.tetris_row_elim
+	generic map
+	(
+		number_of_rows						=> number_of_rows,
+		number_of_columns					=> number_of_columns
+	)
+	port map
+	(
+		clock_i								=> clock_i,
+		reset_i								=> reset_i,
+
+		-- communication with main RAM
+		block_o								=> row_elim_write_data,
+		block_i								=> ram_read_data,
+		block_write_enable_o				=> row_elim_write_enable,
+		block_read_row_o					=> row_elim_read_row,
+		block_read_column_o					=> row_elim_read_column,
+		block_write_row_o					=> row_elim_write_row,
+		block_write_column_o				=> row_elim_write_column,
+
+		row_elim_address_i					=> block_row_i,
+		row_elim_data_o						=> row_elim_data_o,
+
+		fsm_start_i							=> row_elim_start,
+		fsm_ready_o							=> row_elim_ready
+	);
+
+	-------------------------------------------------------
+	-------------- support counters for FSM ---------------
+	-------------------------------------------------------
 
 	Inst_refresh_counter:	entity work.counter_until
 	generic map				(width => refresh_count_width)
@@ -290,47 +232,9 @@ begin
 		overflow_o			=> refresh_count_overflow
 	);
 
-
-	Inst_row_counter:		entity work.counter_until_new
-	generic map
-	(
-		width				=> row_width,
-		step				=> '0', -- downcounter
-		reset_value			=> number_of_rows - 1
-	)
-	port map
-	(
-		clock_i				=> clock_i,
-		reset_i				=> reset_i,
-		reset_when_i		=> std_logic_vector (to_unsigned (0, row_width)),
-		count_enable_i		=> row_count_enable,
-		count_o				=> row_count,
-		overflow_o			=> row_count_overflow
-	);
-
-	Inst_reg_old:			entity work.generic_register
-	port map
-	(
-		clock_i				=> clock_i,
-		reset_i				=> reset_i,
-		clock_enable_i		=> row_count_enable,
-		data_i				=> row_count,
-		data_o				=> row_count_old
-	);
-
-	Inst_column_counter:	entity work.counter_until_new
-	generic map				(width => column_width)
-	port map
-	(
-		clock_i				=> clock_i,
-		reset_i				=> reset_i,
-		reset_when_i		=> std_logic_vector (to_unsigned (number_of_columns - 1, column_width)),
-		count_enable_i		=> column_count_enable,
-		count_o				=> column_count,
-		overflow_o			=> column_count_overflow
-	);
-
-
+	-------------------------------------------------------
+	------------------------- FSM -------------------------
+	-------------------------------------------------------
 
 	-- FSM state change process
 	process (clock_i)
@@ -344,68 +248,24 @@ begin
 		end if;
 	end process;
 
-
 	-- FSM output
 	process (state)
 	begin
 
-		ram_write_enable			<= '0';
-		ram_write_data_mux			<= MUXSEL_MOVE_DOWN;
-		ram_read_address_mux		<= MUXSEL_ROW_ELIM;
-
-		column_count_enable			<= '0';
-		row_count_enable			<= '0';
-
-		row_elim_mode				<= MUXSEL_ROW_ELIM_RENDER;
-		row_elim_write_enable		<= '0';
+		ram_access_mux				<= MUXSEL_RENDER;
+		row_elim_start				<= '0';
 
 		case state is
 		when state_start =>
-			ram_read_address_mux	<= MUXSEL_RENDER;
+			ram_access_mux			<= MUXSEL_RENDER;
 
-		-- logic that increments block removal counters (row_elim)
-		when state_check_block =>
-			null;
-		when state_check_block_increment_column =>
-			column_count_enable		<= '1';
-		when state_check_block_increment_column_til_end =>
-			column_count_enable		<= '1';
-		when state_increment_row_elim =>
-			row_elim_mode			<= MUXSEL_ROW_ELIM_INCREMENT;
-			row_elim_write_enable	<= '1';
-		when state_check_block_decrement_row =>
-			row_count_enable		<= '1';
+		when state_full_row_elim =>
+			row_elim_start			<= '1';
+			ram_access_mux			<= MUXSEL_ROW_ELIM;
+		when state_full_row_elim_wait =>
+			ram_access_mux			<= MUXSEL_ROW_ELIM;
 
-		-- logic that finds what row we have to remove and then fires
-		-- removal down below
-		when state_check_row =>
-			row_elim_mode			<= MUXSEL_ROW_ELIM_INCREMENT; -- same r addr
-		when state_check_row_decrement_row =>
-			row_count_enable		<= '1';
 
-		-- logic that moves blocks down by one
-		when state_pre_decrement_row =>
-			row_count_enable		<= '1';
-
-		when state_move_block_down =>
-			-- enable writes
-			ram_write_enable		<= '1';
-			-- activate counter
-			column_count_enable		<= '1';
-		when state_decrement_row =>
-			row_elim_mode			<= MUXSEL_ROW_ELIM_MOVE_DOWN;
-			row_elim_write_enable	<= '1';
-			row_count_enable		<= '1';
-
-		-- finaly zero upper row
-		when state_zero_upper_row =>
-			row_elim_mode			<= MUXSEL_ROW_ELIM_ZERO;
-			row_elim_write_enable	<= '1';
-			-- enable writes
-			ram_write_enable		<= '1';
-			ram_write_data_mux		<= MUXSEL_ZERO;
-			-- activate counter
-			column_count_enable		<= '1';
 		when others =>
 			null;
 		end case;
@@ -414,82 +274,24 @@ begin
 
 	-- FSM next state
 	process (state,
-		ram_read_data, row_elim_read_data,
-		screen_finished_render_i, refresh_count_overflow,
-		row_count_overflow, column_count_overflow)
+		refresh_count_overflow,
+		row_elim_ready)
 	begin
 		next_state	<= state;
 
 		case state is
 		when state_start =>
 			if refresh_count_overflow = '1' then
-				next_state <= state_check_block;
+				next_state <= state_full_row_elim;
 			end if;
 
-		-- logic that increments block removal counters (row_elim)
-		when state_check_block =>
-			if ram_read_data = "000" then
-				next_state <= state_check_block_increment_column_til_end;
-			else
-				next_state <= state_check_block_increment_column;
-			end if;
-		when state_check_block_increment_column_til_end =>
-			if column_count_overflow = '1' then
-				next_state <= state_check_block_decrement_row;
-			end if;
-		when state_check_block_increment_column =>
-			if column_count_overflow = '1' then
-				next_state <= state_increment_row_elim;
-			else
-				next_state <= state_check_block;
-			end if;
-		when state_increment_row_elim =>
-			next_state <= state_check_block_decrement_row;
-		when state_check_block_decrement_row =>
-			if row_count_overflow = '1' then
-				-- start row check passes
-				next_state <= state_check_row;
-			else
-				next_state <= state_check_block;
-			end if;
-
-		-- logic that finds what row we have to remove and then fires
-		-- removal down below
-		when state_check_row =>
-			if row_elim_read_data = "11111" then
-				next_state <= state_pre_decrement_row;
-			else
-				next_state <= state_check_row_decrement_row;
-			end if;
-		when state_check_row_decrement_row =>
-			if row_count_overflow = '1' then
+		when state_full_row_elim =>
+			next_state <= state_full_row_elim_wait;
+		when state_full_row_elim_wait =>
+			if row_elim_ready = '1' then
 				next_state <= state_start;
-			else
-				next_state <= state_check_row;
 			end if;
 
-		-- logic that moves blocks down by one
-		when state_pre_decrement_row =>
-			next_state <= state_move_block_down;
-
-		when state_move_block_down =>
-			if column_count_overflow = '1' then
-				next_state <= state_decrement_row;
-			end if;
-		when state_decrement_row =>
-			-- if we finished moving, go to end
-			if row_count_overflow = '1' then
-				next_state <= state_zero_upper_row;
-			else
-				next_state <= state_move_block_down;
-			end if;
-
-		when state_zero_upper_row =>
-			if column_count_overflow = '1' then
-				-- TODO: jump back to check row
---				next_state <= state_start;
-				next_state <= state_check_row;
-			end if;
 		when others =>
 			next_state <= state_start;
 		end case;

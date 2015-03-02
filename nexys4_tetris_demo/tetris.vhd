@@ -179,7 +179,7 @@ begin
 		clock_i						=> clock_i,
 		reset_i						=> reset_i,
 
-		row_elim_data_out			=> stage1_row_elim_data_out,
+		row_elim_data_o				=> stage1_row_elim_data_out,
 		block_descriptor_o			=> stage1_block_descriptor,
 		block_row_i					=> stage1_vga_row (8 downto 4),
 		block_column_i				=> stage1_vga_column (7 downto 4),
