@@ -106,7 +106,8 @@ architecture Behavioral of tetris_block is
 	type ram_access_mux_enum is
 	(
 		MUXSEL_RENDER,
-		MUXSEL_ROW_ELIM
+		MUXSEL_ROW_ELIM,
+		MUXSEL_ACTIVE_ELEMENT
 	);
 	signal ram_access_mux					: ram_access_mux_enum;
 
@@ -123,7 +124,10 @@ architecture Behavioral of tetris_block is
 		state_start,
 
 		state_full_row_elim,
-		state_full_row_elim_wait
+		state_full_row_elim_wait,
+
+		state_active_element,
+		state_active_element_wait
 	);
 	signal state, next_state				: fsm_states := state_start;
 
@@ -144,9 +148,21 @@ architecture Behavioral of tetris_block is
 	signal row_elim_start					: std_logic;
 	signal row_elim_ready					: std_logic;
 
+	signal active_write_data				: std_logic_vector (block_descriptor_width - 1 downto 0);
+	signal active_write_enable				: std_logic;
+	signal active_read_row					: std_logic_vector (row_width - 1 downto 0);
+	signal active_read_column				: std_logic_vector (column_width - 1 downto 0);
+	signal active_write_row					: std_logic_vector (row_width - 1 downto 0);
+	signal active_write_column				: std_logic_vector (column_width - 1 downto 0);
+
+	signal active_block_descriptor			: std_logic_vector (block_descriptor_width - 1 downto 0);
+
+	signal active_start						: std_logic;
+	signal active_ready						: std_logic;
+
 begin
 
-	block_descriptor_o						<= ram_read_data;
+	block_descriptor_o						<= ram_read_data or active_block_descriptor;
 
 	-------------------------------------------------------
 	--------------- logic for RAM for blocks --------------
@@ -167,21 +183,25 @@ begin
 	with ram_access_mux							select ram_write_data <=
 		"000"										when MUXSEL_RENDER,
 		row_elim_write_data							when MUXSEL_ROW_ELIM,
+		active_write_data							when MUXSEL_ACTIVE_ELEMENT,
 		"000"										when others;
 
 	with ram_access_mux							select ram_write_address <=
 		"00000"            & "0000"					when MUXSEL_RENDER,
 		row_elim_write_row & row_elim_write_column	when MUXSEL_ROW_ELIM,
+		active_write_row   & active_write_column	when MUXSEL_ACTIVE_ELEMENT,
 		"00000"            & "0000"					when others;
 
 	with ram_access_mux							select ram_write_enable <=
 		'0'											when MUXSEL_RENDER,
 		row_elim_write_enable						when MUXSEL_ROW_ELIM,
+		active_write_enable							when MUXSEL_ACTIVE_ELEMENT,
 		'0'											when others;
 
 	with ram_access_mux							select ram_read_address <=
 		block_row_i       & block_column_i			when MUXSEL_RENDER,
 		row_elim_read_row & row_elim_read_column	when MUXSEL_ROW_ELIM,
+		active_read_row   & active_read_column		when MUXSEL_ACTIVE_ELEMENT,
 		"00000"           & "0000"					when others;
 
 
@@ -214,6 +234,35 @@ begin
 
 		fsm_start_i							=> row_elim_start,
 		fsm_ready_o							=> row_elim_ready
+	);
+
+	Inst_active_element:					entity work.tetris_active_element
+	generic map
+	(
+		number_of_rows						=> number_of_rows,
+		number_of_columns					=> number_of_columns
+	)
+	port map
+	(
+		clock_i								=> clock_i,
+		reset_i								=> reset_i,
+
+		-- communication with main RAM
+		block_o								=> active_write_data,
+		block_i								=> ram_read_data,
+		block_write_enable_o				=> active_write_enable,
+		block_read_row_o					=> active_read_row,
+		block_read_column_o					=> active_read_column,
+		block_write_row_o					=> active_write_row,
+		block_write_column_o				=> active_write_column,
+
+		-- readout for drawing of active element
+		active_data_o						=> active_block_descriptor,
+		active_row_i						=> block_row_i,
+		active_column_i						=> block_column_i,
+
+		fsm_start_i							=> active_start,
+		fsm_ready_o							=> active_ready
 	);
 
 	-------------------------------------------------------
@@ -253,7 +302,9 @@ begin
 	begin
 
 		ram_access_mux				<= MUXSEL_RENDER;
+
 		row_elim_start				<= '0';
+		active_start				<= '1';
 
 		case state is
 		when state_start =>
@@ -265,6 +316,11 @@ begin
 		when state_full_row_elim_wait =>
 			ram_access_mux			<= MUXSEL_ROW_ELIM;
 
+		when state_active_element =>
+			active_start			<= '1';
+			ram_access_mux			<= MUXSEL_ACTIVE_ELEMENT;
+		when state_active_element_wait =>
+			ram_access_mux			<= MUXSEL_ACTIVE_ELEMENT;
 
 		when others =>
 			null;
@@ -275,7 +331,8 @@ begin
 	-- FSM next state
 	process (state,
 		refresh_count_overflow,
-		row_elim_ready)
+		row_elim_ready,
+		active_ready)
 	begin
 		next_state	<= state;
 
@@ -289,6 +346,13 @@ begin
 			next_state <= state_full_row_elim_wait;
 		when state_full_row_elim_wait =>
 			if row_elim_ready = '1' then
+				next_state <= state_active_element;
+			end if;
+
+		when state_active_element =>
+			next_state <= state_active_element_wait;
+		when state_active_element_wait =>
+			if active_ready = '1' then
 				next_state <= state_start;
 			end if;
 
