@@ -1,22 +1,25 @@
-library IEEE;
-use		IEEE.std_logic_1164.	all;
-use		IEEE.std_logic_ARITH.	all;
-use		IEEE.std_logic_UNSIGNED.all;
+library ieee;
+use     ieee.std_logic_1164.    all;
+use     ieee.std_logic_arith.   all;
+use     ieee.std_logic_unsigned.all;
 
 
 
 entity counter_until is
-	Generic
+	generic
 	(
-		width				: integer := 10
+		width				: integer	:= 10;
+		step				: std_logic	:= '1' -- up
 	);
-	Port
+	port
 	(
 		clock_i				: in	std_logic;
 		reset_i				: in	std_logic;
-		count_enable_i		: in	std_logic;
+		enable_i			: in	std_logic;
 		reset_when_i		: in	std_logic_vector (width - 1 downto 0);
+		reset_value_i		: in	std_logic_vector (width - 1 downto 0);
 		count_o				: out	std_logic_vector (width - 1 downto 0);
+		count_at_top_o		: out	std_logic;
 		overflow_o			: out	std_logic
 	);
 end counter_until;
@@ -25,51 +28,42 @@ end counter_until;
 
 architecture Behavioral of counter_until is
 
-	COMPONENT comparator
-	GENERIC(
-		width				: integer := width
-	);
-	PORT(
-		a_i					: in	std_logic_vector(width - 1 downto 0);
-		b_i					: in	std_logic_vector(width - 1 downto 0);
-		eq_o				: out	std_logic
-	);
-	END COMPONENT;
+	signal count				: std_logic_vector(width - 1 downto 0)
+								:=reset_value_i;
 
-
-
-	signal count			: std_logic_vector(width - 1 downto 0);
-	signal reset			: std_logic;
-	signal count_reset		: std_logic;
+	signal count_at_top			: std_logic;
 
 begin
-	reset			<= reset_i or count_reset;
+	count_o						<= count;
+	overflow_o					<= count_at_top and enable_i;
+	count_at_top_o				<= count_at_top;
 
-	count_o			<= count;
-	overflow_o		<= count_reset;
-
-
-	process(clock_i)
+	process (clock_i)
 	begin
-		if clock_i'event and clock_i = '1' then
-			if reset = '1' then
-				count <= (others => '0');
+		if rising_edge (clock_i) then
+			if reset_i = '1' then
+				count <= reset_value_i;
 			else
-				if count_enable_i = '1' then
-					count <= count + '1';
+				if enable_i = '1' then
+					if count_at_top = '1' then
+						count <= reset_value_i;
+					elsif step = '1' then
+						count <= count + '1';
+					else
+						count <= count - '1';
+					end if;
 				end if;
 			end if ;
 		end if ;
 	end process;
 
-
-	Inst_comparator: comparator
-	GENERIC MAP ( width => width )
-	PORT MAP
-	(
-		a_i		=> count,
-		b_i		=> reset_when_i,
-		eq_o	=> count_reset
-	);
+	process (count, reset_when_i)
+	begin
+		if count = reset_when_i then
+			count_at_top <= '1';
+		else
+			count_at_top <= '0';
+		end if;
+	end process;
 
 end Behavioral;
