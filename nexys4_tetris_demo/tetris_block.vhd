@@ -133,8 +133,6 @@ architecture Behavioral of tetris_block is
 
 	constant refresh_count_top				: integer := 59; --255;
 	constant refresh_count_width			: integer := integer(CEIL(LOG2(real(refresh_count_top))));
---	signal refresh_count_enable				: std_logic;
-	signal refresh_count					: std_logic_vector (refresh_count_width - 1 downto 0);
 	signal refresh_count_overflow			: std_logic;
 
 	signal row_elim_read_data				: std_logic_vector (block_descriptor_width - 1 downto 0);
@@ -275,9 +273,11 @@ begin
 	(
 		clock_i				=> clock_i,
 		reset_i				=> reset_i,
+		enable_i			=> screen_finished_render_i,
 		reset_when_i		=> std_logic_vector (to_unsigned (refresh_count_top, refresh_count_width)),
-		count_enable_i		=> screen_finished_render_i,
-		count_o				=> refresh_count,
+		reset_value_i		=> std_logic_vector (to_unsigned (0,                 refresh_count_width)),
+		count_o				=> open,
+		count_at_top_o		=> open,
 		overflow_o			=> refresh_count_overflow
 	);
 
@@ -338,6 +338,7 @@ begin
 
 		case state is
 		when state_start =>
+			-- active only one clock
 			if refresh_count_overflow = '1' then
 				next_state <= state_full_row_elim;
 			end if;

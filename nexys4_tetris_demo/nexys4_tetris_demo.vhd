@@ -47,7 +47,6 @@ architecture Behavioral of nexys4_tetris_demo is
 	signal reset_i			: std_logic;
 
 	-- vga signals
-	signal counter_prescale : std_logic_vector(1 downto 0);
 	signal vga_pixel_clock	: std_logic;
 
 	signal led				: std_logic_vector(15 downto 0);
@@ -95,9 +94,11 @@ begin
 	(
 		clock_i				=> clock_i,
 		reset_i				=> reset_i,
-		count_enable_i		=> '1',
+		enable_i			=> '1',
 		reset_when_i		=> "11",
-		count_o				=> counter_prescale,
+		reset_value_i		=> "00",
+		count_o				=> open,
+		count_at_top_o		=> open,
 		overflow_o			=> vga_pixel_clock
 	);
 

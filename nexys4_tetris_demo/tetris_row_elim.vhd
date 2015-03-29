@@ -76,11 +76,11 @@ architecture Behavioral of tetris_row_elim is
 	signal row_count_enable				: std_logic;
 	signal row_count					: std_logic_vector (row_width - 1 downto 0);
 	signal row_count_old				: std_logic_vector (row_width - 1 downto 0);
-	signal row_count_overflow			: std_logic;
+	signal row_count_at_top				: std_logic;
 
 	signal column_count_enable			: std_logic;
 	signal column_count					: std_logic_vector (column_width - 1 downto 0);
-	signal column_count_overflow		: std_logic;
+	signal column_count_at_top			: std_logic;
 
 	type ram_row_elim_type is array (0 to (2 ** row_width) - 1) of std_logic_vector (0 to row_elim_width - 1);
 	signal RAM_ROW_ELIM					: ram_row_elim_type := (others => (others => '0'));
@@ -153,21 +153,22 @@ begin
 	-------------- support counters for FSM ---------------
 	-------------------------------------------------------
 
-	Inst_row_counter:		entity work.counter_until_new
+	Inst_row_counter:		entity work.counter_until
 	generic map
 	(
 		width				=> row_width,
-		step				=> '0', -- downcounter
-		reset_value			=> number_of_rows - 1
+		step				=> '0' -- downcounter
 	)
 	port map
 	(
 		clock_i				=> clock_i,
 		reset_i				=> reset_i,
+		enable_i			=> row_count_enable,
 		reset_when_i		=> std_logic_vector (to_unsigned (0, row_width)),
-		count_enable_i		=> row_count_enable,
+		reset_value_i		=> std_logic_vector (to_unsigned (number_of_rows - 1, row_width)),
 		count_o				=> row_count,
-		overflow_o			=> row_count_overflow
+		count_at_top_o		=> row_count_at_top,
+		overflow_o			=> open
 	);
 
 	Inst_reg_old:			entity work.generic_register
@@ -180,16 +181,18 @@ begin
 		data_o				=> row_count_old
 	);
 
-	Inst_column_counter:	entity work.counter_until_new
+	Inst_column_counter:	entity work.counter_until
 	generic map				(width => column_width)
 	port map
 	(
 		clock_i				=> clock_i,
 		reset_i				=> reset_i,
+		enable_i			=> column_count_enable,
 		reset_when_i		=> std_logic_vector (to_unsigned (number_of_columns - 1, column_width)),
-		count_enable_i		=> column_count_enable,
+		reset_value_i		=> std_logic_vector (to_unsigned (0, column_width)),
 		count_o				=> column_count,
-		overflow_o			=> column_count_overflow
+		count_at_top_o		=> column_count_at_top,
+		overflow_o			=> open
 	);
 
 
@@ -283,7 +286,7 @@ begin
 	process (state,
 		block_i, row_elim_read_data,
 		fsm_start_i,
-		row_count_overflow, column_count_overflow)
+		row_count_at_top, column_count_at_top)
 	begin
 		next_state	<= state;
 
@@ -301,11 +304,11 @@ begin
 				next_state <= state_check_block_increment_column;
 			end if;
 		when state_check_block_increment_column_til_end =>
-			if column_count_overflow = '1' then
+			if column_count_at_top = '1' then
 				next_state <= state_check_block_decrement_row;
 			end if;
 		when state_check_block_increment_column =>
-			if column_count_overflow = '1' then
+			if column_count_at_top = '1' then
 				next_state <= state_increment_row_elim;
 			else
 				next_state <= state_check_block;
@@ -313,7 +316,7 @@ begin
 		when state_increment_row_elim =>
 			next_state <= state_check_block_decrement_row;
 		when state_check_block_decrement_row =>
-			if row_count_overflow = '1' then
+			if row_count_at_top = '1' then
 				-- start row check passes
 				next_state <= state_check_row;
 			else
@@ -329,7 +332,7 @@ begin
 				next_state <= state_check_row_decrement_row;
 			end if;
 		when state_check_row_decrement_row =>
-			if row_count_overflow = '1' then
+			if row_count_at_top = '1' then
 				next_state <= state_start;
 			else
 				next_state <= state_check_row;
@@ -340,19 +343,19 @@ begin
 			next_state <= state_move_block_down;
 
 		when state_move_block_down =>
-			if column_count_overflow = '1' then
+			if column_count_at_top = '1' then
 				next_state <= state_decrement_row;
 			end if;
 		when state_decrement_row =>
 			-- if we finished moving, go to end
-			if row_count_overflow = '1' then
+			if row_count_at_top = '1' then
 				next_state <= state_zero_upper_row;
 			else
 				next_state <= state_move_block_down;
 			end if;
 
 		when state_zero_upper_row =>
-			if column_count_overflow = '1' then
+			if column_count_at_top = '1' then
 				next_state <= state_check_row;
 			end if;
 
