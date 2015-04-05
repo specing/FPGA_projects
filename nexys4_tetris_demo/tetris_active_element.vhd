@@ -34,6 +34,7 @@ entity tetris_active_element is
 		active_column_i				: in	std_logic_vector(integer(CEIL(LOG2(real(number_of_columns - 1)))) - 1 downto 0);
 
 		-- communication with the main finite state machine
+		operation_i					: in	active_tetrimino_operations;
 		fsm_start_i					: in	std_logic;
 		fsm_ready_o					: out	std_logic
 	);
@@ -45,6 +46,17 @@ architecture Behavioral of tetris_active_element is
 
 	constant row_width					: integer := integer(CEIL(LOG2(real(number_of_rows    - 1))));
 	constant column_width				: integer := integer(CEIL(LOG2(real(number_of_columns - 1))));
+
+	constant row0		: std_logic_vector	:= std_logic_vector(to_unsigned(0, row_width));
+	constant row1		: std_logic_vector	:= std_logic_vector(to_unsigned(1, row_width));
+	constant rowNm1		: std_logic_vector	:= std_logic_vector(to_unsigned(number_of_rows - 1, row_width));
+	constant rowN		: std_logic_vector	:= std_logic_vector(to_unsigned(number_of_rows, row_width));
+
+	constant column0	: std_logic_vector	:= std_logic_vector(to_unsigned(0, column_width));
+	constant column1	: std_logic_vector	:= std_logic_vector(to_unsigned(1, column_width));
+	constant columnNm1	: std_logic_vector	:= std_logic_vector(to_unsigned(number_of_columns - 1, column_width));
+	constant columnN	: std_logic_vector	:= std_logic_vector(to_unsigned(number_of_columns, column_width));
+
 
 	signal block0_row					: std_logic_vector (row_width - 1 downto 0);
 	signal block1_row					: std_logic_vector (row_width - 1 downto 0);
@@ -103,7 +115,26 @@ architecture Behavioral of tetris_active_element is
 	type fsm_states is
 	(
 		state_start,
+		-- NT...NEW_TETRIMINO
 		state_NT_new_addresses,
+		-- MD...MOVE_DOWN
+		state_MD_addresses,
+		state_MD_check_contents0,
+		state_MD_check_contents1,
+		state_MD_check_contents2,
+		state_MD_check_contents3,
+		  -- when MOVE_DOWN fails, transfer active tetrimino to ram
+		  -- and go to NEW_TETRIMINO
+		state_MD_fill_contents0,
+		state_MD_fill_contents1,
+		state_MD_fill_contents2,
+		state_MD_fill_contents3,
+		-- check contents of cells
+		state_check_contents0,
+		state_check_contents1,
+		state_check_contents2,
+		state_check_contents3,
+		-- apply operation
 		state_writeback
 	);
 	signal state, next_state			: fsm_states := state_NT_new_addresses;
@@ -246,7 +277,6 @@ begin
 		end if;
 	end process;
 
-
 	-- FSM output
 	process (state)
 	begin
@@ -264,8 +294,11 @@ begin
 
 		new_address_write_enable			<= '0';
 		active_address_write_enable			<= '0';
+		block_write_enable_o				<= '0';
 
 		tetrimino_select					<= TETRIMINO_OLD;
+
+		block_select						<= BLOCK0;
 
 		case state is
 		when state_start =>
@@ -275,6 +308,36 @@ begin
 			-- all operations ZERO
 			tetrimino_select				<= TETRIMINO_NEW;
 			new_address_write_enable		<= '1';
+
+		when state_MD_addresses =>
+			-- addresses start at top left corner
+			block0_row_operation			<= PLUS_ONE;
+			block1_row_operation			<= PLUS_ONE;
+			block2_row_operation			<= PLUS_ONE;
+			block3_row_operation			<= PLUS_ONE;
+			new_address_write_enable		<= '1';
+
+		when state_MD_check_contents0 =>
+			block_select					<= BLOCK0;
+		when state_MD_check_contents1 =>
+			block_select					<= BLOCK1;
+		when state_MD_check_contents2 =>
+			block_select					<= BLOCK2;
+		when state_MD_check_contents3 =>
+			block_select					<= BLOCK3;
+
+		when state_MD_fill_contents0 =>
+			block_select					<= BLOCK0;
+			block_write_enable_o			<= '1';
+		when state_MD_fill_contents1 =>
+			block_select					<= BLOCK1;
+			block_write_enable_o			<= '1';
+		when state_MD_fill_contents2 =>
+			block_select					<= BLOCK2;
+			block_write_enable_o			<= '1';
+		when state_MD_fill_contents3 =>
+			block_select					<= BLOCK3;
+			block_write_enable_o			<= '1';
 
 		when state_writeback =>
 			active_address_write_enable		<= '1';
@@ -286,18 +349,69 @@ begin
 	end process;
 
 	-- FSM next state
-	process (state, fsm_start_i)
+	process
+	(
+		state, fsm_start_i, operation_i, block_i,
+		block0_row,    block1_row,    block2_row,    block3_row,
+		block0_column, block1_column, block2_column, block3_column
+	)
 	begin
 		next_state	<= state;
 
 		case state is
 		when state_start =>
 			if fsm_start_i = '1' then
-				next_state <= state_start;
+				case operation_i is
+				when ATO_MOVE_DOWN =>
+					next_state <= state_MD_addresses;
+				when others =>
+					next_state <= state_start;
+				end case;
 			end if;
 
 		when state_NT_new_addresses =>
 			next_state <= state_writeback;
+
+		when state_MD_addresses =>
+			if block0_row = rowNm1 or block1_row = rowNm1 or block2_row = rowNm1 or block3_row = rowNm1 then
+				next_state <= state_start;
+			else
+				next_state <= state_MD_check_contents0;
+			end if;
+
+		when state_MD_check_contents0 =>
+			if block_i = tetrimino_shape_empty then
+				next_state <= state_MD_check_contents1;
+			else
+				next_state <= state_MD_fill_contents0;
+			end if;
+		when state_MD_check_contents1 =>
+			if block_i = tetrimino_shape_empty then
+				next_state <= state_MD_check_contents2;
+			else
+				next_state <= state_MD_fill_contents0;
+			end if;
+		when state_MD_check_contents2 =>
+			if block_i = tetrimino_shape_empty then
+				next_state <= state_MD_check_contents3;
+			else
+				next_state <= state_MD_fill_contents0;
+			end if;
+		when state_MD_check_contents3 =>
+			if block_i = tetrimino_shape_empty then
+				next_state <= state_writeback;
+			else
+				next_state <= state_MD_fill_contents0;
+			end if;
+
+		when state_MD_fill_contents0 =>
+			next_state <= state_MD_fill_contents1;
+		when state_MD_fill_contents1 =>
+			next_state <= state_MD_fill_contents2;
+		when state_MD_fill_contents2 =>
+			next_state <= state_MD_fill_contents3;
+		when state_MD_fill_contents3 =>
+			next_state <= state_NT_new_addresses;
 
 		when state_writeback =>
 			next_state <= state_start;
@@ -328,5 +442,30 @@ begin
 		end if;
 	end process;
 
+	with block_select		select block_read_row_o <=
+		block0_row_new			when BLOCK0,
+		block1_row_new			when BLOCK1,
+		block2_row_new			when BLOCK2,
+		block3_row_new			when BLOCK3;
+
+	with block_select		select block_read_column_o <=
+		block0_column_new		when BLOCK0,
+		block1_column_new		when BLOCK1,
+		block2_column_new		when BLOCK2,
+		block3_column_new		when BLOCK3;
+
+	with block_select		select block_write_row_o <=
+		block0_row				when BLOCK0,
+		block1_row				when BLOCK1,
+		block2_row				when BLOCK2,
+		block3_row				when BLOCK3;
+
+	with block_select		select block_write_column_o	<=
+		block0_column			when BLOCK0,
+		block1_column			when BLOCK1,
+		block2_column			when BLOCK2,
+		block3_column			when BLOCK3;
+
+	block_o <= tetrimino_shape;
 
 end Behavioral;
