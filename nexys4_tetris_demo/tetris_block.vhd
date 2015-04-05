@@ -1,14 +1,16 @@
-library	ieee;
-use		ieee.std_logic_1164		.all;
-use		ieee.std_logic_unsigned	.all;
-use		ieee.numeric_std		.all;
-use		ieee.math_real			.all;
+library ieee;
+use     ieee.std_logic_1164     .all;
+use     ieee.std_logic_unsigned .all;
+use     ieee.numeric_std        .all;
+use     ieee.math_real          .all;
+
+use     work.definitions        .all;
 
 
 
 entity tetris_block is
 	generic
-	(	
+	(
 		number_of_rows		: integer := 30;
 		number_of_columns	: integer := 16
 	);
@@ -18,7 +20,7 @@ entity tetris_block is
 		reset_i						: in	std_logic;
 
 		row_elim_data_o				: out	std_logic_vector(4 downto 0);
-		block_descriptor_o			: out	std_logic_vector(2 downto 0);
+		tetrimino_shape_o			: out	std_logic_vector(2 downto 0);
 		block_row_i					: in	std_logic_vector(integer(CEIL(LOG2(real(number_of_rows    - 1)))) - 1 downto 0);
 		block_column_i				: in	std_logic_vector(integer(CEIL(LOG2(real(number_of_columns - 1)))) - 1 downto 0);
 
@@ -36,35 +38,11 @@ architecture Behavioral of tetris_block is
 	constant ram_width						: integer := row_width + column_width;
 	constant ram_size						: integer := 2 ** (ram_width);
 
-	-- block descriptor
-	constant block_descriptor_width			: integer := 3;
-	constant block_descriptor_empty 		: std_logic_vector := std_logic_vector(to_unsigned(0, block_descriptor_width));
-	-- ####
-	constant block_descriptor_pipe	 		: std_logic_vector := std_logic_vector(to_unsigned(1, block_descriptor_width));
-	-- #
-	-- ###
-	constant block_descriptor_L_left		: std_logic_vector := std_logic_vector(to_unsigned(2, block_descriptor_width));
-	--   #
-	-- ###
-	constant block_descriptor_L_right 		: std_logic_vector := std_logic_vector(to_unsigned(3, block_descriptor_width));
-	-- ##
-	--  ##
-	constant block_descriptor_Z_left 		: std_logic_vector := std_logic_vector(to_unsigned(4, block_descriptor_width));
-	--  ##
-	-- ##
-	constant block_descriptor_Z_right 		: std_logic_vector := std_logic_vector(to_unsigned(5, block_descriptor_width));
-	--  #
-	-- ###
-	constant block_descriptor_T				: std_logic_vector := std_logic_vector(to_unsigned(6, block_descriptor_width));
-	-- ##
-	-- ##
-	constant block_descriptor_square		: std_logic_vector := std_logic_vector(to_unsigned(7, block_descriptor_width));
-
 	-------------------------------------------------------
 	----------------- Tetris Active Data ------------------
 	-------------------------------------------------------
-	-- 30x16x(block_descriptor_width) RAM for storing block descriptors
-	type ram_blocks_type is array (0 to ram_size - 1) of std_logic_vector (0 to block_descriptor_width - 1);
+	-- 30x16x(tetrimino_shape_width) RAM for storing block descriptors
+	type ram_blocks_type is array (0 to ram_size - 1) of std_logic_vector (0 to tetrimino_shape_width - 1);
 	signal RAM : ram_blocks_type := (
 		"011", "001", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "100",
 		"000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000",
@@ -113,10 +91,10 @@ architecture Behavioral of tetris_block is
 
 	signal ram_write_enable					: std_logic;
 	signal ram_write_address				: std_logic_vector (ram_width - 1 downto 0);
-	signal ram_write_data					: std_logic_vector (block_descriptor_width - 1 downto 0);
+	signal ram_write_data					: std_logic_vector (tetrimino_shape_width - 1 downto 0);
 
 	signal ram_read_address					: std_logic_vector (ram_width - 1 downto 0);
-	signal ram_read_data					: std_logic_vector (block_descriptor_width - 1 downto 0);
+	signal ram_read_data					: std_logic_vector (tetrimino_shape_width - 1 downto 0);
 
 
 	type fsm_states is
@@ -135,10 +113,9 @@ architecture Behavioral of tetris_block is
 	constant refresh_count_width			: integer := integer(CEIL(LOG2(real(refresh_count_top))));
 	signal refresh_count_overflow			: std_logic;
 
-	signal row_elim_read_data				: std_logic_vector (block_descriptor_width - 1 downto 0);
 	signal row_elim_read_row				: std_logic_vector (row_width - 1 downto 0);
 	signal row_elim_read_column				: std_logic_vector (column_width - 1 downto 0);
-	signal row_elim_write_data				: std_logic_vector (block_descriptor_width - 1 downto 0);
+	signal row_elim_write_data				: std_logic_vector (tetrimino_shape_width - 1 downto 0);
 	signal row_elim_write_enable			: std_logic;
 	signal row_elim_write_row				: std_logic_vector (row_width - 1 downto 0);
 	signal row_elim_write_column			: std_logic_vector (column_width - 1 downto 0);
@@ -146,21 +123,21 @@ architecture Behavioral of tetris_block is
 	signal row_elim_start					: std_logic;
 	signal row_elim_ready					: std_logic;
 
-	signal active_write_data				: std_logic_vector (block_descriptor_width - 1 downto 0);
+	signal active_write_data				: std_logic_vector (tetrimino_shape_width - 1 downto 0);
 	signal active_write_enable				: std_logic;
 	signal active_read_row					: std_logic_vector (row_width - 1 downto 0);
 	signal active_read_column				: std_logic_vector (column_width - 1 downto 0);
 	signal active_write_row					: std_logic_vector (row_width - 1 downto 0);
 	signal active_write_column				: std_logic_vector (column_width - 1 downto 0);
 
-	signal active_block_descriptor			: std_logic_vector (block_descriptor_width - 1 downto 0);
+	signal active_tetrimino_shape			: std_logic_vector (tetrimino_shape_width - 1 downto 0);
 
 	signal active_start						: std_logic;
 	signal active_ready						: std_logic;
 
 begin
 
-	block_descriptor_o						<= ram_read_data or active_block_descriptor;
+	tetrimino_shape_o						<= ram_read_data or active_tetrimino_shape;
 
 	-------------------------------------------------------
 	--------------- logic for RAM for blocks --------------
@@ -255,7 +232,7 @@ begin
 		block_write_column_o				=> active_write_column,
 
 		-- readout for drawing of active element
-		active_data_o						=> active_block_descriptor,
+		active_data_o						=> active_tetrimino_shape,
 		active_row_i						=> block_row_i,
 		active_column_i						=> block_column_i,
 

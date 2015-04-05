@@ -1,7 +1,9 @@
-library	ieee;
-use		ieee.std_logic_1164		.all;
-use		ieee.std_logic_unsigned	.all;
-use		ieee.numeric_std		.all;
+library ieee;
+use     ieee.std_logic_1164     .all;
+use     ieee.std_logic_unsigned .all;
+use     ieee.numeric_std        .all;
+
+use     work.definitions        .all;
 
 
 
@@ -10,10 +12,6 @@ entity tetris is
 	(
 		vga_row_width		: integer := 10;
 		vga_column_width	: integer := 10;
-
-		vga_red_width		: integer;
-		vga_green_width		: integer;
-		vga_blue_width		: integer;
 
 		num_of_buttons		: integer := 4
 	);
@@ -40,30 +38,6 @@ end tetris;
 
 
 architecture Behavioral of tetris is
-	-- block descriptor
-	constant block_descriptor_width			: integer := 3;
-	constant block_descriptor_empty 		: std_logic_vector := std_logic_vector(to_unsigned(0, block_descriptor_width));
-	-- ####
-	constant block_descriptor_pipe	 		: std_logic_vector := std_logic_vector(to_unsigned(1, block_descriptor_width));
-	-- #
-	-- ###
-	constant block_descriptor_L_left		: std_logic_vector := std_logic_vector(to_unsigned(2, block_descriptor_width));
-	--   #
-	-- ###
-	constant block_descriptor_L_right 		: std_logic_vector := std_logic_vector(to_unsigned(3, block_descriptor_width));
-	-- ##
-	--  ##
-	constant block_descriptor_Z_left 		: std_logic_vector := std_logic_vector(to_unsigned(4, block_descriptor_width));
-	--  ##
-	-- ##
-	constant block_descriptor_Z_right 		: std_logic_vector := std_logic_vector(to_unsigned(5, block_descriptor_width));
-	--  #
-	-- ###
-	constant block_descriptor_T				: std_logic_vector := std_logic_vector(to_unsigned(6, block_descriptor_width));
-	-- ##
-	-- ##
-	constant block_descriptor_square		: std_logic_vector := std_logic_vector(to_unsigned(7, block_descriptor_width));
-
 
 	constant line_remove_counter_width	: integer := 5;
 	
@@ -89,7 +63,7 @@ architecture Behavioral of tetris is
 	signal stage1_vga_row				: std_logic_vector (vga_row_width    - 1 downto 0);
 	signal stage1_vga_enable_draw		: std_logic;
 	signal stage1_vga_off_screen		: std_logic;
-	signal stage1_block_descriptor		: std_logic_vector (block_descriptor_width - 1 downto 0);
+	signal stage1_tetrimino_shape		: std_logic_vector (tetrimino_shape_width - 1 downto 0);
 	signal stage1_row_elim_data_out		: std_logic_vector (4 downto 0);
 	signal stage1_line_remove_counter	: std_logic_vector (line_remove_counter_width - 1 downto 0);
 
@@ -98,7 +72,7 @@ architecture Behavioral of tetris is
 	signal stage2_vga_column			: std_logic_vector (vga_column_width - 1 downto 0);
 	signal stage2_vga_row				: std_logic_vector (vga_row_width    - 1 downto 0);
 	signal stage2_vga_enable_draw		: std_logic;
-	signal stage2_block_descriptor		: std_logic_vector (block_descriptor_width - 1 downto 0);
+	signal stage2_tetrimino_shape		: std_logic_vector (tetrimino_shape_width - 1 downto 0);
 	signal stage2_row_elim_data_out		: std_logic_vector (4 downto 0);
 	signal stage2_line_remove_counter	: std_logic_vector (line_remove_counter_width - 1 downto 0);
 	signal stage2_block_red				: std_logic_vector (vga_red_width   - 1 downto 0);
@@ -110,7 +84,7 @@ architecture Behavioral of tetris is
 	signal stage3_vga_column			: std_logic_vector (vga_column_width - 1 downto 0);
 	signal stage3_vga_row				: std_logic_vector (vga_row_width    - 1 downto 0);
 	signal stage3_vga_enable_draw		: std_logic;
-	signal stage3_block_descriptor		: std_logic_vector (block_descriptor_width - 1 downto 0);
+	signal stage3_tetrimino_shape		: std_logic_vector (tetrimino_shape_width - 1 downto 0);
 	signal stage3_row_elim_data_out		: std_logic_vector (4 downto 0);
 	signal stage3_line_remove_counter	: std_logic_vector (line_remove_counter_width - 1 downto 0);
 	signal stage3_block_red				: std_logic_vector (vga_red_width   - 1 downto 0);
@@ -125,7 +99,7 @@ architecture Behavioral of tetris is
 	signal stage4_vga_column			: std_logic_vector (vga_column_width - 1 downto 0);
 	signal stage4_vga_row				: std_logic_vector (vga_row_width    - 1 downto 0);
 	signal stage4_vga_enable_draw		: std_logic;
-	signal stage4_block_descriptor		: std_logic_vector (block_descriptor_width - 1 downto 0);
+	signal stage4_tetrimino_shape		: std_logic_vector (tetrimino_shape_width - 1 downto 0);
 	signal stage4_line_remove_counter	: std_logic_vector (line_remove_counter_width - 1 downto 0);
 	signal stage4_block_red				: std_logic_vector (vga_red_width   - 1 downto 0);
 	signal stage4_block_green			: std_logic_vector (vga_green_width - 1 downto 0);
@@ -180,7 +154,7 @@ begin
 		reset_i						=> reset_i,
 
 		row_elim_data_o				=> stage1_row_elim_data_out,
-		block_descriptor_o			=> stage1_block_descriptor,
+		tetrimino_shape_o			=> stage1_tetrimino_shape,
 		block_row_i					=> stage1_vga_row (8 downto 4),
 		block_column_i				=> stage1_vga_column (7 downto 4),
 
@@ -196,38 +170,38 @@ begin
 			stage2_vga_column		<= stage1_vga_column;
 			stage2_vga_row			<= stage1_vga_row;
 			stage2_vga_enable_draw	<= stage1_vga_enable_draw;
-			stage2_block_descriptor	<= stage1_block_descriptor;
+			stage2_tetrimino_shape	<= stage1_tetrimino_shape;
 			stage2_row_elim_data_out<= stage1_row_elim_data_out;
 		end if;
 	end process;
 
 	-- obtain block colour from block descriptor
-	with stage2_block_descriptor select stage2_block_red <=
-		X"0" when block_descriptor_pipe,
-		X"0" when block_descriptor_L_left,
-		X"F" when block_descriptor_L_right,
-		X"F" when block_descriptor_Z_left,
-		X"0" when block_descriptor_Z_right,
-		X"F" when block_descriptor_T,
-		X"F" when block_descriptor_square,
+	with stage2_tetrimino_shape select stage2_block_red <=
+		X"0" when tetrimino_shape_pipe,
+		X"0" when tetrimino_shape_L_left,
+		X"F" when tetrimino_shape_L_right,
+		X"F" when tetrimino_shape_Z_left,
+		X"0" when tetrimino_shape_Z_right,
+		X"F" when tetrimino_shape_T,
+		X"F" when tetrimino_shape_square,
 		X"0" when others;
-	with stage2_block_descriptor select stage2_block_green <=
-		X"F" when block_descriptor_pipe,
-		X"0" when block_descriptor_L_left,
-		X"A" when block_descriptor_L_right,
-		X"0" when block_descriptor_Z_left,
-		X"F" when block_descriptor_Z_right,
-		X"0" when block_descriptor_T,
-		X"F" when block_descriptor_square,
+	with stage2_tetrimino_shape select stage2_block_green <=
+		X"F" when tetrimino_shape_pipe,
+		X"0" when tetrimino_shape_L_left,
+		X"A" when tetrimino_shape_L_right,
+		X"0" when tetrimino_shape_Z_left,
+		X"F" when tetrimino_shape_Z_right,
+		X"0" when tetrimino_shape_T,
+		X"F" when tetrimino_shape_square,
 		X"0" when others;
-	with stage2_block_descriptor select stage2_block_blue <=
-		X"F" when block_descriptor_pipe,
-		X"F" when block_descriptor_L_left,
-		X"0" when block_descriptor_L_right,
-		X"0" when block_descriptor_Z_left,
-		X"0" when block_descriptor_Z_right,
-		X"F" when block_descriptor_T,
-		X"0" when block_descriptor_square,
+	with stage2_tetrimino_shape select stage2_block_blue <=
+		X"F" when tetrimino_shape_pipe,
+		X"F" when tetrimino_shape_L_left,
+		X"0" when tetrimino_shape_L_right,
+		X"0" when tetrimino_shape_Z_left,
+		X"0" when tetrimino_shape_Z_right,
+		X"F" when tetrimino_shape_T,
+		X"0" when tetrimino_shape_square,
 		X"0" when others;
 
 	-- Stage3: save row, column, hsync, vsync and en_draw + block desc, RGB of block, line remove
@@ -241,7 +215,7 @@ begin
 			stage3_vga_enable_draw	<= stage2_vga_enable_draw;
 
 			stage3_row_elim_data_out<= stage2_row_elim_data_out;
-			stage3_block_descriptor	<= stage2_block_descriptor;
+			stage3_tetrimino_shape	<= stage2_tetrimino_shape;
 			stage3_block_red		<= stage2_block_red;
 			stage3_block_green		<= stage2_block_green;
 			stage3_block_blue		<= stage2_block_blue;
@@ -263,7 +237,7 @@ begin
 			stage4_vga_row			<= stage3_vga_row;
 			stage4_vga_enable_draw	<= stage3_vga_enable_draw;
 
-			stage4_block_descriptor	<= stage3_block_descriptor;
+			stage4_tetrimino_shape	<= stage3_tetrimino_shape;
 			stage4_block_red		<= stage3_block_final_red;
 			stage4_block_green		<= stage3_block_final_green;
 			stage4_block_blue		<= stage3_block_final_blue;

@@ -1,14 +1,16 @@
-library	ieee;
-use		ieee.std_logic_1164		.all;
-use		ieee.std_logic_unsigned	.all;
-use		ieee.numeric_std		.all;
-use		ieee.math_real			.all;
+library ieee;
+use     ieee.std_logic_1164     .all;
+use     ieee.std_logic_unsigned .all;
+use     ieee.numeric_std        .all;
+use     ieee.math_real          .all;
+
+use     work.definitions        .all;
 
 
 
 entity tetris_row_elim is
 	generic
-	(	
+	(
 		number_of_rows				: integer := 30;
 		number_of_columns			: integer := 16
 	);
@@ -41,9 +43,6 @@ architecture Behavioral of tetris_row_elim is
 	constant column_width				: integer := integer(CEIL(LOG2(real(number_of_columns - 1))));
 
 	-- block descriptor
-	constant block_descriptor_width		: integer := 3;
-	constant block_descriptor_empty 	: std_logic_vector := std_logic_vector(to_unsigned(0, block_descriptor_width));
-
 	constant row_elim_width				: integer := 5;
 
 	type ram_write_data_mux_enum is (
@@ -146,7 +145,7 @@ begin
 
 	with ram_write_data_mux		select block_o <=
 		block_i						when MUXSEL_MOVE_DOWN,
-		block_descriptor_empty		when others;
+		tetrimino_shape_empty		when others;
 
 
 	-------------------------------------------------------
@@ -298,7 +297,7 @@ begin
 
 		-- logic that increments block removal counters (row_elim)
 		when state_check_block =>
-			if block_i = block_descriptor_empty then
+			if block_i = tetrimino_shape_empty then
 				next_state <= state_check_block_increment_column_til_end;
 			else
 				next_state <= state_check_block_increment_column;

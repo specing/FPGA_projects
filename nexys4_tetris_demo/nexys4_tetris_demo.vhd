@@ -1,7 +1,9 @@
-library	ieee;
-use		ieee.std_logic_1164		.all;
-use		ieee.std_logic_unsigned	.all;
-use		ieee.numeric_std		.all;
+library ieee;
+use     ieee.std_logic_1164     .all;
+use     ieee.std_logic_unsigned .all;
+use     ieee.numeric_std        .all;
+
+use     work.definitions        .all;
 
 
 
@@ -10,10 +12,6 @@ entity nexys4_tetris_demo is
 	(
 		row_width			: integer := 10;
 		column_width		: integer := 10;
-
-		vga_red_bits		: integer := 4;
-		vga_green_bits		: integer := 4;
-		vga_blue_bits		: integer := 4;
 
 		num_of_buttons		: integer := 4
 	);
@@ -24,9 +22,9 @@ entity nexys4_tetris_demo is
 
 		hsync_o				: out	std_logic;
 		vsync_o				: out	std_logic;
-		vga_red_o			: out	std_logic_vector(vga_red_bits   - 1 downto 0);
-		vga_green_o			: out	std_logic_vector(vga_green_bits - 1 downto 0);
-		vga_blue_o			: out	std_logic_vector(vga_blue_bits  - 1 downto 0);
+		vga_red_o			: out	std_logic_vector(vga_red_width   - 1 downto 0);
+		vga_green_o			: out	std_logic_vector(vga_green_width - 1 downto 0);
+		vga_blue_o			: out	std_logic_vector(vga_blue_width  - 1 downto 0);
 
 		switches_i			: in	std_logic_vector(15 downto 0);
 		btnL_i				: in	std_logic;
@@ -103,12 +101,6 @@ begin
 	);
 
 	Inst_tetris:			entity work.tetris
-	generic map
-	(
-		vga_red_width		=> 4,
-		vga_green_width		=> 4,
-		vga_blue_width		=> 4
-	)
 	port map
 	(
 		clock_i				=> clock_i,
