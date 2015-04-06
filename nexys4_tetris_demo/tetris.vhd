@@ -207,7 +207,6 @@ begin
 			stage3_vga_enable_draw	<= stage2_vga_enable_draw;
 
 			stage3_row_elim_data_out<= stage2_row_elim_data_out;
-			stage3_tetrimino_shape	<= stage2_tetrimino_shape;
 			stage3_block_red		<= stage2_block_red;
 			stage3_block_green		<= stage2_block_green;
 			stage3_block_blue		<= stage2_block_blue;
@@ -229,7 +228,6 @@ begin
 			stage4_vga_row			<= stage3_vga_row;
 			stage4_vga_enable_draw	<= stage3_vga_enable_draw;
 
-			stage4_tetrimino_shape	<= stage3_tetrimino_shape;
 			stage4_block_red		<= stage3_block_final_red;
 			stage4_block_green		<= stage3_block_final_green;
 			stage4_block_blue		<= stage3_block_final_blue;
