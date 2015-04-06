@@ -11,26 +11,22 @@ entity tetris is
 	generic
 	(
 		vga_row_width		: integer := 10;
-		vga_column_width	: integer := 10;
-
-		num_of_buttons		: integer := 4
+		vga_column_width	: integer := 10
 	);
 	port
 	(
-		clock_i				: in	std_logic;
-		reset_i				: in	std_logic;
+		clock_i					: in	std_logic;
+		reset_i					: in	std_logic;
 
-		vga_pixel_clock_i	: in	std_logic;
-		hsync_o				: out	std_logic;
-		vsync_o				: out	std_logic;
-		vga_red_o			: out	std_logic_vector (vga_red_width   - 1 downto 0);
-		vga_green_o			: out	std_logic_vector (vga_green_width - 1 downto 0);
-		vga_blue_o			: out	std_logic_vector (vga_blue_width  - 1 downto 0);
+		vga_pixel_clock_i		: in	std_logic;
+		hsync_o					: out	std_logic;
+		vsync_o					: out	std_logic;
+		vga_red_o				: out	std_logic_vector (vga_red_width   - 1 downto 0);
+		vga_green_o				: out	std_logic_vector (vga_green_width - 1 downto 0);
+		vga_blue_o				: out	std_logic_vector (vga_blue_width  - 1 downto 0);
 
-		btnL_i				: in	std_logic;
-		btnR_i				: in	std_logic;
-		btnU_i				: in	std_logic;
-		btnD_i				: in	std_logic
+		active_operation_i		: in	active_tetrimino_operations;
+		active_operation_ack_o	: out	std_logic
 	);
 end tetris;
 
@@ -152,7 +148,9 @@ begin
 		block_row_i					=> stage1_vga_row (8 downto 4),
 		block_column_i				=> stage1_vga_column (7 downto 4),
 
-		screen_finished_render_i	=> stage1_vga_off_screen
+		screen_finished_render_i	=> stage1_vga_off_screen,
+		active_operation_i			=> active_operation_i,
+		active_operation_ack_o		=> active_operation_ack_o
 	);
 
 	-- Stage2: save row, column, hsync, vsync, en_draw + block desc, line remove

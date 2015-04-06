@@ -24,7 +24,9 @@ entity tetris_block is
 		block_row_i					: in	std_logic_vector(integer(CEIL(LOG2(real(number_of_rows    - 1)))) - 1 downto 0);
 		block_column_i				: in	std_logic_vector(integer(CEIL(LOG2(real(number_of_columns - 1)))) - 1 downto 0);
 
-		screen_finished_render_i	: in	std_logic
+		screen_finished_render_i	: in	std_logic;
+		active_operation_i			: in	active_tetrimino_operations;
+		active_operation_ack_o		: out	std_logic
 	);
 end tetris_block;
 
@@ -100,12 +102,16 @@ architecture Behavioral of tetris_block is
 	type fsm_states is
 	(
 		state_start,
-
+		-- removes full rows
 		state_full_row_elim,
 		state_full_row_elim_wait,
-
-		state_active_element,
-		state_active_element_wait
+		-- move down
+		state_active_element_MD,
+		state_active_element_MD_wait,
+		-- user input
+		state_active_element_input,
+		state_active_element_input_wait,
+		state_active_element_input_ack
 	);
 	signal state, next_state				: fsm_states := state_start;
 
@@ -131,6 +137,14 @@ architecture Behavioral of tetris_block is
 	signal active_write_column				: std_logic_vector (column_width - 1 downto 0);
 
 	signal active_tetrimino_shape			: std_logic_vector (tetrimino_shape_width - 1 downto 0);
+	type active_tetrimino_command_mux_enum is
+	(
+		ATC_DISABLED,
+		ATC_MOVE_DOWN,
+		ATC_USER_INPUT
+	);
+	signal active_tetrimino_command_mux		: active_tetrimino_command_mux_enum;
+	signal active_operation					: active_tetrimino_operations;
 
 	signal active_start						: std_logic;
 	signal active_ready						: std_logic;
@@ -237,10 +251,15 @@ begin
 		active_column_i						=> block_column_i,
 
 		-- communication with the main finite state machine
-		operation_i							=> ATO_MOVE_DOWN,
+		operation_i							=> active_operation,
 		fsm_start_i							=> active_start,
 		fsm_ready_o							=> active_ready
 	);
+
+	with active_tetrimino_command_mux select active_operation <=
+		ATO_NONE						when ATC_DISABLED,
+		ATO_NONE						when ATC_MOVE_DOWN,
+		active_operation_i				when ATC_USER_INPUT;
 
 	-------------------------------------------------------
 	-------------- support counters for FSM ---------------
@@ -280,26 +299,40 @@ begin
 	process (state)
 	begin
 
-		ram_access_mux				<= MUXSEL_RENDER;
+		ram_access_mux							<= MUXSEL_RENDER;
 
-		row_elim_start				<= '0';
-		active_start				<= '0';
+		row_elim_start							<= '0';
+		active_start							<= '0';
+		active_tetrimino_command_mux			<= ATC_DISABLED;
+		active_operation_ack_o					<= '0';
 
 		case state is
 		when state_start =>
-			ram_access_mux			<= MUXSEL_RENDER;
+			ram_access_mux						<= MUXSEL_RENDER;
 
 		when state_full_row_elim =>
-			row_elim_start			<= '1';
-			ram_access_mux			<= MUXSEL_ROW_ELIM;
+			row_elim_start						<= '1';
+			ram_access_mux						<= MUXSEL_ROW_ELIM;
 		when state_full_row_elim_wait =>
-			ram_access_mux			<= MUXSEL_ROW_ELIM;
+			ram_access_mux						<= MUXSEL_ROW_ELIM;
 
-		when state_active_element =>
-			active_start			<= '1';
-			ram_access_mux			<= MUXSEL_ACTIVE_ELEMENT;
-		when state_active_element_wait =>
-			ram_access_mux			<= MUXSEL_ACTIVE_ELEMENT;
+		when state_active_element_MD =>
+			active_start						<= '1';
+			ram_access_mux						<= MUXSEL_ACTIVE_ELEMENT;
+			active_tetrimino_command_mux		<= ATC_MOVE_DOWN;
+		when state_active_element_MD_wait =>
+			ram_access_mux						<= MUXSEL_ACTIVE_ELEMENT;
+			active_tetrimino_command_mux		<= ATC_MOVE_DOWN;
+
+		when state_active_element_input =>
+			active_start						<= '1';
+			ram_access_mux						<= MUXSEL_ACTIVE_ELEMENT;
+			active_tetrimino_command_mux		<= ATC_USER_INPUT;
+		when state_active_element_input_wait =>
+			ram_access_mux						<= MUXSEL_ACTIVE_ELEMENT;
+			active_tetrimino_command_mux		<= ATC_USER_INPUT;
+		when state_active_element_input_ack =>
+			active_operation_ack_o				<= '1';
 
 		when others =>
 			null;
@@ -326,15 +359,24 @@ begin
 			next_state <= state_full_row_elim_wait;
 		when state_full_row_elim_wait =>
 			if row_elim_ready = '1' then
-				next_state <= state_active_element;
+				next_state <= state_active_element_MD;
 			end if;
 
-		when state_active_element =>
-			next_state <= state_active_element_wait;
-		when state_active_element_wait =>
+		when state_active_element_MD =>
+			next_state <= state_active_element_MD_wait;
+		when state_active_element_MD_wait =>
 			if active_ready = '1' then
-				next_state <= state_start;
+				next_state <= state_active_element_input;
 			end if;
+
+		when state_active_element_input =>
+			next_state <= state_active_element_input_wait;
+		when state_active_element_input_wait =>
+			if active_ready = '1' then
+				next_state <= state_active_element_input_ack;
+			end if;
+		when state_active_element_input_ack =>
+			next_state <= state_start;
 
 		when others =>
 			next_state <= state_start;

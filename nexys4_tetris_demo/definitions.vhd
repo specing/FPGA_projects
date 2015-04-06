@@ -14,7 +14,12 @@ package definitions is
 
 	type active_tetrimino_operations is
 	(
-		ATO_NONE, ATO_MOVE_DOWN
+		ATO_NONE,
+		ATO_MOVE_DOWN,
+		ATO_MOVE_LEFT,
+		ATO_MOVE_RIGHT,
+		ATO_ROTATE_CLOCKWISE,
+		ATO_ROTATE_COUNTER_CLOCKWISE
 	);
 
 	-- tetrimino type

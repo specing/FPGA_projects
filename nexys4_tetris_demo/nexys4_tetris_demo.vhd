@@ -42,20 +42,21 @@ end nexys4_tetris_demo;
 
 architecture Behavioral of nexys4_tetris_demo is
 
-	signal reset_i			: std_logic;
+	signal reset_i					: std_logic;
+	signal tetrimino_operation		: active_tetrimino_operations;
+	signal tetrimino_operation_ack	: std_logic;
 
 	-- vga signals
-	signal vga_pixel_clock	: std_logic;
+	signal vga_pixel_clock			: std_logic;
 
-	signal led				: std_logic_vector(15 downto 0);
-	signal pwm_count		: std_logic;
+	signal led						: std_logic_vector(15 downto 0);
+	signal pwm_count				: std_logic;
 
-	signal buttons			: std_logic_vector(3 downto 0);
-	signal buttons_pulse	: std_logic_vector(3 downto 0);
-	signal button_left		: std_logic;
-	signal button_right		: std_logic;
-	signal button_up		: std_logic;
-	signal button_down		: std_logic;
+	signal button_left			: std_logic;
+	signal button_right			: std_logic;
+	signal button_up			: std_logic;
+	signal button_down			: std_logic;
+
 begin
 	-- board reset is active low
 	reset_i					<= not reset_low_i;
@@ -64,22 +65,131 @@ begin
 	------------------------ INPUT ------------------------
 	-------------------------------------------------------
 
-	buttons					<= btnL_i & btnR_i & btnU_i & btnD_i;
-	-- sync & rising edge detectors on input buttons
-	Inst_button_input:	entity work.button_input
-	generic map			( num_of_buttons => 4 )
-	port map
-	(
-		clock_i				=> clock_i,
-		reset_i				=> reset_i,
-		buttons_i			=> buttons,
-		buttons_pulse_o		=> buttons_pulse
-	);
+	INPUT_LOGIC: block
+		signal buttons_joined		: std_logic_vector(3 downto 0);
+		signal buttons				: std_logic_vector(3 downto 0);
 
-	button_left				<= buttons_pulse(3);
-	button_right			<= buttons_pulse(2);
-	button_up				<= buttons_pulse(1);
-	button_down				<= buttons_pulse(0);
+		type state_type is
+		(
+			state_start,
+			state_left,
+			state_right,
+			state_up,
+			state_down
+		--	state_wait_for_ack
+		);
+		signal state, next_state	: state_type := state_start;
+
+
+		signal button_left_ack		: std_logic;
+		signal button_right_ack		: std_logic;
+		signal button_up_ack		: std_logic;
+		signal button_down_ack		: std_logic;
+		signal buttons_ack_joined	: std_logic_vector(3 downto 0);
+
+	begin
+
+		buttons_joined			<= btnL_i & btnR_i & btnU_i & btnD_i;
+		buttons_ack_joined		<= button_left_ack & button_right_ack & button_up_ack & button_down_ack;
+		-- sync & rising edge detectors on input buttons
+		Inst_button_input:		entity work.button_input
+		generic map				( num_of_buttons => 4 )
+		port map
+		(
+			clock_i				=> clock_i,
+			reset_i				=> reset_i,
+			buttons_i			=> buttons_joined,
+			buttons_ack_i		=> buttons_ack_joined,
+			buttons_o			=> buttons
+		);
+
+		button_left				<= buttons(3);
+		button_right			<= buttons(2);
+		button_up				<= buttons(1);
+		button_down				<= buttons(0);
+
+		-- FSM state change
+		process (clock_i)
+		begin
+			if rising_edge (clock_i) then
+				if reset_i = '1' then
+					state <= state_start;
+				else
+					state <= next_state;
+				end if;
+			end if;
+		end process;
+
+		-- FSM output
+		process (state)
+		begin
+			button_left_ack				<= '0';
+			button_right_ack			<= '0';
+			button_up_ack				<= '0';
+			button_down_ack				<= '0';
+			tetrimino_operation			<= ATO_NONE;
+
+			case state is
+			when state_start =>
+				null;
+			when state_left =>
+			--	tetrimino_operation		<= ATO_MOVE_LEFT;
+				tetrimino_operation		<= ATO_MOVE_DOWN;
+				button_left_ack			<= '1';
+			when state_right =>
+				tetrimino_operation		<= ATO_MOVE_RIGHT;
+				button_right_ack		<= '1';
+			when state_up =>
+				tetrimino_operation		<= ATO_ROTATE_CLOCKWISE;
+				button_up_ack			<= '1';
+			when state_down =>
+				tetrimino_operation		<= ATO_ROTATE_COUNTER_CLOCKWISE;
+				button_down_ack			<= '1';
+			end case;
+		end process;
+
+		-- FSM next state
+		process
+		(
+			state, tetrimino_operation_ack,
+			button_left, button_right, button_up, button_down
+		)
+		begin
+			next_state <= state;
+
+			case state is
+			when state_start =>
+				if button_left = '1' then
+					next_state <= state_left;
+				elsif button_right = '1' then
+					next_state <= state_right;
+				elsif button_up = '1' then
+					next_state <= state_up;
+				elsif button_down = '1' then
+					next_state <= state_down;
+				else
+					next_state <= state_start;
+				end if;
+			when state_left =>
+				if tetrimino_operation_ack = '1' then
+					next_state <= state_start;
+				end if;
+			when state_right =>
+				if tetrimino_operation_ack = '1' then
+					next_state <= state_start;
+				end if;
+			when state_up =>
+				if tetrimino_operation_ack = '1' then
+					next_state <= state_start;
+				end if;
+			when state_down =>
+				if tetrimino_operation_ack = '1' then
+					next_state <= state_start;
+				end if;
+			end case;
+		end process;
+
+	end block;
 
 	-------------------------------------------------------
 	----------------------- SCREEN ------------------------
@@ -100,23 +210,21 @@ begin
 		overflow_o			=> vga_pixel_clock
 	);
 
-	Inst_tetris:			entity work.tetris
+	Inst_tetris:				entity work.tetris
 	port map
 	(
-		clock_i				=> clock_i,
-		reset_i				=> reset_i,
+		clock_i					=> clock_i,
+		reset_i					=> reset_i,
 
-		vga_pixel_clock_i	=> vga_pixel_clock,
-		hsync_o				=> hsync_o,
-		vsync_o				=> vsync_o,
-		vga_red_o			=> vga_red_o,
-		vga_green_o			=> vga_green_o,
-		vga_blue_o			=> vga_blue_o,
+		vga_pixel_clock_i		=> vga_pixel_clock,
+		hsync_o					=> hsync_o,
+		vsync_o					=> vsync_o,
+		vga_red_o				=> vga_red_o,
+		vga_green_o				=> vga_green_o,
+		vga_blue_o				=> vga_blue_o,
 
-		btnL_i				=> button_left,
-		btnR_i				=> button_right,
-		btnU_i				=> button_up,
-		btnD_i				=> button_down
+		active_operation_i		=> tetrimino_operation,
+		active_operation_ack_o	=> tetrimino_operation_ack
 	);
 
 	-- dim LEDs
@@ -138,6 +246,11 @@ begin
 	cathode_o				<= (others => '0');
 
 	-- silence warnings
-	led						<= switches_i;
+	led(15 downto 4)		<= switches_i (15 downto 4);
+	led(0) <= button_left;
+	led(1) <= button_right;
+	led(2) <= button_up;
+	led(3) <= button_down;
+
 
 end Behavioral;
