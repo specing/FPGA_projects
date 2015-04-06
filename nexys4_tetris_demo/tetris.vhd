@@ -26,8 +26,7 @@ entity tetris is
 		vga_red_o			: out	std_logic_vector (vga_red_width   - 1 downto 0);
 		vga_green_o			: out	std_logic_vector (vga_green_width - 1 downto 0);
 		vga_blue_o			: out	std_logic_vector (vga_blue_width  - 1 downto 0);
-		
-		switches_i			: in	std_logic_vector(15 downto 0);
+
 		btnL_i				: in	std_logic;
 		btnR_i				: in	std_logic;
 		btnU_i				: in	std_logic;
@@ -40,11 +39,6 @@ end tetris;
 architecture Behavioral of tetris is
 
 	constant line_remove_counter_width	: integer := 5;
-	
-	signal line_left					: std_logic_vector (vga_column_width - 1 downto 0);
-	signal line_right					: std_logic_vector (vga_column_width - 1 downto 0);
-	signal line_top						: std_logic_vector (vga_row_width - 1 downto 0);
-	signal line_bottom					: std_logic_vector (vga_row_width - 1 downto 0);
 
 	signal vga_hsync					: std_logic;
 	signal vga_vsync					: std_logic;
@@ -53,7 +47,7 @@ architecture Behavioral of tetris is
 	signal vga_enable_draw				: std_logic;
 	signal vga_screen_end				: std_logic;
 	signal vga_off_screen				: std_logic;
-		
+
 	-- pipeline stuff
 	signal on_tetris_surface			: std_logic;
 
@@ -78,7 +72,7 @@ architecture Behavioral of tetris is
 	signal stage2_block_red				: std_logic_vector (vga_red_width   - 1 downto 0);
 	signal stage2_block_green			: std_logic_vector (vga_green_width - 1 downto 0);
 	signal stage2_block_blue			: std_logic_vector (vga_blue_width  - 1 downto 0);
-	
+
 	signal stage3_vga_hsync				: std_logic;
 	signal stage3_vga_vsync				: std_logic;
 	signal stage3_vga_column			: std_logic_vector (vga_column_width - 1 downto 0);
@@ -93,7 +87,7 @@ architecture Behavioral of tetris is
 	signal stage3_block_final_red		: std_logic_vector (vga_red_width   - 1 downto 0);
 	signal stage3_block_final_green		: std_logic_vector (vga_green_width - 1 downto 0);
 	signal stage3_block_final_blue		: std_logic_vector (vga_blue_width  - 1 downto 0);
-	
+
 	signal stage4_vga_hsync				: std_logic;
 	signal stage4_vga_vsync				: std_logic;
 	signal stage4_vga_column			: std_logic_vector (vga_column_width - 1 downto 0);
@@ -244,8 +238,8 @@ begin
 		end if;
 	end process;
 
-	hsync_o				<= stage4_vga_hsync;
-	vsync_o				<= stage4_vga_vsync;
+	hsync_o							<= stage4_vga_hsync;
+	vsync_o							<= stage4_vga_vsync;
 
 	-- column must be from 0 to 16 * 16 - 1 =  0 .. 256 - 1 = 0 .. 255
 	-- row must be from 0 to 30 * 16 - 1 = 0 .. 480 - 1 = 0 .. 479
@@ -257,68 +251,10 @@ begin
 	-- figure out what to display
 	-- ==========================
 
-	-- 4 registers, each for the corresponding line
-	Inst_GR_line_left:	entity work.generic_register
-	GENERIC MAP
-	(
-		reset_value		=> 100
-	)
-	PORT MAP
-	(
-		clock_i			=> clock_i,
-		reset_i			=> reset_i,
-		clock_enable_i	=> btnL_i,
-		data_i			=> switches_i (vga_column_width - 1 downto 0),
-		data_o			=> line_left
-	);
-
-	Inst_GR_line_right:	entity work.generic_register
-	GENERIC MAP
-	(
-		reset_value		=> 539
-	)
-	PORT MAP
-	(
-		clock_i			=> clock_i,
-		reset_i			=> reset_i,
-		clock_enable_i	=> btnR_i,
-		data_i			=> switches_i (vga_column_width - 1 downto 0),
-		data_o			=> line_right
-	);
-
-	Inst_GR_line_top:	entity work.generic_register
-	GENERIC MAP
-	(
-		reset_value		=> 100
-	)
-	PORT MAP
-	(
-		clock_i			=> clock_i,
-		reset_i			=> reset_i,
-		clock_enable_i	=> btnU_i,
-		data_i			=> switches_i (vga_row_width - 1 downto 0),
-		data_o			=> line_top
-	);
-
-	Inst_GR_line_bottom:entity work.generic_register
-	GENERIC MAP
-	(
-		reset_value		=> 379
-	)
-	PORT MAP
-	(
-		clock_i			=> clock_i,
-		reset_i			=> reset_i,
-		clock_enable_i	=> btnD_i,
-		data_i			=> switches_i (vga_row_width - 1 downto 0),
-		data_o			=> line_bottom
-	);
-
 	-- main draw multiplexer
 	process
 	(
 		stage4_vga_enable_draw,	stage4_vga_column, stage4_vga_row,
-		line_left, line_right, line_top, line_bottom,
 		on_tetris_surface, stage4_block_red, stage4_block_green, stage4_block_blue
 	)
 	begin
@@ -337,15 +273,6 @@ begin
 			vga_red_o				<= "1000";
 			vga_green_o				<= "0000";
 			vga_blue_o				<= "0100";
-		-- check if we have to draw dynamic (for testing) lines
-		elsif stage4_vga_column = line_left   -- 0
-		or    stage4_vga_column = line_right  -- 638
-		or    stage4_vga_row    = line_top	  -- 5
-		or    stage4_vga_row    = line_bottom -- 478
-		then
-			vga_red_o				<= "0011";
-			vga_green_o				<= "1000";
-			vga_blue_o				<= "0100";
 		-- check if we are on the tetris block surface
 		elsif on_tetris_surface = '1' then
 			vga_red_o				<= stage4_block_red;
@@ -359,13 +286,4 @@ begin
 		end if;
 	end process;
 
---	GENERIC MAP (width => 16) PORT MAP
---	(
---		clock_i				=> clock_i,
---		reset_i				=> reset_i,
---		count_enable_i		=> vga_screen_end,
---		count_o				=> led
---	);
-
-	
 end Behavioral;

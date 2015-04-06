@@ -112,14 +112,13 @@ begin
 		vga_red_o			=> vga_red_o,
 		vga_green_o			=> vga_green_o,
 		vga_blue_o			=> vga_blue_o,
-		
-		switches_i			=> switches_i,
+
 		btnL_i				=> button_left,
 		btnR_i				=> button_right,
 		btnU_i				=> button_up,
 		btnD_i				=> button_down
 	);
-	
+
 	-- dim LEDs
 
 	process(clock_i)
@@ -140,5 +139,5 @@ begin
 
 	-- silence warnings
 	led						<= switches_i;
-	
+
 end Behavioral;
