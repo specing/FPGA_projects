@@ -374,7 +374,7 @@ begin
 
 		when state_MD_addresses =>
 			if block0_row = rowNm1 or block1_row = rowNm1 or block2_row = rowNm1 or block3_row = rowNm1 then
-				next_state <= state_start;
+				next_state <= state_MD_fill_contents0;
 			else
 				next_state <= state_MD_check_contents0;
 			end if;

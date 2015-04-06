@@ -77,7 +77,7 @@ architecture Behavioral of tetris_block is
 		"000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000",
 		"000", "010", "000", "000", "000", "000", "000", "000", "000", "000", "000", "100", "001", "010", "001", "000",
 		"000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000",
-		"000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "001", "100", "010", "010", "000",
+		"001", "100", "100", "100", "010", "001", "100", "000", "000", "000", "010", "001", "100", "010", "010", "010",
 		"001", "001", "111", "111", "111", "010", "010", "010", "110", "010", "001", "010", "011", "101", "010", "010",
 		"000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000",
 		"000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000"
@@ -117,7 +117,7 @@ architecture Behavioral of tetris_block is
 
 	constant refresh_count_top				: integer := 59; --255;
 	constant refresh_count_width			: integer := integer(CEIL(LOG2(real(refresh_count_top))));
-	signal refresh_count_overflow			: std_logic;
+	signal refresh_count_at_top				: std_logic;
 
 	signal row_elim_read_row				: std_logic_vector (row_width - 1 downto 0);
 	signal row_elim_read_column				: std_logic_vector (column_width - 1 downto 0);
@@ -258,7 +258,7 @@ begin
 
 	with active_tetrimino_command_mux select active_operation <=
 		ATO_NONE						when ATC_DISABLED,
-		ATO_NONE						when ATC_MOVE_DOWN,
+		ATO_MOVE_DOWN					when ATC_MOVE_DOWN,
 		active_operation_i				when ATC_USER_INPUT;
 
 	-------------------------------------------------------
@@ -275,8 +275,8 @@ begin
 		reset_when_i		=> std_logic_vector (to_unsigned (refresh_count_top, refresh_count_width)),
 		reset_value_i		=> std_logic_vector (to_unsigned (0,                 refresh_count_width)),
 		count_o				=> open,
-		count_at_top_o		=> open,
-		overflow_o			=> refresh_count_overflow
+		count_at_top_o		=> refresh_count_at_top,
+		overflow_o			=> open
 	);
 
 	-------------------------------------------------------
@@ -341,17 +341,20 @@ begin
 	end process;
 
 	-- FSM next state
-	process (state,
-		refresh_count_overflow,
-		row_elim_ready,
-		active_ready)
+	process
+	(
+		state,
+		screen_finished_render_i, refresh_count_at_top,
+		row_elim_ready,	active_ready
+	)
 	begin
 		next_state	<= state;
 
 		case state is
 		when state_start =>
 			-- active only one clock
-			if refresh_count_overflow = '1' then
+			if screen_finished_render_i = '1' then
+			--refresh_count_overflow = '1' then
 				next_state <= state_full_row_elim;
 			end if;
 
@@ -359,7 +362,11 @@ begin
 			next_state <= state_full_row_elim_wait;
 		when state_full_row_elim_wait =>
 			if row_elim_ready = '1' then
-				next_state <= state_active_element_MD;
+				if refresh_count_at_top = '1' then
+					next_state <= state_active_element_MD;
+				else
+					next_state <= state_active_element_input;
+				end if;
 			end if;
 
 		when state_active_element_MD =>
