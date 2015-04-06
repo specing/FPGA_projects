@@ -129,7 +129,11 @@ architecture Behavioral of tetris_active_element is
 		state_MD_fill_contents1,
 		state_MD_fill_contents2,
 		state_MD_fill_contents3,
-		-- check contents of cells
+		-- ML... MOVE_LEFT
+		state_ML_addresses,
+		-- MR... MOVE_RIGHT
+		state_MR_addresses,
+		-- check contents of cells (generic) and go back to start on failure
 		state_check_contents0,
 		state_check_contents1,
 		state_check_contents2,
@@ -287,7 +291,7 @@ begin
 		block1_row_operation				<= ZERO;
 		block2_row_operation				<= ZERO;
 		block3_row_operation				<= ZERO;
-		block1_column_operation				<= ZERO;
+		block0_column_operation				<= ZERO;
 		block1_column_operation				<= ZERO;
 		block2_column_operation				<= ZERO;
 		block3_column_operation				<= ZERO;
@@ -326,6 +330,7 @@ begin
 		when state_MD_check_contents3 =>
 			block_select					<= BLOCK3;
 
+		-- transfer active tetrimino to main RAM
 		when state_MD_fill_contents0 =>
 			block_select					<= BLOCK0;
 			block_write_enable_o			<= '1';
@@ -338,6 +343,30 @@ begin
 		when state_MD_fill_contents3 =>
 			block_select					<= BLOCK3;
 			block_write_enable_o			<= '1';
+
+		when state_ML_addresses =>
+			block0_column_operation			<= MINUS_ONE;
+			block1_column_operation			<= MINUS_ONE;
+			block2_column_operation			<= MINUS_ONE;
+			block3_column_operation			<= MINUS_ONE;
+			new_address_write_enable		<= '1';
+
+		when state_MR_addresses =>
+			block0_column_operation			<= PLUS_ONE;
+			block1_column_operation			<= PLUS_ONE;
+			block2_column_operation			<= PLUS_ONE;
+			block3_column_operation			<= PLUS_ONE;
+			new_address_write_enable		<= '1';
+
+		-- generic check contents
+		when state_check_contents0 =>
+			block_select					<= BLOCK0;
+		when state_check_contents1 =>
+			block_select					<= BLOCK1;
+		when state_check_contents2 =>
+			block_select					<= BLOCK2;
+		when state_check_contents3 =>
+			block_select					<= BLOCK3;
 
 		when state_writeback =>
 			active_address_write_enable		<= '1';
@@ -364,6 +393,10 @@ begin
 				case operation_i is
 				when ATO_MOVE_DOWN =>
 					next_state <= state_MD_addresses;
+				when ATO_MOVE_LEFT =>
+					next_state <= state_ML_addresses;
+				when ATO_MOVE_RIGHT =>
+					next_state <= state_MR_addresses;
 				when others =>
 					next_state <= state_start;
 				end case;
@@ -413,6 +446,49 @@ begin
 		when state_MD_fill_contents3 =>
 			next_state <= state_NT_new_addresses;
 
+		when state_ML_addresses =>
+			if block0_column = column0 or block1_column = column0
+			or block2_column = column0 or block3_column = column0 then
+				next_state <= state_start;
+			else
+				next_state <= state_check_contents0;
+			end if;
+
+		when state_MR_addresses =>
+			if block0_column = columnNm1 or block1_column = columnNm1
+			or block2_column = columnNm1 or block3_column = columnNm1 then
+				next_state <= state_start;
+			else
+				next_state <= state_check_contents0;
+			end if;
+
+		-- generic check contents, goes to start on error
+		when state_check_contents0 =>
+			if block_i = tetrimino_shape_empty then
+				next_state <= state_check_contents1;
+			else
+				next_state <= state_start;
+			end if;
+		when state_check_contents1 =>
+			if block_i = tetrimino_shape_empty then
+				next_state <= state_check_contents2;
+			else
+				next_state <= state_start;
+			end if;
+		when state_check_contents2 =>
+			if block_i = tetrimino_shape_empty then
+				next_state <= state_check_contents3;
+			else
+				next_state <= state_start;
+			end if;
+		when state_check_contents3 =>
+			if block_i = tetrimino_shape_empty then
+				next_state <= state_writeback;
+			else
+				next_state <= state_start;
+			end if;
+
+		-- write the new addresses
 		when state_writeback =>
 			next_state <= state_start;
 

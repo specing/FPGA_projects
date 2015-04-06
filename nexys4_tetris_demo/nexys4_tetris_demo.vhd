@@ -133,8 +133,7 @@ begin
 			when state_start =>
 				null;
 			when state_left =>
-			--	tetrimino_operation		<= ATO_MOVE_LEFT;
-				tetrimino_operation		<= ATO_MOVE_DOWN;
+				tetrimino_operation		<= ATO_MOVE_LEFT;
 				button_left_ack			<= '1';
 			when state_right =>
 				tetrimino_operation		<= ATO_MOVE_RIGHT;
