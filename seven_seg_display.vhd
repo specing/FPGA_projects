@@ -18,7 +18,7 @@ entity seven_seg_display is
 		-- Nexys 4's cathodes have A on right and inverted, but our seven_seg_digit has A on the left
 		cathode_on		: std_logic	:= '0'
 	);
-	Port
+	port
 	(
 		clock_i			: in	std_logic;
 		reset_i			: in	std_logic;
@@ -40,7 +40,6 @@ architecture Behavioral of seven_seg_display is
 	constant prescaler_divisor	: real		:= f_clock / 1000.0; -- 1 milisekunda
 	constant prescaler_top		: integer	:= integer (FLOOR(prescaler_divisor)) - 1;
 	constant prescaler_width	: integer	:= integer (CEIL(LOG2( real(prescaler_top) ) ) );
-	signal   prescaler_count	: std_logic_vector(prescaler_width - 1 downto 0);
 	signal   prescaler_overflow	: std_logic;
 
 	signal   bcd				: std_logic_vector(3 downto 0);
@@ -48,7 +47,6 @@ architecture Behavioral of seven_seg_display is
 	signal   anodes				: std_logic_vector(num_of_digits - 1 downto 0) := (0 => anode_on, others => anode_off);
 
 	constant dim_width			: integer	:= integer (CEIL(LOG2( real(dim_top + 1) ) ) );
-	signal   dim_count			: std_logic_vector(dim_width - 1 downto 0);
 	signal   dim_overflow		: std_logic;
 
 begin
@@ -72,9 +70,11 @@ begin
 	(
 		clock_i				=> clock_i,
 		reset_i				=> reset_i,
+		enable_i			=> '1',
 		reset_when_i		=> std_logic_vector(to_unsigned(prescaler_top, prescaler_width)),
-		count_enable_i		=> '1',
-		count_o				=> prescaler_count,
+		reset_value_i		=> std_logic_vector(to_unsigned(0, prescaler_width)),
+		count_o				=> open,
+		count_at_top_o		=> open,
 		overflow_o			=> prescaler_overflow
 	);
 
@@ -86,9 +86,11 @@ begin
 	(
 		clock_i				=> clock_i,
 		reset_i				=> reset_i,
+		enable_i			=> '1',
 		reset_when_i		=> std_logic_vector(to_unsigned(dim_top, dim_width)),
-		count_enable_i		=> '1',
-		count_o				=> dim_count,
+		reset_value_i		=> std_logic_vector(to_unsigned(0, dim_width)),
+		count_o				=> open,
+		count_at_top_o		=> open,
 		overflow_o			=> dim_overflow
 	);
 

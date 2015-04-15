@@ -1,7 +1,7 @@
--- generates a short pulse when a button is pressed
-library	IEEE;
-use		IEEE.STD_LOGIC_1164		.all;
-use		IEEE.STD_LOGIC_UNSIGNED	.all;
+-- generates a clock_i period pulse when a button is pressed
+library ieee;
+use     ieee.std_logic_1164    .all;
+use     ieee.std_logic_unsigned.all;
 
 
 
@@ -16,7 +16,8 @@ entity button_input is
 		reset_i				: in	std_logic;
 
 		buttons_i			: in	std_logic_vector(num_of_buttons - 1 downto 0);
-		buttons_pulse_o		: out	std_logic_vector(num_of_buttons - 1 downto 0)
+		buttons_ack_i		: in	std_logic_vector(num_of_buttons - 1 downto 0);
+		buttons_o			: out	std_logic_vector(num_of_buttons - 1 downto 0)
 	);
 end button_input;
 
@@ -45,7 +46,7 @@ begin
 	for index in 0 to num_of_buttons - 1 generate
 		signal button_pulse : std_logic;
 	begin
-		buttons_pulse_o(index) <= button_pulse;
+		buttons_o(index) <= button_pulse;
 
 		-- rising edge detectors on synced input buttons
 		Inst_RED:			entity work.rising_edge_detector
@@ -54,6 +55,7 @@ begin
 			clock_i			=> clock_i,
 			reset_i			=> reset_i,
 			input_i			=> buttons_sync(index),
+			input_ack_i		=> buttons_ack_i(index),
 			output_o		=> button_pulse
 		);
 

@@ -23,15 +23,15 @@ end generic_register;
 
 architecture Behavioral of generic_register is
 
-	signal data_on_reset: std_logic_vector(data_i'length - 1 downto 0)
-						:=std_logic_vector(to_unsigned(reset_value, data_i'length));
+	constant data_on_reset	: std_logic_vector(data_i'length - 1 downto 0)
+							:=std_logic_vector(to_unsigned(reset_value, data_i'length));
 
-	signal data			: std_logic_vector(data_i'length - 1 downto 0)
-						:=data_on_reset;
+	signal data				: std_logic_vector(data_i'length - 1 downto 0)
+							:=data_on_reset;
 
 begin
 
-	data_o				<= data;
+	data_o					<= data;
 
 	process (clock_i)
 	begin

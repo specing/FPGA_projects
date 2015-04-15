@@ -31,7 +31,7 @@ begin
 
 	process (clock_i)
 	begin
-		if clock_i'event and clock_i = '1' then
+		if rising_edge (clock_i) then
 			if reset_i = '1' then
 				count <= (others => '0');
 			else
