@@ -2,18 +2,12 @@ library ieee;
 use     ieee.std_logic_1164     .all;
 use     ieee.std_logic_unsigned .all;
 use     ieee.numeric_std        .all;
-use     ieee.math_real          .all;
 
 use     work.definitions        .all;
 
 
 
 entity tetris_active_element is
-	generic
-	(
-		number_of_rows				: integer := 30;
-		number_of_columns			: integer := 16
-	);
 	port
 	(
 		clock_i						: in	std_logic;
@@ -23,15 +17,15 @@ entity tetris_active_element is
 		block_o						: out	tetrimino_shape_type;
 		block_i						: in	tetrimino_shape_type;
 		block_write_enable_o		: out	std_logic;
-		block_read_row_o			: out	std_logic_vector(integer(CEIL(LOG2(real(number_of_rows    - 1)))) - 1 downto 0);
-		block_read_column_o			: out	std_logic_vector(integer(CEIL(LOG2(real(number_of_columns - 1)))) - 1 downto 0);
-		block_write_row_o			: out	std_logic_vector(integer(CEIL(LOG2(real(number_of_rows    - 1)))) - 1 downto 0);
-		block_write_column_o		: out	std_logic_vector(integer(CEIL(LOG2(real(number_of_columns - 1)))) - 1 downto 0);
+		block_read_row_o			: out	block_storage_row_type;
+		block_read_column_o			: out	block_storage_column_type;
+		block_write_row_o			: out	block_storage_row_type;
+		block_write_column_o		: out	block_storage_column_type;
 
 		-- readout for drawing of active element
 		active_data_o				: out	tetrimino_shape_type;
-		active_row_i				: in	std_logic_vector(integer(CEIL(LOG2(real(number_of_rows    - 1)))) - 1 downto 0);
-		active_column_i				: in	std_logic_vector(integer(CEIL(LOG2(real(number_of_columns - 1)))) - 1 downto 0);
+		active_row_i				: in	block_storage_row_type;
+		active_column_i				: in	block_storage_column_type;
 
 		-- communication with the main finite state machine
 		operation_i					: in	active_tetrimino_operations;
@@ -44,57 +38,54 @@ end tetris_active_element;
 
 architecture Behavioral of tetris_active_element is
 
-	constant row_width					: integer := integer(CEIL(LOG2(real(number_of_rows    - 1))));
-	constant column_width				: integer := integer(CEIL(LOG2(real(number_of_columns - 1))));
+	constant row0		: block_storage_row_type	:= block_storage_row_type(to_unsigned(0, row_width));
+	constant row1		: block_storage_row_type	:= block_storage_row_type(to_unsigned(1, row_width));
+	constant rowNm1		: block_storage_row_type	:= block_storage_row_type(to_unsigned(number_of_rows - 1, row_width));
+	constant rowN		: block_storage_row_type	:= block_storage_row_type(to_unsigned(number_of_rows, row_width));
 
-	constant row0		: std_logic_vector	:= std_logic_vector(to_unsigned(0, row_width));
-	constant row1		: std_logic_vector	:= std_logic_vector(to_unsigned(1, row_width));
-	constant rowNm1		: std_logic_vector	:= std_logic_vector(to_unsigned(number_of_rows - 1, row_width));
-	constant rowN		: std_logic_vector	:= std_logic_vector(to_unsigned(number_of_rows, row_width));
-
-	constant column0	: std_logic_vector	:= std_logic_vector(to_unsigned(0, column_width));
-	constant column1	: std_logic_vector	:= std_logic_vector(to_unsigned(1, column_width));
-	constant columnNm1	: std_logic_vector	:= std_logic_vector(to_unsigned(number_of_columns - 1, column_width));
-	constant columnN	: std_logic_vector	:= std_logic_vector(to_unsigned(number_of_columns, column_width));
+	constant column0	: block_storage_column_type	:= block_storage_column_type(to_unsigned(0, column_width));
+	constant column1	: block_storage_column_type	:= block_storage_column_type(to_unsigned(1, column_width));
+	constant columnNm1	: block_storage_column_type	:= block_storage_column_type(to_unsigned(number_of_columns - 1, column_width));
+	constant columnN	: block_storage_column_type	:= block_storage_column_type(to_unsigned(number_of_columns, column_width));
 
 
-	signal block0_row					: std_logic_vector (row_width - 1 downto 0);
-	signal block1_row					: std_logic_vector (row_width - 1 downto 0);
-	signal block2_row					: std_logic_vector (row_width - 1 downto 0);
-	signal block3_row					: std_logic_vector (row_width - 1 downto 0);
-	signal block0_column				: std_logic_vector (column_width - 1 downto 0);
-	signal block1_column				: std_logic_vector (column_width - 1 downto 0);
-	signal block2_column				: std_logic_vector (column_width - 1 downto 0);
-	signal block3_column				: std_logic_vector (column_width - 1 downto 0);
+	signal block0_row					: block_storage_row_type;
+	signal block1_row					: block_storage_row_type;
+	signal block2_row					: block_storage_row_type;
+	signal block3_row					: block_storage_row_type;
+	signal block0_column				: block_storage_column_type;
+	signal block1_column				: block_storage_column_type;
+	signal block2_column				: block_storage_column_type;
+	signal block3_column				: block_storage_column_type;
 	signal active_address_write_enable	: std_logic;
 
-	signal block0_row_new				: std_logic_vector (row_width - 1 downto 0);
-	signal block1_row_new				: std_logic_vector (row_width - 1 downto 0);
-	signal block2_row_new				: std_logic_vector (row_width - 1 downto 0);
-	signal block3_row_new				: std_logic_vector (row_width - 1 downto 0);
-	signal block0_column_new			: std_logic_vector (column_width - 1 downto 0);
-	signal block1_column_new			: std_logic_vector (column_width - 1 downto 0);
-	signal block2_column_new			: std_logic_vector (column_width - 1 downto 0);
-	signal block3_column_new			: std_logic_vector (column_width - 1 downto 0);
+	signal block0_row_new				: block_storage_row_type;
+	signal block1_row_new				: block_storage_row_type;
+	signal block2_row_new				: block_storage_row_type;
+	signal block3_row_new				: block_storage_row_type;
+	signal block0_column_new			: block_storage_column_type;
+	signal block1_column_new			: block_storage_column_type;
+	signal block2_column_new			: block_storage_column_type;
+	signal block3_column_new			: block_storage_column_type;
 	signal new_address_write_enable		: std_logic;
 
-	signal block0_row_next				: std_logic_vector (row_width - 1 downto 0);
-	signal block1_row_next				: std_logic_vector (row_width - 1 downto 0);
-	signal block2_row_next				: std_logic_vector (row_width - 1 downto 0);
-	signal block3_row_next				: std_logic_vector (row_width - 1 downto 0);
-	signal block0_column_next			: std_logic_vector (column_width - 1 downto 0);
-	signal block1_column_next			: std_logic_vector (column_width - 1 downto 0);
-	signal block2_column_next			: std_logic_vector (column_width - 1 downto 0);
-	signal block3_column_next			: std_logic_vector (column_width - 1 downto 0);
+	signal block0_row_next				: block_storage_row_type;
+	signal block1_row_next				: block_storage_row_type;
+	signal block2_row_next				: block_storage_row_type;
+	signal block3_row_next				: block_storage_row_type;
+	signal block0_column_next			: block_storage_column_type;
+	signal block1_column_next			: block_storage_column_type;
+	signal block2_column_next			: block_storage_column_type;
+	signal block3_column_next			: block_storage_column_type;
 
-	signal block0_row_operand			: std_logic_vector (row_width - 1 downto 0);
-	signal block1_row_operand			: std_logic_vector (row_width - 1 downto 0);
-	signal block2_row_operand			: std_logic_vector (row_width - 1 downto 0);
-	signal block3_row_operand			: std_logic_vector (row_width - 1 downto 0);
-	signal block0_column_operand		: std_logic_vector (column_width - 1 downto 0);
-	signal block1_column_operand		: std_logic_vector (column_width - 1 downto 0);
-	signal block2_column_operand		: std_logic_vector (column_width - 1 downto 0);
-	signal block3_column_operand		: std_logic_vector (column_width - 1 downto 0);
+	signal block0_row_operand			: block_storage_row_type;
+	signal block1_row_operand			: block_storage_row_type;
+	signal block2_row_operand			: block_storage_row_type;
+	signal block3_row_operand			: block_storage_row_type;
+	signal block0_column_operand		: block_storage_column_type;
+	signal block1_column_operand		: block_storage_column_type;
+	signal block2_column_operand		: block_storage_column_type;
+	signal block3_column_operand		: block_storage_column_type;
 
 	type operation_enum is
 	(

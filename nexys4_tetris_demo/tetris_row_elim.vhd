@@ -9,11 +9,6 @@ use     work.definitions        .all;
 
 
 entity tetris_row_elim is
-	generic
-	(
-		number_of_rows				: integer := 30;
-		number_of_columns			: integer := 16
-	);
 	port
 	(
 		clock_i						: in	std_logic;
@@ -23,10 +18,10 @@ entity tetris_row_elim is
 		block_o						: out	tetrimino_shape_type;
 		block_i						: in	tetrimino_shape_type;
 		block_write_enable_o		: out	std_logic;
-		block_read_row_o			: out	std_logic_vector(integer(CEIL(LOG2(real(number_of_rows    - 1)))) - 1 downto 0);
-		block_read_column_o			: out	std_logic_vector(integer(CEIL(LOG2(real(number_of_columns - 1)))) - 1 downto 0);
-		block_write_row_o			: out	std_logic_vector(integer(CEIL(LOG2(real(number_of_rows    - 1)))) - 1 downto 0);
-		block_write_column_o		: out	std_logic_vector(integer(CEIL(LOG2(real(number_of_columns - 1)))) - 1 downto 0);
+		block_read_row_o			: out	block_storage_row_type;
+		block_read_column_o			: out	block_storage_column_type;
+		block_write_row_o			: out	block_storage_row_type;
+		block_write_column_o		: out	block_storage_column_type;
 
 		row_elim_address_i			: in	std_logic_vector(4 downto 0);
 		row_elim_data_o				: out	std_logic_vector(4 downto 0);
@@ -38,9 +33,6 @@ end tetris_row_elim;
 
 
 architecture Behavioral of tetris_row_elim is
-
-	constant row_width					: integer := integer(CEIL(LOG2(real(number_of_rows    - 1))));
-	constant column_width				: integer := integer(CEIL(LOG2(real(number_of_columns - 1))));
 
 	-- block descriptor
 	constant row_elim_width				: integer := 5;
@@ -163,8 +155,8 @@ begin
 		clock_i				=> clock_i,
 		reset_i				=> reset_i,
 		enable_i			=> row_count_enable,
-		reset_when_i		=> std_logic_vector (to_unsigned (0, row_width)),
-		reset_value_i		=> std_logic_vector (to_unsigned (number_of_rows - 1, row_width)),
+		reset_when_i		=> block_storage_row_type (to_unsigned (0, row_width)),
+		reset_value_i		=> block_storage_row_type (to_unsigned (number_of_rows - 1, row_width)),
 		count_o				=> row_count,
 		count_at_top_o		=> row_count_at_top,
 		overflow_o			=> open
@@ -187,8 +179,8 @@ begin
 		clock_i				=> clock_i,
 		reset_i				=> reset_i,
 		enable_i			=> column_count_enable,
-		reset_when_i		=> std_logic_vector (to_unsigned (number_of_columns - 1, column_width)),
-		reset_value_i		=> std_logic_vector (to_unsigned (0, column_width)),
+		reset_when_i		=> block_storage_column_type (to_unsigned (number_of_columns - 1, column_width)),
+		reset_value_i		=> block_storage_column_type (to_unsigned (0, column_width)),
 		count_o				=> column_count,
 		count_at_top_o		=> column_count_at_top,
 		overflow_o			=> open

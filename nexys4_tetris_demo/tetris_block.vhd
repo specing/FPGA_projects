@@ -9,11 +9,6 @@ use     work.definitions        .all;
 
 
 entity tetris_block is
-	generic
-	(
-		number_of_rows		: integer := 30;
-		number_of_columns	: integer := 16
-	);
 	port
 	(
 		clock_i						: in	std_logic;
@@ -21,8 +16,8 @@ entity tetris_block is
 
 		row_elim_data_o				: out	std_logic_vector(4 downto 0);
 		tetrimino_shape_o			: out	tetrimino_shape_type;
-		block_row_i					: in	std_logic_vector(integer(CEIL(LOG2(real(number_of_rows    - 1)))) - 1 downto 0);
-		block_column_i				: in	std_logic_vector(integer(CEIL(LOG2(real(number_of_columns - 1)))) - 1 downto 0);
+		block_row_i					: in	block_storage_row_type;
+		block_column_i				: in	block_storage_column_type;
 
 		screen_finished_render_i	: in	std_logic;
 		active_operation_i			: in	active_tetrimino_operations;
@@ -33,9 +28,6 @@ end tetris_block;
 
 
 architecture Behavioral of tetris_block is
-
-	constant row_width						: integer := integer(CEIL(LOG2(real(number_of_rows    - 1))));
-	constant column_width					: integer := integer(CEIL(LOG2(real(number_of_columns - 1))));
 
 	constant ram_width						: integer := row_width + column_width;
 	constant ram_size						: integer := 2 ** (ram_width);
@@ -83,22 +75,22 @@ architecture Behavioral of tetris_block is
 	constant refresh_count_width			: integer := integer(CEIL(LOG2(real(refresh_count_top))));
 	signal refresh_count_at_top				: std_logic;
 
-	signal row_elim_read_row				: std_logic_vector (row_width - 1 downto 0);
-	signal row_elim_read_column				: std_logic_vector (column_width - 1 downto 0);
+	signal row_elim_read_row				: block_storage_row_type;
+	signal row_elim_read_column				: block_storage_column_type;
 	signal row_elim_write_data				: tetrimino_shape_type;
 	signal row_elim_write_enable			: std_logic;
-	signal row_elim_write_row				: std_logic_vector (row_width - 1 downto 0);
-	signal row_elim_write_column			: std_logic_vector (column_width - 1 downto 0);
+	signal row_elim_write_row				: block_storage_row_type;
+	signal row_elim_write_column			: block_storage_column_type;
 
 	signal row_elim_start					: std_logic;
 	signal row_elim_ready					: std_logic;
 
 	signal active_write_data				: tetrimino_shape_type;
 	signal active_write_enable				: std_logic;
-	signal active_read_row					: std_logic_vector (row_width - 1 downto 0);
-	signal active_read_column				: std_logic_vector (column_width - 1 downto 0);
-	signal active_write_row					: std_logic_vector (row_width - 1 downto 0);
-	signal active_write_column				: std_logic_vector (column_width - 1 downto 0);
+	signal active_read_row					: block_storage_row_type;
+	signal active_read_column				: block_storage_column_type;
+	signal active_write_row					: block_storage_row_type;
+	signal active_write_column				: block_storage_column_type;
 
 	signal active_tetrimino_shape			: tetrimino_shape_type;
 	type active_tetrimino_command_mux_enum is
@@ -166,11 +158,6 @@ begin
 	-------------------------------------------------------
 
 	Inst_tetris_row_elim:					entity work.tetris_row_elim
-	generic map
-	(
-		number_of_rows						=> number_of_rows,
-		number_of_columns					=> number_of_columns
-	)
 	port map
 	(
 		clock_i								=> clock_i,
@@ -193,11 +180,6 @@ begin
 	);
 
 	Inst_active_element:					entity work.tetris_active_element
-	generic map
-	(
-		number_of_rows						=> number_of_rows,
-		number_of_columns					=> number_of_columns
-	)
 	port map
 	(
 		clock_i								=> clock_i,
