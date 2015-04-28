@@ -20,8 +20,8 @@ entity tetris_row_elim is
 		reset_i						: in	std_logic;
 
 		-- communication with main RAM
-		block_o						: out	std_logic_vector(2 downto 0);
-		block_i						: in	std_logic_vector(2 downto 0);
+		block_o						: out	tetrimino_shape_type;
+		block_i						: in	tetrimino_shape_type;
 		block_write_enable_o		: out	std_logic;
 		block_read_row_o			: out	std_logic_vector(integer(CEIL(LOG2(real(number_of_rows    - 1)))) - 1 downto 0);
 		block_read_column_o			: out	std_logic_vector(integer(CEIL(LOG2(real(number_of_columns - 1)))) - 1 downto 0);
@@ -145,7 +145,7 @@ begin
 
 	with ram_write_data_mux		select block_o <=
 		block_i						when MUXSEL_MOVE_DOWN,
-		tetrimino_shape_empty		when others;
+		TETRIMINO_SHAPE_NONE		when others;
 
 
 	-------------------------------------------------------
@@ -297,7 +297,7 @@ begin
 
 		-- logic that increments block removal counters (row_elim)
 		when state_check_block =>
-			if block_i = tetrimino_shape_empty then
+			if block_i = TETRIMINO_SHAPE_NONE then
 				next_state <= state_check_block_increment_column_til_end;
 			else
 				next_state <= state_check_block_increment_column;

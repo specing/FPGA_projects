@@ -22,29 +22,35 @@ package definitions is
 		ATO_ROTATE_COUNTER_CLOCKWISE
 	);
 
-	-- tetrimino type
-	constant tetrimino_shape_width		: integer := 3;
-	constant tetrimino_shape_empty 		: std_logic_vector := std_logic_vector(to_unsigned(0, tetrimino_shape_width));
-	-- ####
-	constant tetrimino_shape_pipe	 	: std_logic_vector := std_logic_vector(to_unsigned(1, tetrimino_shape_width));
-	-- #
-	-- ###
-	constant tetrimino_shape_L_left		: std_logic_vector := std_logic_vector(to_unsigned(2, tetrimino_shape_width));
-	--   #
-	-- ###
-	constant tetrimino_shape_L_right 	: std_logic_vector := std_logic_vector(to_unsigned(3, tetrimino_shape_width));
-	-- ##
-	--  ##
-	constant tetrimino_shape_Z_left 	: std_logic_vector := std_logic_vector(to_unsigned(4, tetrimino_shape_width));
-	--  ##
-	-- ##
-	constant tetrimino_shape_Z_right 	: std_logic_vector := std_logic_vector(to_unsigned(5, tetrimino_shape_width));
-	--  #
-	-- ###
-	constant tetrimino_shape_T			: std_logic_vector := std_logic_vector(to_unsigned(6, tetrimino_shape_width));
-	-- ##
-	-- ##
-	constant tetrimino_shape_square		: std_logic_vector := std_logic_vector(to_unsigned(7, tetrimino_shape_width));
+
+
+	-- it seems Xilinx does not like creating ROMs with enums in them.
+	type tetrimino_shape_type is array (2 downto 0) of bit;
+	constant TETRIMINO_SHAPE_NONE       : tetrimino_shape_type := "000";
+	constant TETRIMINO_SHAPE_PIPE       : tetrimino_shape_type := "001";
+	constant TETRIMINO_SHAPE_L_LEFT     : tetrimino_shape_type := "010";
+	constant TETRIMINO_SHAPE_L_RIGHT    : tetrimino_shape_type := "011";
+	constant TETRIMINO_SHAPE_Z_LEFT     : tetrimino_shape_type := "100";
+	constant TETRIMINO_SHAPE_Z_RIGHT    : tetrimino_shape_type := "101";
+	constant TETRIMINO_SHAPE_T          : tetrimino_shape_type := "110";
+	constant TETRIMINO_SHAPE_SQUARE     : tetrimino_shape_type := "111";
+
+	procedure get_colour (
+		shape: tetrimino_shape_type;
+		signal red, green, blue : out std_logic_vector (3 downto 0) )
+	is
+	begin
+		case shape is
+		when TETRIMINO_SHAPE_NONE       => red <= X"0"; green <= X"0"; blue <= X"0";
+		when TETRIMINO_SHAPE_PIPE       => red <= X"0"; green <= X"F"; blue <= X"F";
+		when TETRIMINO_SHAPE_L_LEFT     => red <= X"0"; green <= X"0"; blue <= X"F";
+		when TETRIMINO_SHAPE_L_RIGHT    => red <= X"F"; green <= X"A"; blue <= X"0";
+		when TETRIMINO_SHAPE_Z_LEFT     => red <= X"F"; green <= X"0"; blue <= X"0";
+		when TETRIMINO_SHAPE_Z_RIGHT    => red <= X"0"; green <= X"F"; blue <= X"0";
+		when TETRIMINO_SHAPE_T          => red <= X"F"; green <= X"0"; blue <= X"F";
+		when TETRIMINO_SHAPE_SQUARE     => red <= X"F"; green <= X"F"; blue <= X"0";
+		end case;
+	end procedure get_colour;
 
 	-- default start positions
 	constant default_pipe_row0			: std_logic_vector := "00001";

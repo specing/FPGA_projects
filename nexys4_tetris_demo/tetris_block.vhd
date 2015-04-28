@@ -20,7 +20,7 @@ entity tetris_block is
 		reset_i						: in	std_logic;
 
 		row_elim_data_o				: out	std_logic_vector(4 downto 0);
-		tetrimino_shape_o			: out	std_logic_vector(2 downto 0);
+		tetrimino_shape_o			: out	tetrimino_shape_type;
 		block_row_i					: in	std_logic_vector(integer(CEIL(LOG2(real(number_of_rows    - 1)))) - 1 downto 0);
 		block_column_i				: in	std_logic_vector(integer(CEIL(LOG2(real(number_of_columns - 1)))) - 1 downto 0);
 
@@ -43,45 +43,9 @@ architecture Behavioral of tetris_block is
 	-------------------------------------------------------
 	----------------- Tetris Active Data ------------------
 	-------------------------------------------------------
-	-- 30x16x(tetrimino_shape_width) RAM for storing block descriptors
-	type ram_blocks_type is array (0 to ram_size - 1) of std_logic_vector (0 to tetrimino_shape_width - 1);
-	signal RAM : ram_blocks_type := (
-		"011", "001", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "100",
-		"000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000",
-		"000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000",
-		"000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000",
-		"000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000",
-		"000", "000", "000", "000", "001", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000",
-		"000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000",
-		"000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000",
-
-		"000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000",
-		"000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000",
-		"000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000",
-		"000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000",
-		"000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000",
-		"000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000",
-		"000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000",
-		"000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000",
-
-		"000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000",
-		"000", "000", "001", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000",
-		"000", "000", "010", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000",
-		"000", "000", "011", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000",
-		"001", "001", "111", "111", "111", "010", "010", "010", "110", "010", "001", "010", "011", "101", "010", "010",
-		"000", "000", "101", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000",
-		"000", "000", "110", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000",
-		"001", "001", "111", "111", "111", "010", "010", "010", "110", "010", "001", "010", "011", "101", "010", "010",
-
-		"111", "011", "101", "100", "111", "010", "110", "110", "001", "010", "100", "001", "100", "001", "100", "001",
-		"000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000",
-		"000", "010", "000", "000", "000", "000", "000", "000", "000", "000", "000", "100", "001", "010", "001", "000",
-		"000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000",
-		"001", "100", "100", "100", "010", "001", "100", "000", "000", "000", "010", "001", "100", "010", "010", "010",
-		"001", "001", "111", "111", "111", "010", "010", "010", "110", "010", "001", "010", "011", "101", "010", "010",
-		"000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000",
-		"000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000", "000"
-	);
+	-- 30x16x(tetrimino_shape_type size) RAM for storing block descriptors
+	type tetrimino_block_storage_type is array (0 to ram_size - 1) of tetrimino_shape_type;
+	signal RAM : tetrimino_block_storage_type := (others => TETRIMINO_SHAPE_NONE);
 
 	type ram_access_mux_enum is
 	(
@@ -93,10 +57,10 @@ architecture Behavioral of tetris_block is
 
 	signal ram_write_enable					: std_logic;
 	signal ram_write_address				: std_logic_vector (ram_width - 1 downto 0);
-	signal ram_write_data					: std_logic_vector (tetrimino_shape_width - 1 downto 0);
+	signal ram_write_data					: tetrimino_shape_type;
 
 	signal ram_read_address					: std_logic_vector (ram_width - 1 downto 0);
-	signal ram_read_data					: std_logic_vector (tetrimino_shape_width - 1 downto 0);
+	signal ram_read_data					: tetrimino_shape_type;
 
 
 	type fsm_states is
@@ -121,7 +85,7 @@ architecture Behavioral of tetris_block is
 
 	signal row_elim_read_row				: std_logic_vector (row_width - 1 downto 0);
 	signal row_elim_read_column				: std_logic_vector (column_width - 1 downto 0);
-	signal row_elim_write_data				: std_logic_vector (tetrimino_shape_width - 1 downto 0);
+	signal row_elim_write_data				: tetrimino_shape_type;
 	signal row_elim_write_enable			: std_logic;
 	signal row_elim_write_row				: std_logic_vector (row_width - 1 downto 0);
 	signal row_elim_write_column			: std_logic_vector (column_width - 1 downto 0);
@@ -129,14 +93,14 @@ architecture Behavioral of tetris_block is
 	signal row_elim_start					: std_logic;
 	signal row_elim_ready					: std_logic;
 
-	signal active_write_data				: std_logic_vector (tetrimino_shape_width - 1 downto 0);
+	signal active_write_data				: tetrimino_shape_type;
 	signal active_write_enable				: std_logic;
 	signal active_read_row					: std_logic_vector (row_width - 1 downto 0);
 	signal active_read_column				: std_logic_vector (column_width - 1 downto 0);
 	signal active_write_row					: std_logic_vector (row_width - 1 downto 0);
 	signal active_write_column				: std_logic_vector (column_width - 1 downto 0);
 
-	signal active_tetrimino_shape			: std_logic_vector (tetrimino_shape_width - 1 downto 0);
+	signal active_tetrimino_shape			: tetrimino_shape_type;
 	type active_tetrimino_command_mux_enum is
 	(
 		ATC_DISABLED,
@@ -151,7 +115,10 @@ architecture Behavioral of tetris_block is
 
 begin
 
-	tetrimino_shape_o						<= ram_read_data or active_tetrimino_shape;
+	-- determine what goes out on screen
+	with active_tetrimino_shape	select tetrimino_shape_o <=
+		ram_read_data				when TETRIMINO_SHAPE_NONE,
+		active_tetrimino_shape		when others;
 
 	-------------------------------------------------------
 	--------------- logic for RAM for blocks --------------
@@ -170,10 +137,10 @@ begin
 
 	-- figure out who has access to it
 	with ram_access_mux							select ram_write_data <=
-		"000"										when MUXSEL_RENDER,
+		TETRIMINO_SHAPE_NONE						when MUXSEL_RENDER,
 		row_elim_write_data							when MUXSEL_ROW_ELIM,
 		active_write_data							when MUXSEL_ACTIVE_ELEMENT,
-		"000"										when others;
+		TETRIMINO_SHAPE_NONE						when others;
 
 	with ram_access_mux							select ram_write_address <=
 		"00000"            & "0000"					when MUXSEL_RENDER,

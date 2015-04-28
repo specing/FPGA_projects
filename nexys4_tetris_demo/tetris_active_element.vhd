@@ -20,8 +20,8 @@ entity tetris_active_element is
 		reset_i						: in	std_logic;
 
 		-- communication with main RAM
-		block_o						: out	std_logic_vector(2 downto 0);
-		block_i						: in	std_logic_vector(2 downto 0);
+		block_o						: out	tetrimino_shape_type;
+		block_i						: in	tetrimino_shape_type;
 		block_write_enable_o		: out	std_logic;
 		block_read_row_o			: out	std_logic_vector(integer(CEIL(LOG2(real(number_of_rows    - 1)))) - 1 downto 0);
 		block_read_column_o			: out	std_logic_vector(integer(CEIL(LOG2(real(number_of_columns - 1)))) - 1 downto 0);
@@ -29,7 +29,7 @@ entity tetris_active_element is
 		block_write_column_o		: out	std_logic_vector(integer(CEIL(LOG2(real(number_of_columns - 1)))) - 1 downto 0);
 
 		-- readout for drawing of active element
-		active_data_o				: out	std_logic_vector(2 downto 0);
+		active_data_o				: out	tetrimino_shape_type;
 		active_row_i				: in	std_logic_vector(integer(CEIL(LOG2(real(number_of_rows    - 1)))) - 1 downto 0);
 		active_column_i				: in	std_logic_vector(integer(CEIL(LOG2(real(number_of_columns - 1)))) - 1 downto 0);
 
@@ -158,9 +158,8 @@ architecture Behavioral of tetris_active_element is
 	signal block_select					: block_select_enum;
 
 
-	signal tetrimino_shape				: std_logic_vector (tetrimino_shape_width - 1 downto 0)
-										:= tetrimino_shape_L_left;
-	signal tetrimino_shape_next			: std_logic_vector (tetrimino_shape_width - 1 downto 0);
+	signal tetrimino_shape				: tetrimino_shape_type := TETRIMINO_SHAPE_L_LEFT;
+	signal tetrimino_shape_next			: tetrimino_shape_type;
 	signal tetrimino_we					: std_logic;
 
 begin
@@ -413,25 +412,25 @@ begin
 			end if;
 
 		when state_MD_check_contents0 =>
-			if block_i = tetrimino_shape_empty then
+			if block_i = TETRIMINO_SHAPE_NONE then
 				next_state <= state_MD_check_contents1;
 			else
 				next_state <= state_MD_fill_contents0;
 			end if;
 		when state_MD_check_contents1 =>
-			if block_i = tetrimino_shape_empty then
+			if block_i = TETRIMINO_SHAPE_NONE then
 				next_state <= state_MD_check_contents2;
 			else
 				next_state <= state_MD_fill_contents0;
 			end if;
 		when state_MD_check_contents2 =>
-			if block_i = tetrimino_shape_empty then
+			if block_i = TETRIMINO_SHAPE_NONE then
 				next_state <= state_MD_check_contents3;
 			else
 				next_state <= state_MD_fill_contents0;
 			end if;
 		when state_MD_check_contents3 =>
-			if block_i = tetrimino_shape_empty then
+			if block_i = TETRIMINO_SHAPE_NONE then
 				next_state <= state_writeback;
 			else
 				next_state <= state_MD_fill_contents0;
@@ -464,25 +463,25 @@ begin
 
 		-- generic check contents, goes to start on error
 		when state_check_contents0 =>
-			if block_i = tetrimino_shape_empty then
+			if block_i = TETRIMINO_SHAPE_NONE then
 				next_state <= state_check_contents1;
 			else
 				next_state <= state_start;
 			end if;
 		when state_check_contents1 =>
-			if block_i = tetrimino_shape_empty then
+			if block_i = TETRIMINO_SHAPE_NONE then
 				next_state <= state_check_contents2;
 			else
 				next_state <= state_start;
 			end if;
 		when state_check_contents2 =>
-			if block_i = tetrimino_shape_empty then
+			if block_i = TETRIMINO_SHAPE_NONE then
 				next_state <= state_check_contents3;
 			else
 				next_state <= state_start;
 			end if;
 		when state_check_contents3 =>
-			if block_i = tetrimino_shape_empty then
+			if block_i = TETRIMINO_SHAPE_NONE then
 				next_state <= state_writeback;
 			else
 				next_state <= state_start;
@@ -514,7 +513,7 @@ begin
 		then
 			active_data_o				<= tetrimino_shape;
 		else
-			active_data_o				<= tetrimino_shape_empty;
+			active_data_o				<= TETRIMINO_SHAPE_NONE;
 		end if;
 	end process;
 

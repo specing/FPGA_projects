@@ -53,7 +53,7 @@ architecture Behavioral of tetris is
 	signal stage1_vga_row				: std_logic_vector (vga_row_width    - 1 downto 0);
 	signal stage1_vga_enable_draw		: std_logic;
 	signal stage1_vga_off_screen		: std_logic;
-	signal stage1_tetrimino_shape		: std_logic_vector (tetrimino_shape_width - 1 downto 0);
+	signal stage1_tetrimino_shape		: tetrimino_shape_type;
 	signal stage1_row_elim_data_out		: std_logic_vector (4 downto 0);
 	signal stage1_line_remove_counter	: std_logic_vector (line_remove_counter_width - 1 downto 0);
 
@@ -62,7 +62,7 @@ architecture Behavioral of tetris is
 	signal stage2_vga_column			: std_logic_vector (vga_column_width - 1 downto 0);
 	signal stage2_vga_row				: std_logic_vector (vga_row_width    - 1 downto 0);
 	signal stage2_vga_enable_draw		: std_logic;
-	signal stage2_tetrimino_shape		: std_logic_vector (tetrimino_shape_width - 1 downto 0);
+	signal stage2_tetrimino_shape		: tetrimino_shape_type;
 	signal stage2_row_elim_data_out		: std_logic_vector (4 downto 0);
 	signal stage2_line_remove_counter	: std_logic_vector (line_remove_counter_width - 1 downto 0);
 	signal stage2_block_red				: std_logic_vector (vga_red_width   - 1 downto 0);
@@ -74,7 +74,7 @@ architecture Behavioral of tetris is
 	signal stage3_vga_column			: std_logic_vector (vga_column_width - 1 downto 0);
 	signal stage3_vga_row				: std_logic_vector (vga_row_width    - 1 downto 0);
 	signal stage3_vga_enable_draw		: std_logic;
-	signal stage3_tetrimino_shape		: std_logic_vector (tetrimino_shape_width - 1 downto 0);
+	signal stage3_tetrimino_shape		: tetrimino_shape_type;
 	signal stage3_row_elim_data_out		: std_logic_vector (4 downto 0);
 	signal stage3_line_remove_counter	: std_logic_vector (line_remove_counter_width - 1 downto 0);
 	signal stage3_block_red				: std_logic_vector (vga_red_width   - 1 downto 0);
@@ -89,7 +89,7 @@ architecture Behavioral of tetris is
 	signal stage4_vga_column			: std_logic_vector (vga_column_width - 1 downto 0);
 	signal stage4_vga_row				: std_logic_vector (vga_row_width    - 1 downto 0);
 	signal stage4_vga_enable_draw		: std_logic;
-	signal stage4_tetrimino_shape		: std_logic_vector (tetrimino_shape_width - 1 downto 0);
+	signal stage4_tetrimino_shape		: tetrimino_shape_type;
 	signal stage4_line_remove_counter	: std_logic_vector (line_remove_counter_width - 1 downto 0);
 	signal stage4_block_red				: std_logic_vector (vga_red_width   - 1 downto 0);
 	signal stage4_block_green			: std_logic_vector (vga_green_width - 1 downto 0);
@@ -167,34 +167,8 @@ begin
 		end if;
 	end process;
 
-	-- obtain block colour from block descriptor
-	with stage2_tetrimino_shape select stage2_block_red <=
-		X"0" when tetrimino_shape_pipe,
-		X"0" when tetrimino_shape_L_left,
-		X"F" when tetrimino_shape_L_right,
-		X"F" when tetrimino_shape_Z_left,
-		X"0" when tetrimino_shape_Z_right,
-		X"F" when tetrimino_shape_T,
-		X"F" when tetrimino_shape_square,
-		X"0" when others;
-	with stage2_tetrimino_shape select stage2_block_green <=
-		X"F" when tetrimino_shape_pipe,
-		X"0" when tetrimino_shape_L_left,
-		X"A" when tetrimino_shape_L_right,
-		X"0" when tetrimino_shape_Z_left,
-		X"F" when tetrimino_shape_Z_right,
-		X"0" when tetrimino_shape_T,
-		X"F" when tetrimino_shape_square,
-		X"0" when others;
-	with stage2_tetrimino_shape select stage2_block_blue <=
-		X"F" when tetrimino_shape_pipe,
-		X"F" when tetrimino_shape_L_left,
-		X"0" when tetrimino_shape_L_right,
-		X"0" when tetrimino_shape_Z_left,
-		X"0" when tetrimino_shape_Z_right,
-		X"F" when tetrimino_shape_T,
-		X"0" when tetrimino_shape_square,
-		X"0" when others;
+	-- obtain colour from tetrimino shape
+	get_colour (stage2_tetrimino_shape, stage2_block_red, stage2_block_green, stage2_block_blue);
 
 	-- Stage3: save row, column, hsync, vsync and en_draw + block desc, RGB of block, line remove
 	process (clock_i)
