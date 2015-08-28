@@ -245,7 +245,7 @@ begin
 	cathode_o				<= (others => '0');
 
 	-- silence warnings
-	led(15 downto 4)		<= switches_i (15 downto 4);
+	led(15 downto 4)    <= (others => '0');
 	led(0) <= button_left;
 	led(1) <= button_right;
 	led(2) <= button_up;

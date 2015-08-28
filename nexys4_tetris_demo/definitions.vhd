@@ -37,7 +37,7 @@ package definitions is
 	subtype block_storage_column_type   is std_logic_vector (column_width - 1 downto 0);
 
 	-- it seems Xilinx does not like creating ROMs with enums in them.
-	type tetrimino_shape_type is array (2 downto 0) of bit;
+	subtype tetrimino_shape_type        is std_logic_vector (2 downto 0);
 	constant TETRIMINO_SHAPE_NONE       : tetrimino_shape_type := "000";
 	constant TETRIMINO_SHAPE_PIPE       : tetrimino_shape_type := "001";
 	constant TETRIMINO_SHAPE_L_LEFT     : tetrimino_shape_type := "010";
@@ -61,71 +61,86 @@ package definitions is
 		when TETRIMINO_SHAPE_Z_RIGHT    => red <= X"0"; green <= X"F"; blue <= X"0";
 		when TETRIMINO_SHAPE_T          => red <= X"F"; green <= X"0"; blue <= X"F";
 		when TETRIMINO_SHAPE_SQUARE     => red <= X"F"; green <= X"F"; blue <= X"0";
+		when others                     => report "Oops" severity FAILURE;
 		end case;
 	end procedure get_colour;
 
+
+
+	subtype tetrimino_rotation_type     is std_logic_vector (1 downto 0);
+	constant TETRIMINO_ROTATION_0       : tetrimino_rotation_type := "00";
+	constant TETRIMINO_ROTATION_90      : tetrimino_rotation_type := "01";
+	constant TETRIMINO_ROTATION_180     : tetrimino_rotation_type := "10";
+	constant TETRIMINO_ROTATION_270     : tetrimino_rotation_type := "11";
+
+	type corner_offset_enum is ( OFF0, OFF1, OFF2, OFF3 );
+	function to_integer (offset: corner_offset_enum) return integer is
+	begin
+		case offset is
+		when OFF0 => return 0;
+		when OFF1 => return 1;
+		when OFF2 => return 2;
+		when OFF3 => return 3;
+		end case;
+	end function to_integer;
+
+	-- first indexed by tetrimino_shape, then by tetrimino_rotation
+	-- data is row0, row1, row2, row3, col0, col1, col2, col3
+	type tetrimino_init_row is          array(0 to 7) of corner_offset_enum;
+	-- 2**5 = 2**3 tetrimino shapes + 2**2 rotations
+	type tetrimino_init_data is         array(0 to (2**5) - 1) of tetrimino_init_row;
+	constant tetrimino_init_rom         : tetrimino_init_data := (
+		-- tetrimino_empty: "000"
+		(OFF0, OFF0, OFF0, OFF0,   OFF0, OFF0, OFF0, OFF0), -- rot0:   "00"
+		(OFF0, OFF0, OFF0, OFF0,   OFF0, OFF0, OFF0, OFF0), -- rot90:  "01"
+		(OFF0, OFF0, OFF0, OFF0,   OFF0, OFF0, OFF0, OFF0), -- rot180: "10"
+		(OFF0, OFF0, OFF0, OFF0,   OFF0, OFF0, OFF0, OFF0), -- rot270: "11"
+
+		-- tetrimino_pipe: "001"
+		(OFF1, OFF1, OFF1, OFF1,   OFF0, OFF1, OFF2, OFF3), -- rot0:   "00"
+		(OFF0, OFF1, OFF2, OFF3,   OFF2, OFF2, OFF2, OFF2), -- rot90:  "01"
+		(OFF2, OFF2, OFF2, OFF2,   OFF3, OFF2, OFF1, OFF0), -- rot180: "10"
+		(OFF3, OFF2, OFF1, OFF0,   OFF1, OFF1, OFF1, OFF1), -- rot270: "11"
+
+		-- tetrimino_L_left: "010"
+		(OFF1, OFF2, OFF2, OFF2,   OFF1, OFF1, OFF2, OFF3), -- rot0:   "00"
+		(OFF1, OFF1, OFF2, OFF3,   OFF2, OFF1, OFF1, OFF1), -- rot90:  "01"
+		(OFF2, OFF1, OFF1, OFF1,   OFF2, OFF2, OFF1, OFF0), -- rot180: "10"
+		(OFF2, OFF2, OFF1, OFF0,   OFF1, OFF2, OFF2, OFF2), -- rot270: "11"
+
+		-- tetrimino_L_right: "011"
+		(OFF1, OFF2, OFF2, OFF2,   OFF2, OFF2, OFF1, OFF0), -- rot0:   "00"
+		(OFF2, OFF2, OFF1, OFF0,   OFF2, OFF1, OFF1, OFF1), -- rot90:  "01"
+		(OFF2, OFF1, OFF1, OFF1,   OFF1, OFF1, OFF2, OFF3), -- rot180: "10"
+		(OFF1, OFF1, OFF2, OFF3,   OFF1, OFF2, OFF2, OFF2), -- rot270: "11"
+
+		-- tetrimino_Z_left: "100"
+		(OFF1, OFF1, OFF2, OFF2,   OFF1, OFF2, OFF2, OFF3), -- rot0:   "00"
+		(OFF1, OFF2, OFF2, OFF3,   OFF2, OFF2, OFF1, OFF1), -- rot90:  "01"
+		(OFF2, OFF2, OFF1, OFF1,   OFF2, OFF1, OFF1, OFF0), -- rot180: "10"
+		(OFF2, OFF1, OFF1, OFF0,   OFF1, OFF1, OFF2, OFF2), -- rot270: "11"
+
+		-- tetrimino_Z_right: "101"
+		(OFF2, OFF2, OFF1, OFF1,   OFF0, OFF1, OFF1, OFF2), -- rot0:   "00"
+		(OFF0, OFF1, OFF1, OFF2,   OFF1, OFF1, OFF2, OFF2), -- rot90:  "01"
+		(OFF1, OFF1, OFF2, OFF2,   OFF3, OFF2, OFF2, OFF1), -- rot180: "10"
+		(OFF3, OFF2, OFF2, OFF1,   OFF2, OFF2, OFF1, OFF1), -- rot270: "11"
+
+		-- tetrimino_T: "110"
+		(OFF1, OFF2, OFF2, OFF2,   OFF1, OFF0, OFF1, OFF2), -- rot0:   "00"
+		(OFF1, OFF0, OFF1, OFF2,   OFF2, OFF1, OFF1, OFF1), -- rot90:  "01"
+		(OFF2, OFF1, OFF1, OFF1,   OFF2, OFF3, OFF2, OFF1), -- rot180: "10"
+		(OFF2, OFF3, OFF2, OFF1,   OFF1, OFF2, OFF2, OFF2), -- rot270: "11"
+
+		-- tetrimino_square: "111"
+		(OFF1, OFF1, OFF2, OFF2,   OFF1, OFF2, OFF2, OFF1), -- rot0:   "00"
+		(OFF1, OFF2, OFF2, OFF1,   OFF2, OFF2, OFF1, OFF1), -- rot90:  "01"
+		(OFF2, OFF2, OFF1, OFF1,   OFF2, OFF1, OFF1, OFF2), -- rot180: "10"
+		(OFF2, OFF1, OFF1, OFF2,   OFF1, OFF1, OFF2, OFF2)  -- rot270: "11"
+	);
+
 	-- default start positions
-	constant default_pipe_row0			: block_storage_row_type := "00001";
-	constant default_pipe_row1			: block_storage_row_type := "00001";
-	constant default_pipe_row2			: block_storage_row_type := "00001";
-	constant default_pipe_row3			: block_storage_row_type := "00001";
-	constant default_pipe_column0		: block_storage_column_type := "0110";
-	constant default_pipe_column1		: block_storage_column_type := "0111";
-	constant default_pipe_column2		: block_storage_column_type := "1000";
-	constant default_pipe_column3		: block_storage_column_type := "1001";
-
-	constant default_L_left_row0		: block_storage_row_type := "00001";
-	constant default_L_left_row1		: block_storage_row_type := "00010";
-	constant default_L_left_row2		: block_storage_row_type := "00010";
-	constant default_L_left_row3		: block_storage_row_type := "00010";
-	constant default_L_left_column0		: block_storage_column_type := "0111";
-	constant default_L_left_column1		: block_storage_column_type := "0111";
-	constant default_L_left_column2		: block_storage_column_type := "1000";
-	constant default_L_left_column3		: block_storage_column_type := "1001";
-
-	constant default_L_right_row0		: block_storage_row_type := "00001";
-	constant default_L_right_row1		: block_storage_row_type := "00010";
-	constant default_L_right_row2		: block_storage_row_type := "00010";
-	constant default_L_right_row3		: block_storage_row_type := "00010";
-	constant default_L_right_column0	: block_storage_column_type := "1000";
-	constant default_L_right_column1	: block_storage_column_type := "1000";
-	constant default_L_right_column2	: block_storage_column_type := "0111";
-	constant default_L_right_column3	: block_storage_column_type := "0110";
-
-	constant default_square_row0		: block_storage_row_type := "00001";
-	constant default_square_row1		: block_storage_row_type := "00001";
-	constant default_square_row2		: block_storage_row_type := "00010";
-	constant default_square_row3		: block_storage_row_type := "00010";
-	constant default_square_column0		: block_storage_column_type := "0111";
-	constant default_square_column1		: block_storage_column_type := "1000";
-	constant default_square_column2		: block_storage_column_type := "1000";
-	constant default_square_column3		: block_storage_column_type := "0111";
-
-	constant default_Z_right_row0		: block_storage_row_type := "00010";
-	constant default_Z_right_row1		: block_storage_row_type := "00010";
-	constant default_Z_right_row2		: block_storage_row_type := "00001";
-	constant default_Z_right_row3		: block_storage_row_type := "00001";
-	constant default_Z_right_column0	: block_storage_column_type := "0110";
-	constant default_Z_right_column1	: block_storage_column_type := "0111";
-	constant default_Z_right_column2	: block_storage_column_type := "0111";
-	constant default_Z_right_column3	: block_storage_column_type := "1000";
-
-	constant default_Z_left_row0		: block_storage_row_type := "00001";
-	constant default_Z_left_row1		: block_storage_row_type := "00001";
-	constant default_Z_left_row2		: block_storage_row_type := "00010";
-	constant default_Z_left_row3		: block_storage_row_type := "00010";
-	constant default_Z_left_column0		: block_storage_column_type := "0111";
-	constant default_Z_left_column1		: block_storage_column_type := "1000";
-	constant default_Z_left_column2		: block_storage_column_type := "1000";
-	constant default_Z_left_column3		: block_storage_column_type := "1001";
-
-	constant default_T_row0				: block_storage_row_type := "00001";
-	constant default_T_row1				: block_storage_row_type := "00010";
-	constant default_T_row2				: block_storage_row_type := "00010";
-	constant default_T_row3				: block_storage_row_type := "00010";
-	constant default_T_column0			: block_storage_column_type := "0111";
-	constant default_T_column1			: block_storage_column_type := "0110";
-	constant default_T_column2			: block_storage_column_type := "0111";
-	constant default_T_column3			: block_storage_column_type := "1000";
+	constant block_storage_start_row    : block_storage_row_type    := "00000";
+	constant block_storage_start_column : block_storage_column_type := "0110";
 
 end package definitions;

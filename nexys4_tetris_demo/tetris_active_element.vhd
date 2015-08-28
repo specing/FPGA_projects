@@ -38,17 +38,30 @@ end tetris_active_element;
 
 architecture Behavioral of tetris_active_element is
 
-	constant row0		: block_storage_row_type	:= block_storage_row_type(to_unsigned(0, row_width));
-	constant row1		: block_storage_row_type	:= block_storage_row_type(to_unsigned(1, row_width));
-	constant rowNm1		: block_storage_row_type	:= block_storage_row_type(to_unsigned(number_of_rows - 1, row_width));
-	constant rowN		: block_storage_row_type	:= block_storage_row_type(to_unsigned(number_of_rows, row_width));
+	constant extended_column_width : integer := 5;
+	subtype extended_column_type is std_logic_vector (extended_column_width - 1 downto 0);
 
-	constant column0	: block_storage_column_type	:= block_storage_column_type(to_unsigned(0, column_width));
-	constant column1	: block_storage_column_type	:= block_storage_column_type(to_unsigned(1, column_width));
-	constant columnNm1	: block_storage_column_type	:= block_storage_column_type(to_unsigned(number_of_columns - 1, column_width));
-	constant columnN	: block_storage_column_type	:= block_storage_column_type(to_unsigned(number_of_columns, column_width));
+	constant row0                        : block_storage_row_type
+	  := block_storage_row_type(to_unsigned(0, row_width));
+	constant row1                        : block_storage_row_type
+	  := block_storage_row_type(to_unsigned(1, row_width));
+	constant rowNm1                      : block_storage_row_type
+	  := block_storage_row_type(to_unsigned(number_of_rows - 1, row_width));
+	constant rowN                        : block_storage_row_type
+	  := block_storage_row_type(to_unsigned(number_of_rows, row_width));
+
+	constant column0                     : extended_column_type
+	  := extended_column_type(to_unsigned(0, extended_column_width));
+	constant column1                     : extended_column_type
+	  := extended_column_type(to_unsigned(1, extended_column_width));
+	constant columnNm1                   : extended_column_type
+	  := extended_column_type(to_unsigned(number_of_columns - 1, extended_column_width));
+	constant columnN                     : extended_column_type
+	  := extended_column_type(to_unsigned(number_of_columns, extended_column_width));
 
 
+	signal corner_row                   : block_storage_row_type;
+	signal corner_column                : block_storage_column_type;
 	signal block0_row					: block_storage_row_type;
 	signal block1_row					: block_storage_row_type;
 	signal block2_row					: block_storage_row_type;
@@ -59,33 +72,23 @@ architecture Behavioral of tetris_active_element is
 	signal block3_column				: block_storage_column_type;
 	signal active_address_write_enable	: std_logic;
 
+	signal corner_row_new               : block_storage_row_type;
+	signal corner_column_new            : block_storage_column_type;
 	signal block0_row_new				: block_storage_row_type;
 	signal block1_row_new				: block_storage_row_type;
 	signal block2_row_new				: block_storage_row_type;
 	signal block3_row_new				: block_storage_row_type;
-	signal block0_column_new			: block_storage_column_type;
-	signal block1_column_new			: block_storage_column_type;
-	signal block2_column_new			: block_storage_column_type;
-	signal block3_column_new			: block_storage_column_type;
+	signal block0_column_new            : extended_column_type;
+	signal block1_column_new            : extended_column_type;
+	signal block2_column_new            : extended_column_type;
+	signal block3_column_new            : extended_column_type;
 	signal new_address_write_enable		: std_logic;
 
-	signal block0_row_next				: block_storage_row_type;
-	signal block1_row_next				: block_storage_row_type;
-	signal block2_row_next				: block_storage_row_type;
-	signal block3_row_next				: block_storage_row_type;
-	signal block0_column_next			: block_storage_column_type;
-	signal block1_column_next			: block_storage_column_type;
-	signal block2_column_next			: block_storage_column_type;
-	signal block3_column_next			: block_storage_column_type;
+	signal corner_row_next              : block_storage_row_type;
+	signal corner_column_next           : block_storage_column_type;
 
-	signal block0_row_operand			: block_storage_row_type;
-	signal block1_row_operand			: block_storage_row_type;
-	signal block2_row_operand			: block_storage_row_type;
-	signal block3_row_operand			: block_storage_row_type;
-	signal block0_column_operand		: block_storage_column_type;
-	signal block1_column_operand		: block_storage_column_type;
-	signal block2_column_operand		: block_storage_column_type;
-	signal block3_column_operand		: block_storage_column_type;
+	signal corner_row_operand           : block_storage_row_type;
+	signal corner_column_operand        : block_storage_column_type;
 
 	type operation_enum is
 	(
@@ -93,14 +96,8 @@ architecture Behavioral of tetris_active_element is
 		PLUS_ONE,
 		MINUS_ONE
 	);
-	signal block0_row_operation			: operation_enum;
-	signal block1_row_operation			: operation_enum;
-	signal block2_row_operation			: operation_enum;
-	signal block3_row_operation			: operation_enum;
-	signal block0_column_operation		: operation_enum;
-	signal block1_column_operation		: operation_enum;
-	signal block2_column_operation		: operation_enum;
-	signal block3_column_operation		: operation_enum;
+	signal corner_row_operation         : operation_enum;
+	signal corner_column_operation      : operation_enum;
 
 
 	type fsm_states is
@@ -124,6 +121,14 @@ architecture Behavioral of tetris_active_element is
 		state_ML_addresses,
 		-- MR... MOVE_RIGHT
 		state_MR_addresses,
+		-- RC... ROTATE_CLOCKWISE
+		state_RC_rotation,
+		state_RC_addresses,
+		state_RC_addresses_check,
+		-- RCC... ROTATE_COUNTER_CLOCKWISE
+		state_RCC_rotation,
+		state_RCC_addresses,
+		state_RCC_addresses_check,
 		-- check contents of cells (generic) and go back to start on failure
 		state_check_contents0,
 		state_check_contents1,
@@ -153,85 +158,89 @@ architecture Behavioral of tetris_active_element is
 	signal tetrimino_shape_next			: tetrimino_shape_type;
 	signal tetrimino_we					: std_logic;
 
+	signal next_tetrimino_init_row      : tetrimino_init_row;
+
+
+	signal tetrimino_rotation           : tetrimino_rotation_type := TETRIMINO_ROTATION_90;
+	signal tetrimino_rotation_next      : tetrimino_rotation_type;
+	signal tetrimino_rotation_new       : tetrimino_rotation_type;
+
 begin
 
-	process
-	(
-		tetrimino_select,
-		block0_row,    block1_row,    block2_row,    block3_row,
-		block0_column, block1_column, block2_column, block3_column
-	)
+	process ( tetrimino_select, corner_row, corner_column )
 	begin
 		case tetrimino_select is
 		when TETRIMINO_OLD =>
-			block0_row_operand		<= block0_row;
-			block0_column_operand	<= block0_column;
-			block1_row_operand		<= block1_row;
-			block1_column_operand	<= block1_column;
-			block2_row_operand		<= block2_row;
-			block2_column_operand	<= block2_column;
-			block3_row_operand		<= block3_row;
-			block3_column_operand	<= block3_column;
+			corner_row_operand    <= corner_row;
+			corner_column_operand <= corner_column;
 		when TETRIMINO_NEW =>
-			block0_row_operand		<= default_L_left_row0;
-			block0_column_operand	<= default_L_left_column0;
-			block1_row_operand		<= default_L_left_row1;
-			block1_column_operand	<= default_L_left_column1;
-			block2_row_operand		<= default_L_left_row2;
-			block2_column_operand	<= default_L_left_column2;
-			block3_row_operand		<= default_L_left_row3;
-			block3_column_operand	<= default_L_left_column3;
+			corner_row_operand    <= block_storage_start_row;
+			corner_column_operand <= block_storage_start_column;
 		end case;
 	end process;
 
-	with block0_row_operation		select block0_row_next <=
-		block0_row_operand + 1			when PLUS_ONE,
-		block0_row_operand - 1			when MINUS_ONE,
-		block0_row_operand				when others; -- ZERO
-	with block1_row_operation		select block1_row_next <=
-		block1_row_operand + 1			when PLUS_ONE,
-		block1_row_operand - 1			when MINUS_ONE,
-		block1_row_operand				when others; -- ZERO
-	with block2_row_operation		select block2_row_next <=
-		block2_row_operand + 1			when PLUS_ONE,
-		block2_row_operand - 1			when MINUS_ONE,
-		block2_row_operand				when others; -- ZERO
-	with block3_row_operation		select block3_row_next <=
-		block3_row_operand + 1			when PLUS_ONE,
-		block3_row_operand - 1			when MINUS_ONE,
-		block3_row_operand				when others; -- ZERO
+	-- determine next orientation
+	process ( operation_i, tetrimino_rotation )
+	begin
+		case operation_i is
+		when ATO_ROTATE_CLOCKWISE =>
+			case tetrimino_rotation is
+			when TETRIMINO_ROTATION_0 =>   tetrimino_rotation_next <= TETRIMINO_ROTATION_90;
+			when TETRIMINO_ROTATION_90 =>  tetrimino_rotation_next <= TETRIMINO_ROTATION_180;
+			when TETRIMINO_ROTATION_180 => tetrimino_rotation_next <= TETRIMINO_ROTATION_270;
+			when TETRIMINO_ROTATION_270 => tetrimino_rotation_next <= TETRIMINO_ROTATION_0;
+			when others =>                 report "Oops" severity FAILURE;
+			end case;
+		when ATO_ROTATE_COUNTER_CLOCKWISE =>
+			case tetrimino_rotation is
+			when TETRIMINO_ROTATION_0 =>   tetrimino_rotation_next <= TETRIMINO_ROTATION_270;
+			when TETRIMINO_ROTATION_90 =>  tetrimino_rotation_next <= TETRIMINO_ROTATION_0;
+			when TETRIMINO_ROTATION_180 => tetrimino_rotation_next <= TETRIMINO_ROTATION_90;
+			when TETRIMINO_ROTATION_270 => tetrimino_rotation_next <= TETRIMINO_ROTATION_180;
+			when others =>                 report "Oops" severity FAILURE;
+			end case;
+		when others =>
+			                               tetrimino_rotation_next <= tetrimino_rotation;
+		end case;
+	end process;
 
-	with block0_column_operation	select block0_column_next <=
-		block0_column_operand + 1		when PLUS_ONE,
-		block0_column_operand - 1		when MINUS_ONE,
-		block0_column_operand			when others; -- ZERO
-	with block1_column_operation	select block1_column_next <=
-		block1_column_operand + 1		when PLUS_ONE,
-		block1_column_operand - 1		when MINUS_ONE,
-		block1_column_operand			when others; -- ZERO
-	with block2_column_operation	select block2_column_next <=
-		block2_column_operand + 1		when PLUS_ONE,
-		block2_column_operand - 1		when MINUS_ONE,
-		block2_column_operand			when others; -- ZERO
-	with block3_column_operation	select block3_column_next <=
-		block3_column_operand + 1		when PLUS_ONE,
-		block3_column_operand - 1		when MINUS_ONE,
-		block3_column_operand			when others; -- ZERO
+	with corner_row_operation    select corner_row_next <=
+		corner_row_operand + 1     when PLUS_ONE,
+		corner_row_operand - 1     when MINUS_ONE,
+		corner_row_operand         when ZERO;
+	with corner_column_operation select corner_column_next <=
+		corner_column_operand + 1  when PLUS_ONE,
+		corner_column_operand - 1  when MINUS_ONE,
+		corner_column_operand      when ZERO;
+
+	-- compute next tetrimino block addresses
+	next_tetrimino_init_row <= tetrimino_init_rom (conv_integer (
+	  tetrimino_shape & tetrimino_rotation_new));
 
 	-- 8 registers for storing new rows and columns
 	process (clock_i)
 	begin
 		if rising_edge (clock_i) then
 			if new_address_write_enable = '1' then
-				block0_row_new		<= block0_row_next;
-				block0_column_new	<= block0_column_next;
-				block1_row_new		<= block1_row_next;
-				block1_column_new	<= block1_column_next;
-				block2_row_new		<= block2_row_next;
-				block2_column_new	<= block2_column_next;
-				block3_row_new		<= block3_row_next;
-				block3_column_new	<= block3_column_next;
+				corner_row_new    <= corner_row_next;
+				corner_column_new <= corner_column_next;
+
+				block0_row_new    <=        corner_row_next     + to_integer (next_tetrimino_init_row (0));
+				block1_row_new    <=        corner_row_next     + to_integer (next_tetrimino_init_row (1));
+				block2_row_new    <=        corner_row_next     + to_integer (next_tetrimino_init_row (2));
+				block3_row_new    <=        corner_row_next     + to_integer (next_tetrimino_init_row (3));
+				block0_column_new <= ("0" & corner_column_next) + to_integer (next_tetrimino_init_row (4));
+				block1_column_new <= ("0" & corner_column_next) + to_integer (next_tetrimino_init_row (5));
+				block2_column_new <= ("0" & corner_column_next) + to_integer (next_tetrimino_init_row (6));
+				block3_column_new <= ("0" & corner_column_next) + to_integer (next_tetrimino_init_row (7));
 			end if;
+		end if;
+	end process;
+
+	process (clock_i)
+	begin
+		if rising_edge (clock_i) then
+			tetrimino_rotation_new <= tetrimino_rotation_next;
 		end if;
 	end process;
 
@@ -243,14 +252,19 @@ begin
 	begin
 		if rising_edge (clock_i) then
 			if active_address_write_enable = '1' then
-				block0_row			<= block0_row_new;
-				block0_column		<= block0_column_new;
-				block1_row			<= block1_row_new;
-				block1_column		<= block1_column_new;
-				block2_row			<= block2_row_new;
-				block2_column		<= block2_column_new;
-				block3_row			<= block3_row_new;
-				block3_column		<= block3_column_new;
+				corner_row         <= corner_row_new;
+				corner_column      <= corner_column_new (3 downto 0);
+
+				block0_row         <= block0_row_new;
+				block0_column      <= block0_column_new(3 downto 0);
+				block1_row         <= block1_row_new;
+				block1_column      <= block1_column_new(3 downto 0);
+				block2_row         <= block2_row_new;
+				block2_column      <= block2_column_new(3 downto 0);
+				block3_row         <= block3_row_new;
+				block3_column      <= block3_column_new(3 downto 0);
+
+				tetrimino_rotation <= tetrimino_rotation_new;
 			end if;
 		end if;
 	end process;
@@ -277,14 +291,9 @@ begin
 
 		fsm_ready_o							<= '0';
 
-		block0_row_operation				<= ZERO;
-		block1_row_operation				<= ZERO;
-		block2_row_operation				<= ZERO;
-		block3_row_operation				<= ZERO;
-		block0_column_operation				<= ZERO;
-		block1_column_operation				<= ZERO;
-		block2_column_operation				<= ZERO;
-		block3_column_operation				<= ZERO;
+		-- addresses start at top left corner
+		corner_row_operation                <= ZERO;
+		corner_column_operation             <= ZERO;
 
 		new_address_write_enable			<= '0';
 		active_address_write_enable			<= '0';
@@ -299,16 +308,11 @@ begin
 			fsm_ready_o						<= '1';
 
 		when state_NT_new_addresses =>
-			-- all operations ZERO
 			tetrimino_select				<= TETRIMINO_NEW;
 			new_address_write_enable		<= '1';
 
 		when state_MD_addresses =>
-			-- addresses start at top left corner
-			block0_row_operation			<= PLUS_ONE;
-			block1_row_operation			<= PLUS_ONE;
-			block2_row_operation			<= PLUS_ONE;
-			block3_row_operation			<= PLUS_ONE;
+			corner_row_operation            <= PLUS_ONE;
 			new_address_write_enable		<= '1';
 
 		when state_MD_check_contents0 =>
@@ -335,18 +339,26 @@ begin
 			block_write_enable_o			<= '1';
 
 		when state_ML_addresses =>
-			block0_column_operation			<= MINUS_ONE;
-			block1_column_operation			<= MINUS_ONE;
-			block2_column_operation			<= MINUS_ONE;
-			block3_column_operation			<= MINUS_ONE;
+			corner_column_operation         <= MINUS_ONE;
 			new_address_write_enable		<= '1';
 
 		when state_MR_addresses =>
-			block0_column_operation			<= PLUS_ONE;
-			block1_column_operation			<= PLUS_ONE;
-			block2_column_operation			<= PLUS_ONE;
-			block3_column_operation			<= PLUS_ONE;
+			corner_column_operation         <= PLUS_ONE;
 			new_address_write_enable		<= '1';
+
+		when state_RC_rotation =>
+			null;
+		when state_RC_addresses =>
+			new_address_write_enable        <= '1';
+		when state_RC_addresses_check =>
+			null;
+
+		when state_RCC_rotation =>
+			null;
+		when state_RCC_addresses =>
+			new_address_write_enable        <= '1';
+		when state_RCC_addresses_check =>
+			null;
 
 		-- generic check contents
 		when state_check_contents0 =>
@@ -381,14 +393,12 @@ begin
 		when state_start =>
 			if fsm_start_i = '1' then
 				case operation_i is
-				when ATO_MOVE_DOWN =>
-					next_state <= state_MD_addresses;
-				when ATO_MOVE_LEFT =>
-					next_state <= state_ML_addresses;
-				when ATO_MOVE_RIGHT =>
-					next_state <= state_MR_addresses;
-				when others =>
-					next_state <= state_start;
+				when ATO_NONE =>                     next_state <= state_start;
+				when ATO_MOVE_DOWN =>                next_state <= state_MD_addresses;
+				when ATO_MOVE_LEFT =>                next_state <= state_ML_addresses;
+				when ATO_MOVE_RIGHT =>               next_state <= state_MR_addresses;
+				when ATO_ROTATE_CLOCKWISE =>         next_state <= state_RC_rotation;
+				when ATO_ROTATE_COUNTER_CLOCKWISE => next_state <= state_RCC_rotation;
 				end case;
 			end if;
 
@@ -447,6 +457,34 @@ begin
 		when state_MR_addresses =>
 			if block0_column = columnNm1 or block1_column = columnNm1
 			or block2_column = columnNm1 or block3_column = columnNm1 then
+				next_state <= state_start;
+			else
+				next_state <= state_check_contents0;
+			end if;
+
+		when state_RC_rotation =>
+			next_state <= state_RC_addresses;
+		when state_RC_addresses =>
+			next_state <= state_RC_addresses_check;
+		when state_RC_addresses_check =>
+			if block0_column_new(4) = '1' or block0_row_new(4 downto 1) = "1111"
+			or block1_column_new(4) = '1' or block1_row_new(4 downto 1) = "1111"
+			or block2_column_new(4) = '1' or block2_row_new(4 downto 1) = "1111"
+			or block3_column_new(4) = '1' or block3_row_new(4 downto 1) = "1111" then
+				next_state <= state_start;
+			else
+				next_state <= state_check_contents0;
+			end if;
+
+		when state_RCC_rotation =>
+			next_state <= state_RCC_addresses;
+		when state_RCC_addresses =>
+			next_state <= state_RCC_addresses_check;
+		when state_RCC_addresses_check =>
+			if block0_column_new(4) = '1' or block0_row_new(4 downto 1) = "1111"
+			or block1_column_new(4) = '1' or block1_row_new(4 downto 1) = "1111"
+			or block2_column_new(4) = '1' or block2_row_new(4 downto 1) = "1111"
+			or block3_column_new(4) = '1' or block3_row_new(4 downto 1) = "1111" then
 				next_state <= state_start;
 			else
 				next_state <= state_check_contents0;
@@ -514,11 +552,11 @@ begin
 		block2_row_new			when BLOCK2,
 		block3_row_new			when BLOCK3;
 
-	with block_select		select block_read_column_o <=
-		block0_column_new		when BLOCK0,
-		block1_column_new		when BLOCK1,
-		block2_column_new		when BLOCK2,
-		block3_column_new		when BLOCK3;
+	with block_select                  select block_read_column_o <=
+		block0_column_new(3 downto 0)    when BLOCK0,
+		block1_column_new(3 downto 0)    when BLOCK1,
+		block2_column_new(3 downto 0)    when BLOCK2,
+		block3_column_new(3 downto 0)    when BLOCK3;
 
 	with block_select		select block_write_row_o <=
 		block0_row				when BLOCK0,
