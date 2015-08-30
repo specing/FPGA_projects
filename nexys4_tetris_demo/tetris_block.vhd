@@ -202,7 +202,8 @@ begin
 		-- communication with the main finite state machine
 		operation_i							=> active_operation,
 		fsm_start_i							=> active_start,
-		fsm_ready_o							=> active_ready
+		fsm_ready_o							=> active_ready,
+		fsm_game_over_o						=> open
 	);
 
 	with active_tetrimino_command_mux select active_operation <=

@@ -30,7 +30,8 @@ entity tetris_active_element is
 		-- communication with the main finite state machine
 		operation_i					: in	active_tetrimino_operations;
 		fsm_start_i					: in	std_logic;
-		fsm_ready_o					: out	std_logic
+		fsm_ready_o					: out	std_logic;
+		fsm_game_over_o				: out	std_logic
 	);
 end tetris_active_element;
 
@@ -105,6 +106,11 @@ architecture Behavioral of tetris_active_element is
 		state_start,
 		-- NT...NEW_TETRIMINO
 		state_NT_new_addresses,
+		state_NT_check_contents0,
+		state_NT_check_contents1,
+		state_NT_check_contents2,
+		state_NT_check_contents3,
+		state_NT_game_over,
 		-- MD...MOVE_DOWN
 		state_MD_addresses,
 		state_MD_check_contents0,
@@ -290,6 +296,7 @@ begin
 	begin
 
 		fsm_ready_o							<= '0';
+		fsm_game_over_o						<= '0';
 
 		-- addresses start at top left corner
 		corner_row_operation                <= ZERO;
@@ -310,6 +317,17 @@ begin
 		when state_NT_new_addresses =>
 			tetrimino_select				<= TETRIMINO_NEW;
 			new_address_write_enable		<= '1';
+		when state_NT_check_contents0 =>
+			block_select					<= BLOCK0;
+		when state_NT_check_contents1 =>
+			block_select					<= BLOCK1;
+		when state_NT_check_contents2 =>
+			block_select					<= BLOCK2;
+		when state_NT_check_contents3 =>
+			block_select					<= BLOCK3;
+		when state_NT_game_over =>
+			fsm_game_over_o					<= '1';
+			fsm_ready_o						<= '1';
 
 		when state_MD_addresses =>
 			corner_row_operation            <= PLUS_ONE;
@@ -403,7 +421,33 @@ begin
 			end if;
 
 		when state_NT_new_addresses =>
-			next_state <= state_writeback;
+			next_state <= state_NT_check_contents0;
+		when state_NT_check_contents0 =>
+			if block_i = TETRIMINO_SHAPE_NONE then
+				next_state <= state_NT_check_contents1;
+			else
+				next_state <= state_NT_game_over;
+			end if;
+		when state_NT_check_contents1 =>
+			if block_i = TETRIMINO_SHAPE_NONE then
+				next_state <= state_NT_check_contents2;
+			else
+				next_state <= state_NT_game_over;
+			end if;
+		when state_NT_check_contents2 =>
+			if block_i = TETRIMINO_SHAPE_NONE then
+				next_state <= state_NT_check_contents3;
+			else
+				next_state <= state_NT_game_over;
+			end if;
+		when state_NT_check_contents3 =>
+			if block_i = TETRIMINO_SHAPE_NONE then
+				next_state <= state_writeback;
+			else
+				next_state <= state_NT_game_over;
+			end if;
+		when state_NT_game_over =>
+			next_state <= state_start;
 
 		when state_MD_addresses =>
 			if block0_row = rowNm1 or block1_row = rowNm1 or block2_row = rowNm1 or block3_row = rowNm1 then
