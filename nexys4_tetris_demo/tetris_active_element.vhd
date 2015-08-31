@@ -162,7 +162,7 @@ architecture Behavioral of tetris_active_element is
 
 	signal tetrimino_shape				: tetrimino_shape_type := TETRIMINO_SHAPE_L_LEFT;
 	signal tetrimino_shape_next			: tetrimino_shape_type;
-	signal tetrimino_we					: std_logic;
+	signal tetrimino_shape_new			: tetrimino_shape_type;
 
 	signal next_tetrimino_init_row      : tetrimino_init_row;
 
@@ -173,15 +173,28 @@ architecture Behavioral of tetris_active_element is
 
 begin
 
-	process ( tetrimino_select, corner_row, corner_column )
+	process ( tetrimino_select, corner_row, corner_column, tetrimino_shape )
 	begin
 		case tetrimino_select is
 		when TETRIMINO_OLD =>
 			corner_row_operand    <= corner_row;
 			corner_column_operand <= corner_column;
+			tetrimino_shape_next  <= tetrimino_shape;
 		when TETRIMINO_NEW =>
 			corner_row_operand    <= block_storage_start_row;
 			corner_column_operand <= block_storage_start_column;
+
+			case tetrimino_shape is
+			when "000" => tetrimino_shape_next <= "010";
+			when "001" => tetrimino_shape_next <= "010";
+			when "010" => tetrimino_shape_next <= "011";
+			when "011" => tetrimino_shape_next <= "100";
+			when "100" => tetrimino_shape_next <= "101";
+			when "101" => tetrimino_shape_next <= "110";
+			when "110" => tetrimino_shape_next <= "111";
+			when "111" => tetrimino_shape_next <= "001";
+			when others => report "Oops" severity FAILURE;
+			end case;
 		end case;
 	end process;
 
@@ -221,7 +234,7 @@ begin
 
 	-- compute next tetrimino block addresses
 	next_tetrimino_init_row <= tetrimino_init_rom (conv_integer (
-	  tetrimino_shape & tetrimino_rotation_new));
+	  tetrimino_shape_next & tetrimino_rotation_new));
 
 	-- 8 registers for storing new rows and columns
 	process (clock_i)
@@ -239,6 +252,7 @@ begin
 				block1_column_new <= ("0" & corner_column_next) + to_integer (next_tetrimino_init_row (5));
 				block2_column_new <= ("0" & corner_column_next) + to_integer (next_tetrimino_init_row (6));
 				block3_column_new <= ("0" & corner_column_next) + to_integer (next_tetrimino_init_row (7));
+				tetrimino_shape_new	<= tetrimino_shape_next;
 			end if;
 		end if;
 	end process;
@@ -271,6 +285,7 @@ begin
 				block3_column      <= block3_column_new(3 downto 0);
 
 				tetrimino_rotation <= tetrimino_rotation_new;
+				tetrimino_shape    <= tetrimino_shape_new;
 			end if;
 		end if;
 	end process;
