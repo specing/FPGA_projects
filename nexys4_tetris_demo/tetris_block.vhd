@@ -21,7 +21,9 @@ entity tetris_block is
 
 		screen_finished_render_i	: in	std_logic;
 		active_operation_i			: in	active_tetrimino_operations;
-		active_operation_ack_o		: out	std_logic
+		active_operation_ack_o		: out	std_logic;
+
+		score_count_o				: out	score_count_type
 	);
 end tetris_block;
 
@@ -57,6 +59,8 @@ architecture Behavioral of tetris_block is
 
 	type fsm_states is
 	(
+		state_wait_for_initial_input,
+		state_confirm_start,
 		state_start,
 		-- removes full rows
 		state_full_row_elim,
@@ -69,7 +73,7 @@ architecture Behavioral of tetris_block is
 		state_active_element_input_wait,
 		state_active_element_input_ack
 	);
-	signal state, next_state				: fsm_states := state_start;
+	signal state, next_state				: fsm_states := state_wait_for_initial_input;
 
 	constant refresh_count_top				: integer := 59; --255;
 	constant refresh_count_width			: integer := integer(CEIL(LOG2(real(refresh_count_top))));
@@ -105,7 +109,20 @@ architecture Behavioral of tetris_block is
 	signal active_start						: std_logic;
 	signal active_ready						: std_logic;
 
+	signal game_start						: std_logic;
+	signal game_over						: std_logic;
+
 begin
+
+	Inst_score_counter: entity work.counter
+	generic map         ( width => score_count_width )
+	port map
+	(
+		clock_i         => clock_i,
+		reset_i         => game_start,
+		count_enable_i  => '1',
+		count_o         => score_count_o
+	);
 
 	-- determine what goes out on screen
 	with active_tetrimino_shape	select tetrimino_shape_o <=
@@ -203,7 +220,7 @@ begin
 		operation_i							=> active_operation,
 		fsm_start_i							=> active_start,
 		fsm_ready_o							=> active_ready,
-		fsm_game_over_o						=> open
+		fsm_game_over_o						=> game_over
 	);
 
 	with active_tetrimino_command_mux select active_operation <=
@@ -238,7 +255,7 @@ begin
 	begin
 		if rising_edge (clock_i) then
 			if reset_i = '1' then
-				state <= state_start;
+				state <= state_wait_for_initial_input;
 			else
 				state <= next_state;
 			end if;
@@ -256,7 +273,15 @@ begin
 		active_tetrimino_command_mux			<= ATC_DISABLED;
 		active_operation_ack_o					<= '0';
 
+		game_start								<= '0';
+
 		case state is
+		when state_wait_for_initial_input =>
+			null;
+		when state_confirm_start =>
+			game_start							<= '1';
+			-- clear key press
+			active_operation_ack_o				<= '1';
 		when state_start =>
 			ram_access_mux						<= MUXSEL_RENDER;
 
@@ -295,12 +320,20 @@ begin
 	(
 		state,
 		screen_finished_render_i, refresh_count_at_top,
-		row_elim_ready,	active_ready
+		row_elim_ready,	active_ready,
+		active_operation_i
 	)
 	begin
 		next_state	<= state;
 
 		case state is
+		when state_wait_for_initial_input =>
+			if active_operation_i /= ATO_NONE then
+				next_state <= state_confirm_start;
+			end if;
+		when state_confirm_start =>
+			next_state <= state_start;
+
 		when state_start =>
 			-- active only one clock
 			if screen_finished_render_i = '1' then
@@ -323,7 +356,11 @@ begin
 			next_state <= state_active_element_MD_wait;
 		when state_active_element_MD_wait =>
 			if active_ready = '1' then
-				next_state <= state_active_element_input;
+				if game_over = '1' then
+					next_state <= state_wait_for_initial_input;
+				else
+					next_state <= state_active_element_input;
+				end if;
 			end if;
 
 		when state_active_element_input =>

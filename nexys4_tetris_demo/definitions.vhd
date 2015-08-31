@@ -17,6 +17,8 @@ package definitions is
 	constant vga_green_width			: integer := 4;
 	constant vga_blue_width				: integer := 4;
 
+	constant score_count_width			: integer := 32;
+	subtype score_count_type			is std_logic_vector(score_count_width - 1 downto 0);
 
 	type active_tetrimino_operations is
 	(
