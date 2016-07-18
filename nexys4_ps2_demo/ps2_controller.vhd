@@ -1,10 +1,10 @@
-library	IEEE;
-use		IEEE.STD_LOGIC_1164.ALL;
+library ieee;
+use     ieee.std_logic_1164.all;
 
 
 
 entity ps2_controller is
-	Port
+	port
 	(
 		clock_i			: in	std_logic;
 		reset_i			: in	std_logic;
@@ -15,6 +15,7 @@ entity ps2_controller is
 		data_o			: out	std_logic_vector(7 downto 0);
 		data_ready_o	: out	std_logic;
 
+		-- debug
 		state_o			: out	std_logic_vector(3 downto 0);
 		pulse_o			: out	std_logic
 	);
@@ -22,7 +23,7 @@ end ps2_controller;
 
 
 
-architecture Behavioral of PS2_controller is
+architecture behavioral of ps2_controller is
 
 	type state_type is
 	(
@@ -40,14 +41,15 @@ architecture Behavioral of PS2_controller is
 		state_stop
 	);
 
-	signal state, next_state	: state_type; 
+	signal state, next_state	: state_type;
 	--Declare internal signals for all outputs of the state-machine
-	
+
 	signal sync_ps2_clock		: std_logic;
 	signal sync_ps2_clock_low	: std_logic;
 	signal sync_ps2_data		: std_logic;
-	
-	signal shift_register		: std_logic_vector(7 downto 0); -- 8 bit (no parity)
+
+	signal shift_register       : std_logic_vector (7 downto 0) -- 8 bit (no parity)
+	                            := (others => '0');
 	signal shift_register_enable: std_logic;
 	signal data_ready			: std_logic;
 
@@ -55,7 +57,6 @@ begin
 
 	data_o						<= shift_register;
 	data_ready_o				<= data_ready;
-	pulse_o						<= shift_register_enable and sync_ps2_clock_low;
 
 	-- Sync both inputs
 	process (clock_i)
@@ -70,10 +71,10 @@ begin
 			end if;
 		end if;
 	end process;
-																							   
+
 	-- negative edge detection KBD CLOCK
 	Inst_falling_edge_detector_clock: entity work.falling_edge_detector
-	PORT MAP
+	port map
 	(
 		clock_i		=> clock_i,
 		reset_i		=> reset_i,
@@ -82,11 +83,10 @@ begin
 	);
 
 
-
 	-- shift register
 	process (clock_i)
 	begin
-		if clock_i'event and clock_i = '1' then
+		if rising_edge (clock_i) then
 			if reset_i = '1' then
 				shift_register <= (others => '0');
 			else
@@ -104,7 +104,7 @@ begin
 	--Insert the following in the architecture after the begin keyword
 	SYNC_PROC: process (clock_i)
 	begin
-		if clock_i'event and clock_i = '1' then
+		if rising_edge (clock_i) then
 			if reset_i = '1' then
 				state <= state_idle;
 			else
@@ -145,7 +145,7 @@ begin
 			shift_register_enable	<= '1';
 		when state_b7 =>
 			shift_register_enable	<= '1';
-			
+
 		when state_parity =>
 			data_ready				<= '1';
 		when state_stop =>
@@ -197,43 +197,25 @@ begin
 			next_state <= state_idle;
 		when others =>
 			next_state <= state_idle;
-		end case;	  
+		end case;
 	end process;
 
+	-- debug part
+	--pulse_o					<= shift_register_enable and sync_ps2_clock_low;
+	pulse_o						<= sync_ps2_clock;
 
-	-- debug
-	process (state)
-	begin
-		case state is
-		when state_idle =>
-			state_o	<= "0000";
---		when state_start =>
---			state_o	<= "0001";
-		when state_b0 =>
-			state_o	<= "0010";
-		when state_b1 =>
-			state_o	<= "0011";
-		when state_b2 =>
-			state_o	<= "0100";
-		when state_b3 =>
-			state_o	<= "0101";
-		when state_b4 =>
-			state_o	<= "0110";
-		when state_b5 =>
-			state_o	<= "0111";
-		when state_b6 =>
-			state_o	<= "1000";
-		when state_b7 =>
-			state_o	<= "1001";
-		when state_parity =>
-			state_o	<= "1010";
-		when state_stop =>
-			state_o <= "1011";
-		when others =>
-			state_o	<= "1111";
-		end case;	  
+	with state select state_o <=
+		"0000" when state_idle,
+		"0010" when state_b0,
+		"0011" when state_b1,
+		"0100" when state_b2,
+		"0101" when state_b3,
+		"0110" when state_b4,
+		"0111" when state_b5,
+		"1000" when state_b6,
+		"1001" when state_b7,
+		"1010" when state_parity,
+		"1011" when state_stop,
+		"1111" when others;
 
-	end process;
-
-end Behavioral;
-
+end behavioral;
