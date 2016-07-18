@@ -120,7 +120,7 @@ begin
 	(
 		clock_i         => clock_i,
 		reset_i         => game_start,
-		count_enable_i  => '1',
+		count_enable_i  => active_write_enable, -- temporary?
 		count_o         => score_count_o
 	);
 

@@ -26,7 +26,10 @@ entity tetris is
 		vga_blue_o				: out	std_logic_vector (vga_blue_width  - 1 downto 0);
 
 		active_operation_i		: in	active_tetrimino_operations;
-		active_operation_ack_o	: out	std_logic
+		active_operation_ack_o	: out	std_logic;
+
+		cathodes_o				: out	std_logic_vector(6 downto 0);
+		anodes_o				: out	std_logic_vector(7 downto 0)
 	);
 end tetris;
 
@@ -95,6 +98,8 @@ architecture Behavioral of tetris is
 	signal stage4_block_green			: std_logic_vector (vga_green_width - 1 downto 0);
 	signal stage4_block_blue			: std_logic_vector (vga_blue_width  - 1 downto 0);
 
+	signal score_count					: score_count_type;
+
 begin
 
 	Inst_VGA_controller:	entity work.VGA_controller
@@ -150,7 +155,9 @@ begin
 
 		screen_finished_render_i	=> stage1_vga_off_screen,
 		active_operation_i			=> active_operation_i,
-		active_operation_ack_o		=> active_operation_ack_o
+		active_operation_ack_o		=> active_operation_ack_o,
+
+		score_count_o				=> score_count
 	);
 
 	-- Stage2: save row, column, hsync, vsync, en_draw + block desc, line remove
@@ -255,5 +262,27 @@ begin
 			vga_blue_o				<= "0000";
 		end if;
 	end process;
+
+	-- show score count
+	Inst_7seg:        entity work.seven_seg_display
+	generic map
+	(
+		f_clock       => 100_000_000.0,
+		num_of_digits => 8,
+		dim_top       => 3,
+		-- bit values for segment on
+		-- Nexys 4's anodes are active low (have transistors for amplification)
+		anode_on      => '0',
+		-- Nexys 4's cathodes have A on right and inverted, but our seven_seg_digit has A on the left
+		cathode_on    => '0'
+	)
+	port map
+	(
+		clock_i				=> clock_i,
+		reset_i				=> reset_i,
+		bcd_digits_i		=> score_count,
+		anodes_o			=> anodes_o,
+		cathodes_o			=> cathodes_o
+	);
 
 end Behavioral;

@@ -34,7 +34,7 @@ entity nexys4_tetris_demo is
 
 		led_o				: out	std_logic_vector(15 downto 0);
 		anode_o				: out	std_logic_vector(7 downto 0);
-		cathode_o			: out	std_logic_vector(6 downto 0)
+		cathode_o			: out	std_logic_vector(0 to 6)
 	);
 end nexys4_tetris_demo;
 
@@ -223,7 +223,10 @@ begin
 		vga_blue_o				=> vga_blue_o,
 
 		active_operation_i		=> tetrimino_operation,
-		active_operation_ack_o	=> tetrimino_operation_ack
+		active_operation_ack_o	=> tetrimino_operation_ack,
+
+		cathodes_o				=> cathode_o,
+		anodes_o				=> anode_o
 	);
 
 	-- dim LEDs
@@ -238,11 +241,6 @@ begin
 	with pwm_count select led_o <=
 		led				when '0',
 		(others => '0')	when others;
-
-	-- assign debug signals
-
-	anode_o					<= (others => '1');
-	cathode_o				<= (others => '0');
 
 	-- silence warnings
 	led(15 downto 4)    <= (others => '0');
