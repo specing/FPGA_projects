@@ -117,6 +117,8 @@ architecture Behavioral of tetris_active_element is
 		state_MD_check_contents1,
 		state_MD_check_contents2,
 		state_MD_check_contents3,
+		  -- for DROP_DOWN
+		state_MD_writeback,
 		  -- when MOVE_DOWN fails, transfer active tetrimino to ram
 		  -- and go to NEW_TETRIMINO
 		state_MD_fill_contents0,
@@ -403,6 +405,8 @@ begin
 		when state_check_contents3 =>
 			block_select					<= BLOCK3;
 
+		when state_MD_writeback => -- for DROP_DOWN
+			active_address_write_enable		<= '1';
 		when state_writeback =>
 			active_address_write_enable		<= '1';
 
@@ -427,6 +431,7 @@ begin
 			if fsm_start_i = '1' then
 				case operation_i is
 				when ATO_NONE =>                     next_state <= state_start;
+				when ATO_DROP_DOWN =>                next_state <= state_MD_addresses;
 				when ATO_MOVE_DOWN =>                next_state <= state_MD_addresses;
 				when ATO_MOVE_LEFT =>                next_state <= state_ML_addresses;
 				when ATO_MOVE_RIGHT =>               next_state <= state_MR_addresses;
@@ -491,7 +496,7 @@ begin
 			end if;
 		when state_MD_check_contents3 =>
 			if block_i = TETRIMINO_SHAPE_NONE then
-				next_state <= state_writeback;
+				next_state <= state_MD_writeback;
 			else
 				next_state <= state_MD_fill_contents0;
 			end if;
@@ -576,6 +581,12 @@ begin
 			end if;
 
 		-- write the new addresses
+		when state_MD_writeback =>
+			if operation_i = ATO_DROP_DOWN then -- keep moving down
+				next_state <= state_MD_addresses;
+			else
+				next_state <= state_start;
+			end if;
 		when state_writeback =>
 			next_state <= state_start;
 

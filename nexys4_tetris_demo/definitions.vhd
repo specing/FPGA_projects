@@ -23,6 +23,7 @@ package definitions is
 	type active_tetrimino_operations is
 	(
 		ATO_NONE,
+		ATO_DROP_DOWN,
 		ATO_MOVE_DOWN,
 		ATO_MOVE_LEFT,
 		ATO_MOVE_RIGHT,

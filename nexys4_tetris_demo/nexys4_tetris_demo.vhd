@@ -13,7 +13,7 @@ entity nexys4_tetris_demo is
 		row_width			: integer := 10;
 		column_width		: integer := 10;
 
-		num_of_buttons		: integer := 4
+		num_of_buttons		: integer := 5
 	);
 	port
 	(
@@ -31,6 +31,7 @@ entity nexys4_tetris_demo is
 		btnR_i				: in	std_logic;
 		btnU_i				: in	std_logic;
 		btnD_i				: in	std_logic;
+		btnC_i				: in	std_logic;
 
 		led_o				: out	std_logic_vector(15 downto 0);
 		anode_o				: out	std_logic_vector(7 downto 0);
@@ -52,6 +53,7 @@ architecture Behavioral of nexys4_tetris_demo is
 	signal led						: std_logic_vector(15 downto 0);
 	signal pwm_count				: std_logic;
 
+	signal button_drop			: std_logic;
 	signal button_left			: std_logic;
 	signal button_right			: std_logic;
 	signal button_up			: std_logic;
@@ -66,12 +68,13 @@ begin
 	-------------------------------------------------------
 
 	INPUT_LOGIC: block
-		signal buttons_joined		: std_logic_vector(3 downto 0);
-		signal buttons				: std_logic_vector(3 downto 0);
+		signal buttons_joined		: std_logic_vector(4 downto 0);
+		signal buttons				: std_logic_vector(4 downto 0);
 
 		type state_type is
 		(
 			state_start,
+			state_drop,
 			state_left,
 			state_right,
 			state_up,
@@ -81,19 +84,20 @@ begin
 		signal state, next_state	: state_type := state_start;
 
 
+		signal button_drop_ack		: std_logic;
 		signal button_left_ack		: std_logic;
 		signal button_right_ack		: std_logic;
 		signal button_up_ack		: std_logic;
 		signal button_down_ack		: std_logic;
-		signal buttons_ack_joined	: std_logic_vector(3 downto 0);
+		signal buttons_ack_joined	: std_logic_vector(4 downto 0);
 
 	begin
 
-		buttons_joined			<= btnL_i & btnR_i & btnU_i & btnD_i;
-		buttons_ack_joined		<= button_left_ack & button_right_ack & button_up_ack & button_down_ack;
+		buttons_joined			<= btnC_i & btnL_i & btnR_i & btnU_i & btnD_i;
+		buttons_ack_joined		<= button_drop_ack & button_left_ack & button_right_ack & button_up_ack & button_down_ack;
 		-- sync & rising edge detectors on input buttons
 		Inst_button_input:		entity work.button_input
-		generic map				( num_of_buttons => 4 )
+		generic map				( num_of_buttons => 5 )
 		port map
 		(
 			clock_i				=> clock_i,
@@ -103,6 +107,7 @@ begin
 			buttons_o			=> buttons
 		);
 
+		button_drop				<= buttons(4);
 		button_left				<= buttons(3);
 		button_right			<= buttons(2);
 		button_up				<= buttons(1);
@@ -123,6 +128,7 @@ begin
 		-- FSM output
 		process (state)
 		begin
+			button_drop_ack				<= '0';
 			button_left_ack				<= '0';
 			button_right_ack			<= '0';
 			button_up_ack				<= '0';
@@ -132,6 +138,9 @@ begin
 			case state is
 			when state_start =>
 				null;
+			when state_drop =>
+				tetrimino_operation		<= ATO_DROP_DOWN;
+				button_drop_ack			<= '1';
 			when state_left =>
 				tetrimino_operation		<= ATO_MOVE_LEFT;
 				button_left_ack			<= '1';
@@ -151,14 +160,16 @@ begin
 		process
 		(
 			state, tetrimino_operation_ack,
-			button_left, button_right, button_up, button_down
+			button_drop, button_left, button_right, button_up, button_down
 		)
 		begin
 			next_state <= state;
 
 			case state is
 			when state_start =>
-				if button_left = '1' then
+				if    button_drop = '1' then
+					next_state <= state_drop;
+				elsif button_left = '1' then
 					next_state <= state_left;
 				elsif button_right = '1' then
 					next_state <= state_right;
@@ -167,6 +178,10 @@ begin
 				elsif button_down = '1' then
 					next_state <= state_down;
 				else
+					next_state <= state_start;
+				end if;
+			when state_drop =>
+				if tetrimino_operation_ack = '1' then
 					next_state <= state_start;
 				end if;
 			when state_left =>
