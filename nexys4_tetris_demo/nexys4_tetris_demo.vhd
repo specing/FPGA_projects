@@ -26,14 +26,12 @@ entity nexys4_tetris_demo is
 		vga_green_o			: out	std_logic_vector(vga_green_width - 1 downto 0);
 		vga_blue_o			: out	std_logic_vector(vga_blue_width  - 1 downto 0);
 
-		switches_i			: in	std_logic_vector(15 downto 0);
 		btnL_i				: in	std_logic;
 		btnR_i				: in	std_logic;
 		btnU_i				: in	std_logic;
 		btnD_i				: in	std_logic;
 		btnC_i				: in	std_logic;
 
-		led_o				: out	std_logic_vector(15 downto 0);
 		anode_o				: out	std_logic_vector(7 downto 0);
 		cathode_o			: out	std_logic_vector(0 to 6)
 	);
@@ -42,17 +40,11 @@ end nexys4_tetris_demo;
 
 
 architecture Behavioral of nexys4_tetris_demo is
-
 	signal reset_i					: std_logic;
 	signal tetrimino_operation		: active_tetrimino_operations;
 	signal tetrimino_operation_ack	: std_logic;
-
 	-- vga signals
 	signal vga_pixel_clock			: std_logic;
-
-	signal led						: std_logic_vector(15 downto 0);
-	signal pwm_count				: std_logic;
-
 	signal button_drop			: std_logic;
 	signal button_left			: std_logic;
 	signal button_right			: std_logic;
@@ -62,11 +54,9 @@ architecture Behavioral of nexys4_tetris_demo is
 begin
 	-- board reset is active low
 	reset_i					<= not reset_low_i;
-
 	-------------------------------------------------------
 	------------------------ INPUT ------------------------
 	-------------------------------------------------------
-
 	INPUT_LOGIC: block
 		signal buttons_joined		: std_logic_vector(4 downto 0);
 		signal buttons				: std_logic_vector(4 downto 0);
@@ -79,7 +69,6 @@ begin
 			state_right,
 			state_up,
 			state_down
-		--	state_wait_for_ack
 		);
 		signal state, next_state	: state_type := state_start;
 
@@ -92,7 +81,6 @@ begin
 		signal buttons_ack_joined	: std_logic_vector(4 downto 0);
 
 	begin
-
 		buttons_joined			<= btnC_i & btnL_i & btnR_i & btnU_i & btnD_i;
 		buttons_ack_joined		<= button_drop_ack & button_left_ack & button_right_ack & button_up_ack & button_down_ack;
 		-- sync & rising edge detectors on input buttons
@@ -243,26 +231,5 @@ begin
 		cathodes_o				=> cathode_o,
 		anodes_o				=> anode_o
 	);
-
-	-- dim LEDs
-
-	process(clock_i)
-	begin
-		if rising_edge (clock_i) then
-			pwm_count <= not pwm_count;
-		end if;
-	end process;
-
-	with pwm_count select led_o <=
-		led				when '0',
-		(others => '0')	when others;
-
-	-- silence warnings
-	led(15 downto 4)    <= (others => '0');
-	led(0) <= button_left;
-	led(1) <= button_right;
-	led(2) <= button_up;
-	led(3) <= button_down;
-
 
 end Behavioral;
