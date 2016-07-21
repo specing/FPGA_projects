@@ -45,12 +45,6 @@ architecture Behavioral of nexys4_tetris_demo is
 	signal tetrimino_operation_ack	: std_logic;
 	-- vga signals
 	signal vga_pixel_clock			: std_logic;
-	signal button_drop			: std_logic;
-	signal button_left			: std_logic;
-	signal button_right			: std_logic;
-	signal button_up			: std_logic;
-	signal button_down			: std_logic;
-
 begin
 	-- board reset is active low
 	reset_i					<= not reset_low_i;
@@ -58,8 +52,14 @@ begin
 	------------------------ INPUT ------------------------
 	-------------------------------------------------------
 	INPUT_LOGIC: block
-		signal buttons_joined		: std_logic_vector(4 downto 0);
-		signal buttons				: std_logic_vector(4 downto 0);
+		subtype button_vector is std_logic_vector (num_of_buttons - 1 downto 0);
+		signal buttons_joined     : button_vector;
+		signal buttons            : button_vector;
+		alias button_drop         is buttons (4);
+		alias button_left         is buttons (3);
+		alias button_right        is buttons (2);
+		alias button_up           is buttons (1);
+		alias button_down         is buttons (0);
 
 		type state_type is
 		(
@@ -73,19 +73,18 @@ begin
 		signal state, next_state	: state_type := state_start;
 
 
-		signal button_drop_ack		: std_logic;
-		signal button_left_ack		: std_logic;
-		signal button_right_ack		: std_logic;
-		signal button_up_ack		: std_logic;
-		signal button_down_ack		: std_logic;
-		signal buttons_ack_joined	: std_logic_vector(4 downto 0);
-
+		signal buttons_ack_joined : button_vector;
+		alias button_drop_ack     is buttons_ack_joined(4);
+		alias button_left_ack     is buttons_ack_joined(3);
+		alias button_right_ack    is buttons_ack_joined(2);
+		alias button_up_ack       is buttons_ack_joined(1);
+		alias button_down_ack     is buttons_ack_joined(0);
 	begin
 		buttons_joined			<= btnC_i & btnL_i & btnR_i & btnU_i & btnD_i;
-		buttons_ack_joined		<= button_drop_ack & button_left_ack & button_right_ack & button_up_ack & button_down_ack;
+
 		-- sync & rising edge detectors on input buttons
 		Inst_button_input:		entity work.button_input
-		generic map				( num_of_buttons => 5 )
+		generic map             ( num_of_buttons => num_of_buttons )
 		port map
 		(
 			clock_i				=> clock_i,
@@ -94,12 +93,6 @@ begin
 			buttons_ack_i		=> buttons_ack_joined,
 			buttons_o			=> buttons
 		);
-
-		button_drop				<= buttons(4);
-		button_left				<= buttons(3);
-		button_right			<= buttons(2);
-		button_up				<= buttons(1);
-		button_down				<= buttons(0);
 
 		-- FSM state change
 		process (clock_i)
@@ -116,11 +109,7 @@ begin
 		-- FSM output
 		process (state)
 		begin
-			button_drop_ack				<= '0';
-			button_left_ack				<= '0';
-			button_right_ack			<= '0';
-			button_up_ack				<= '0';
-			button_down_ack				<= '0';
+			buttons_ack_joined        <= (others => '0');
 			tetrimino_operation			<= ATO_NONE;
 
 			case state is
@@ -145,48 +134,22 @@ begin
 		end process;
 
 		-- FSM next state
-		process
-		(
-			state, tetrimino_operation_ack,
-			button_drop, button_left, button_right, button_up, button_down
-		)
+		process (state, tetrimino_operation_ack, buttons)
 		begin
-			next_state <= state;
-
 			case state is
 			when state_start =>
-				if    button_drop = '1' then
-					next_state <= state_drop;
-				elsif button_left = '1' then
-					next_state <= state_left;
-				elsif button_right = '1' then
-					next_state <= state_right;
-				elsif button_up = '1' then
-					next_state <= state_up;
-				elsif button_down = '1' then
-					next_state <= state_down;
+				if    button_drop  = '1' then next_state <= state_drop;
+				elsif button_left  = '1' then next_state <= state_left;
+				elsif button_right = '1' then next_state <= state_right;
+				elsif button_up    = '1' then next_state <= state_up;
+				elsif button_down  = '1' then next_state <= state_down;
+				else                          next_state <= state_start;
+				end if;
+			when state_drop | state_left | state_right | state_up | state_down =>
+				if tetrimino_operation_ack = '1' then
+					next_state <= state_start;
 				else
-					next_state <= state_start;
-				end if;
-			when state_drop =>
-				if tetrimino_operation_ack = '1' then
-					next_state <= state_start;
-				end if;
-			when state_left =>
-				if tetrimino_operation_ack = '1' then
-					next_state <= state_start;
-				end if;
-			when state_right =>
-				if tetrimino_operation_ack = '1' then
-					next_state <= state_start;
-				end if;
-			when state_up =>
-				if tetrimino_operation_ack = '1' then
-					next_state <= state_start;
-				end if;
-			when state_down =>
-				if tetrimino_operation_ack = '1' then
-					next_state <= state_start;
+					next_state <= state;
 				end if;
 			end case;
 		end process;
