@@ -420,8 +420,10 @@ begin
 	process
 	(
 		state, fsm_start_i, operation_i, block_i,
-		block0_row,    block1_row,    block2_row,    block3_row,
-		block0_column, block1_column, block2_column, block3_column
+		block0_row, block0_row_new, block0_column, block0_column_new,
+		block1_row, block1_row_new, block1_column, block1_column_new,
+		block2_row, block2_row_new, block2_column, block2_column_new,
+		block3_row, block3_row_new, block3_column, block3_column_new
 	)
 	begin
 		next_state	<= state;

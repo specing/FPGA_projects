@@ -66,7 +66,7 @@ architecture Behavioral of tetris is
 	signal stage2_vga_row				: std_logic_vector (vga_row_width    - 1 downto 0);
 	signal stage2_vga_enable_draw		: std_logic;
 	signal stage2_tetrimino_shape		: tetrimino_shape_type;
-	signal stage2_row_elim_data_out		: std_logic_vector (4 downto 0);
+	signal stage2_row_elim_data_out		: std_logic_vector (4 downto 1);
 	signal stage2_line_remove_counter	: std_logic_vector (line_remove_counter_width - 1 downto 0);
 	signal stage2_block_red				: std_logic_vector (vga_red_width   - 1 downto 0);
 	signal stage2_block_green			: std_logic_vector (vga_green_width - 1 downto 0);
@@ -78,7 +78,7 @@ architecture Behavioral of tetris is
 	signal stage3_vga_row				: std_logic_vector (vga_row_width    - 1 downto 0);
 	signal stage3_vga_enable_draw		: std_logic;
 	signal stage3_tetrimino_shape		: tetrimino_shape_type;
-	signal stage3_row_elim_data_out		: std_logic_vector (4 downto 0);
+	signal stage3_row_elim_data_out		: std_logic_vector (4 downto 1);
 	signal stage3_line_remove_counter	: std_logic_vector (line_remove_counter_width - 1 downto 0);
 	signal stage3_block_red				: std_logic_vector (vga_red_width   - 1 downto 0);
 	signal stage3_block_green			: std_logic_vector (vga_green_width - 1 downto 0);
@@ -170,7 +170,7 @@ begin
 			stage2_vga_row			<= stage1_vga_row;
 			stage2_vga_enable_draw	<= stage1_vga_enable_draw;
 			stage2_tetrimino_shape	<= stage1_tetrimino_shape;
-			stage2_row_elim_data_out<= stage1_row_elim_data_out;
+			stage2_row_elim_data_out<= stage1_row_elim_data_out (4 downto 1);
 		end if;
 	end process;
 
@@ -187,7 +187,7 @@ begin
 			stage3_vga_row			<= stage2_vga_row;
 			stage3_vga_enable_draw	<= stage2_vga_enable_draw;
 
-			stage3_row_elim_data_out<= stage2_row_elim_data_out;
+			stage3_row_elim_data_out<= stage2_row_elim_data_out (4 downto 1);
 			stage3_block_red		<= stage2_block_red;
 			stage3_block_green		<= stage2_block_green;
 			stage3_block_blue		<= stage2_block_blue;

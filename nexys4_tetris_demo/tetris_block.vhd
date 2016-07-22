@@ -321,7 +321,7 @@ begin
 		state,
 		screen_finished_render_i, refresh_count_at_top,
 		row_elim_ready,	active_ready,
-		active_operation_i
+		active_operation_i, game_over
 	)
 	begin
 		next_state	<= state;
