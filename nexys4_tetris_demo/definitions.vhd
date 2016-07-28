@@ -8,9 +8,8 @@ use     ieee.math_real          .all;
 
 package definitions is
 
-	function compute_width (max : integer) return integer is
-	begin return integer (CEIL (LOG2 (real (max) ) ) );
-	end function compute_width;
+	-- computers minimum vector width needed to store the given value
+	function compute_width (max : integer) return integer;
 
 
 	constant vga_red_width				: integer := 4;
@@ -51,23 +50,9 @@ package definitions is
 	constant TETRIMINO_SHAPE_SQUARE     : tetrimino_shape_type := "111";
 
 	procedure get_colour (
-		shape: tetrimino_shape_type;
-		signal red, green, blue : out std_logic_vector (3 downto 0) )
-	is
-	begin
-		case shape is
-		when TETRIMINO_SHAPE_NONE       => red <= X"0"; green <= X"0"; blue <= X"0";
-		when TETRIMINO_SHAPE_PIPE       => red <= X"0"; green <= X"F"; blue <= X"F";
-		when TETRIMINO_SHAPE_L_LEFT     => red <= X"0"; green <= X"0"; blue <= X"F";
-		when TETRIMINO_SHAPE_L_RIGHT    => red <= X"F"; green <= X"A"; blue <= X"0";
-		when TETRIMINO_SHAPE_Z_LEFT     => red <= X"F"; green <= X"0"; blue <= X"0";
-		when TETRIMINO_SHAPE_Z_RIGHT    => red <= X"0"; green <= X"F"; blue <= X"0";
-		when TETRIMINO_SHAPE_T          => red <= X"F"; green <= X"0"; blue <= X"F";
-		when TETRIMINO_SHAPE_SQUARE     => red <= X"F"; green <= X"F"; blue <= X"0";
-		when others                     => report "Oops" severity FAILURE;
-		end case;
-	end procedure get_colour;
-
+		sshape: tetrimino_shape_type;
+		signal red, green, blue : out std_logic_vector (3 downto 0)
+	);
 
 
 	subtype tetrimino_rotation_type     is std_logic_vector (1 downto 0);
@@ -77,15 +62,7 @@ package definitions is
 	constant TETRIMINO_ROTATION_270     : tetrimino_rotation_type := "11";
 
 	type corner_offset_enum is ( OFF0, OFF1, OFF2, OFF3 );
-	function to_integer (offset: corner_offset_enum) return integer is
-	begin
-		case offset is
-		when OFF0 => return 0;
-		when OFF1 => return 1;
-		when OFF2 => return 2;
-		when OFF3 => return 3;
-		end case;
-	end function to_integer;
+	function to_integer (offset: corner_offset_enum) return integer;
 
 	-- first indexed by tetrimino_shape, then by tetrimino_rotation
 	-- data is row0, row1, row2, row3, col0, col1, col2, col3
@@ -147,3 +124,44 @@ package definitions is
 	constant block_storage_start_column : block_storage_column_type := "0110";
 
 end package definitions;
+
+
+
+package body definitions is
+
+	function compute_width (max : integer) return integer is
+	begin
+		return integer (CEIL (LOG2 (real (max) ) ) );
+	end function compute_width;
+
+
+	procedure get_colour (
+		shape: tetrimino_shape_type;
+		signal red, green, blue : out std_logic_vector (3 downto 0)
+	) is
+	begin
+		case shape is
+		when TETRIMINO_SHAPE_NONE       => red <= X"0"; green <= X"0"; blue <= X"0";
+		when TETRIMINO_SHAPE_PIPE       => red <= X"0"; green <= X"F"; blue <= X"F";
+		when TETRIMINO_SHAPE_L_LEFT     => red <= X"0"; green <= X"0"; blue <= X"F";
+		when TETRIMINO_SHAPE_L_RIGHT    => red <= X"F"; green <= X"A"; blue <= X"0";
+		when TETRIMINO_SHAPE_Z_LEFT     => red <= X"F"; green <= X"0"; blue <= X"0";
+		when TETRIMINO_SHAPE_Z_RIGHT    => red <= X"0"; green <= X"F"; blue <= X"0";
+		when TETRIMINO_SHAPE_T          => red <= X"F"; green <= X"0"; blue <= X"F";
+		when TETRIMINO_SHAPE_SQUARE     => red <= X"F"; green <= X"F"; blue <= X"0";
+		when others                     => report "Oops" severity FAILURE;
+		end case;
+	end procedure get_colour;
+
+
+	function to_integer (offset: corner_offset_enum) return integer is
+	begin
+		case offset is
+		when OFF0 => return 0;
+		when OFF1 => return 1;
+		when OFF2 => return 2;
+		when OFF3 => return 3;
+		end case;
+	end function to_integer;
+
+end package body definitions;
