@@ -1,15 +1,15 @@
-library	IEEE;
-use		IEEE.STD_LOGIC_1164.all;
+library ieee;
+use     ieee.std_logic_1164.all;
 
 
 
 entity VGA_controller is
-	Generic
+	generic
 	(
 		row_width			: integer := 9;
 		column_width		: integer := 10
 	);
-	Port
+	port
 	(
 		clock_i				: in	std_logic;
 		reset_i				: in	std_logic;
@@ -63,7 +63,7 @@ begin
 
 
 	Inst_hsync:				entity work.sync_generator
-	GENERIC MAP
+	generic map
 	(
 		t_display			=> 640,
 		t_fp				=> 16,
@@ -71,7 +71,7 @@ begin
 		t_pw				=> 96,
 		counter_width		=> column_width
 	)
-	PORT MAP
+	port map
 	(
 		clock_i				=> clock_i,
 		reset_i				=> reset_i,
@@ -84,7 +84,7 @@ begin
 
 
 	Inst_vsync:				entity work.sync_generator
-	GENERIC MAP
+	generic map
 	(
 		t_display			=> 480,
 		t_fp				=> 10, --10,
@@ -92,7 +92,7 @@ begin
 		t_pw				=> 2,
 		counter_width		=> row_width
 	)
-	PORT MAP
+	port map
 	(
 		clock_i				=> clock_i,
 		reset_i				=> reset_i,
@@ -102,6 +102,5 @@ begin
 		en_draw_o			=> en_draw_row,
 		pixel_pos_o			=> row
 	);
-
 
 end Behavioral;

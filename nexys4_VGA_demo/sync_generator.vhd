@@ -1,17 +1,15 @@
-library	IEEE;
-use		IEEE.STD_LOGIC_1164		.all;
-use		IEEE.STD_LOGIC_ARITH	.all;
-use		IEEE.STD_LOGIC_UNSIGNED	.all;
-use		IEEE.Numeric_STD		.all;
+library ieee;
+use     ieee.std_logic_1164.all;
+use     ieee.numeric_std.all;
 
 
 
 entity sync_generator is
 	generic
 	(
-		-- this values depend on the input clq frequency and
-		-- scan frequency. The following are HSYNC ones
-		-- for the 25 MHz clk and 60 Hz scan frequency
+		-- these values depend on the input clock and scan frequencies
+		-- The following defaults are HSYNC ones
+		-- for a 25 MHz pixel clock and 60 Hz scan frequency
 
 		-- how many pixel clock cycles are spent on the display surface
 		t_display			: integer := 640;
@@ -21,7 +19,7 @@ entity sync_generator is
 		t_bp				: integer := 16;
 		-- how many pixel clock cycles are needed for the magnetic field to lapse
 		t_pw				: integer := 64;
-		
+
 		counter_width		: integer := 10
 	);
 	port
@@ -29,10 +27,10 @@ entity sync_generator is
 		clock_i				: in	std_logic; -- main clock
 		reset_i				: in	std_logic; -- main reset
 		enable_i			: in	std_logic; -- enable -- pixel clock/row clock
-		
+
 		sync_o				: out	std_logic; -- output of HSYNC
 		sig_cycle_o			: out	std_logic; -- row clock -- enable for vsync
-		
+
 		en_draw_o			: out	std_logic; -- enable drawing (on display surface)
 		pixel_pos_o			: out	std_logic_vector(counter_width - 1 downto 0)
 	);
@@ -111,7 +109,7 @@ begin
 		eq_o				=> sig_display_on
 	);
 
-	
+
 	process (sig_display_on, sig_display_off, draw_on)
 	begin
 		if sig_display_on = '1' then
@@ -143,8 +141,8 @@ begin
 		k_i					=> sig_sync_off,
 		q_o					=> sync_on
 	);
-	
-	
+
+
 	Inst_flip_flop_jk_draw: entity work.flip_flop_jk
 	PORT MAP
 	(

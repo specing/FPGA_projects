@@ -1,19 +1,19 @@
-library	IEEE;
-use		IEEE.STD_LOGIC_1164		.all;
-use		IEEE.STD_LOGIC_UNSIGNED	.all;
-use		IEEE.Numeric_STD		.all;
+library ieee;
+use     ieee.std_logic_1164.all;
+use     ieee.std_logic_unsigned.all;
+use     ieee.numeric_std.all;
 
 
 
 entity nexys4_VGA_demo is
-	Generic
+	generic
 	(
 		row_width			: integer := 10;
 		column_width		: integer := 10;
 
 		num_of_buttons		: integer := 4
 	);
-	Port
+	port
 	(
 		clock_i				: in	std_logic;
 		reset_low_i			: in	std_logic;
@@ -31,10 +31,7 @@ entity nexys4_VGA_demo is
 		btnU_i				: in	std_logic;
 		btnD_i				: in	std_logic;
 
-
-		led_o				: out	std_logic_vector(15 downto 0);
-		anode_o				: out	std_logic_vector(7 downto 0);
-		cathode_o			: out	std_logic_vector(6 downto 0)
+		led_o				: out	std_logic_vector(15 downto 0)
 	);
 end nexys4_VGA_demo;
 
@@ -50,8 +47,6 @@ architecture Behavioral of nexys4_VGA_demo is
 	signal reset_i			: std_logic;
 
 	-- vga controller related signals
-	signal counter_prescale : std_logic_vector(1 downto 0);
-
 	signal pixel_clock		: std_logic;
 --	signal hsync			: std_logic;
 --	signal vsync			: std_logic;
@@ -59,7 +54,7 @@ architecture Behavioral of nexys4_VGA_demo is
 	-- pixel drawing related signals
 	signal row				: std_logic_vector(row_width - 1 downto 0);
 	signal col				: std_logic_vector(column_width - 1 downto 0);
-	
+
 --	signal vga_red			: std_logic_vector(3 downto 0);
 --	signal vga_green		: std_logic_vector(3 downto 0);
 --	signal vga_blue			: std_logic_vector(3 downto 0);
@@ -79,7 +74,7 @@ architecture Behavioral of nexys4_VGA_demo is
 	signal line_right		: std_logic_vector(column_width -1 downto 0);
 	signal line_top			: std_logic_vector(row_width -1 downto 0);
 	signal line_bottom		: std_logic_vector(row_width -1 downto 0);
-	
+
 	signal led				: std_logic_vector(15 downto 0);
 	signal pixel_column		: std_logic_vector(39 downto 0);
 
@@ -93,24 +88,27 @@ begin
 	-- prescale the main clock to obtain the "pixel clock"
 	-- /4 for nexys 4
 	Inst_counter_pixelclockprescale: entity work.counter_until
-	GENERIC MAP (width => 2) PORT MAP
+	generic map               (width => 2)
+	port map
 	(
-		clock_i				=> clock_i,
-		reset_i				=> reset_i,
-		count_enable_i		=> '1',
-		reset_when_i		=> "11",
-		count_o				=> counter_prescale,
-		overflow_o			=> pixel_clock
+		clock_i               => clock_i,
+		reset_i               => reset_i,
+		enable_i              => '1',
+		reset_when_i          => "11",
+		reset_value_i         => "00",
+		count_o               => open,
+		count_at_top_o        => open,
+		overflow_o            => pixel_clock
 	);
 
-	
+
 	Inst_VGA_controller:	entity work.VGA_controller
-	GENERIC MAP
+	generic map
 	(
 		row_width			=> 10,
 		column_width		=> 10
 	)
-	PORT MAP
+	port map
 	(
 		clock_i				=> clock_i,
 		reset_i				=> reset_i,
@@ -149,16 +147,17 @@ begin
 	begin
 
 		-- sync & rising edge detectors on input buttons
-		Inst_button_input:	entity work.button_input
-		generic map			( num_of_buttons => 4 )
+		Inst_button_input:entity work.button_input
+		generic map       ( num_of_buttons => 4 )
 		port map
 		(
-			clock_i			=> clock_i,
-			reset_i			=> reset_i,
-			buttons_i		=> btnL_i & btnR_i & btnU_i & btnD_i,
-			buttons_pulse_o	=> buttons_pulse
+			clock_i       => clock_i,
+			reset_i       => reset_i,
+			buttons_i     => btnL_i & btnR_i & btnU_i & btnD_i,
+			buttons_ack_i => (others => '1'),
+			buttons_o     => buttons_pulse
 		);
-			
+
 		btnL	<= buttons_pulse(0);
 		btnR	<= buttons_pulse(1);
 		btnU	<= buttons_pulse(2);
@@ -167,12 +166,11 @@ begin
 
 	-- 4 registers, each for the corresponding line
 	Inst_GR_line_lelft:	entity work.generic_register
-	GENERIC MAP
+	generic map
 	(
-		width			=> column_width,
-		reset_value		=> std_logic_vector(to_unsigned(100, column_width))
+		reset_value		=> 100
 	)
-	PORT MAP
+	port map
 	(
 		clock_i			=> clock_i,
 		reset_i			=> reset_i,
@@ -182,12 +180,11 @@ begin
 	);
 
 	Inst_GR_line_right:	entity work.generic_register
-	GENERIC MAP
+	generic map
 	(
-		width			=> column_width,
-		reset_value		=> std_logic_vector(to_unsigned(539, column_width))
+		reset_value		=> 539
 	)
-	PORT MAP
+	port map
 	(
 		clock_i			=> clock_i,
 		reset_i			=> reset_i,
@@ -197,12 +194,11 @@ begin
 	);
 
 	Inst_GR_line_top:	entity work.generic_register
-	GENERIC MAP
+	generic map
 	(
-		width			=> row_width,
-		reset_value		=> std_logic_vector(to_unsigned(100, row_width))
+		reset_value		=> 100
 	)
-	PORT MAP
+	port map
 	(
 		clock_i			=> clock_i,
 		reset_i			=> reset_i,
@@ -212,12 +208,11 @@ begin
 	);
 
 	Inst_GR_line_bottom:entity work.generic_register
-	GENERIC MAP
+	generic map
 	(
-		width			=> row_width,
-		reset_value		=> std_logic_vector(to_unsigned(379, row_width))
+		reset_value		=> 379
 	)
-	PORT MAP
+	port map
 	(
 		clock_i			=> clock_i,
 		reset_i			=> reset_i,
@@ -257,9 +252,9 @@ begin
 		end if;
 	end process;
 
-	
+
 	Inst_RAM:				entity work.RAM32x40
-	PORT MAP
+	port map
 	(
 		clock_i 			=> clock_i,
 
@@ -273,25 +268,21 @@ begin
 
 	-- dim LEDs
 
-	process(clock_i)
+	process (clock_i)
 	begin
-		if clock_i'event and clock_i = '1' then
+		if rising_edge (clock_i) then
 			pwm_count <= not pwm_count;
 		end if;
 	end process;
 
 	with pwm_count select led_o <=
 		led				when '0',
-		(others => '0'	when others;
+		(others => '0') when others;
 
 	-- assign debug signals
-
-	anode_o					<= (others => '1');
-	cathode_o				<= (others => '0');
-
-
 	Inst_counter_screencount: entity work.counter
-	GENERIC MAP (width => 16) PORT MAP
+	generic map (width => 16)
+	port map
 	(
 		clock_i				=> clock_i,
 		reset_i				=> reset_i,
@@ -299,5 +290,4 @@ begin
 		count_o				=> led
 	);
 
-	
 end Behavioral;
