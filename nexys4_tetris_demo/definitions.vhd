@@ -50,7 +50,7 @@ package definitions is
 	constant TETRIMINO_SHAPE_SQUARE     : tetrimino_shape_type := "111";
 
 	procedure get_colour (
-		sshape: tetrimino_shape_type;
+		shape: tetrimino_shape_type;
 		signal red, green, blue : out std_logic_vector (3 downto 0)
 	);
 
