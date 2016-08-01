@@ -66,11 +66,6 @@ package definitions is
 
 	end package VGA;
 
-	-- Compatibility aliases, to be removed eventually
-	alias vga_red_width   is VGA.colours.red.width;
-	alias vga_green_width is VGA.colours.green.width;
-	alias vga_blue_width  is VGA.colours.blue.width;
-
 
 
 	constant score_count_width			: integer := 32;
