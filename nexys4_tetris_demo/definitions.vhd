@@ -11,10 +11,67 @@ package definitions is
 	-- computers minimum vector width needed to store the given value
 	function compute_width (max : integer) return integer;
 
+	-- Tetris configuration
+	package config is
+		-- VGA display
+		constant red_width   : integer := 4;
+		constant green_width : integer := 4;
+		constant blue_width  : integer := 4;
+	end package config;
 
-	constant vga_red_width				: integer := 4;
-	constant vga_green_width			: integer := 4;
-	constant vga_blue_width				: integer := 4;
+
+	-- SCREEN
+	package VGA is
+		package colours is
+			-- One package for each colour channel
+			package red is
+				alias width is config.red_width;
+				subtype object is std_logic_vector (width - 1 downto 0);
+			end package red;
+
+			package green is
+				alias width is config.green_width;
+				subtype object is std_logic_vector (width - 1 downto 0);
+			end package green;
+
+			package blue is
+				alias width is config.blue_width;
+				subtype object is std_logic_vector (width - 1 downto 0);
+			end package blue;
+			-- finaly the record combining all the colour channels
+			type object is record
+				red   : red.object;
+				green : green.object;
+				blue  : blue.object;
+			end record;
+		end package colours;
+
+
+		package sync is
+			type object is record
+				h : std_logic;
+				v : std_logic;
+			end record;
+		end package sync;
+
+
+		package display is
+			type object is record
+				sync    : sync.object;
+				-- TODO:c->colours proper alias?
+--				colours : colours.object;
+				c       : colours.object;
+			end record;
+		end package display;
+
+	end package VGA;
+
+	-- Compatibility aliases, to be removed eventually
+	alias vga_red_width   is VGA.colours.red.width;
+	alias vga_green_width is VGA.colours.green.width;
+	alias vga_blue_width  is VGA.colours.blue.width;
+
+
 
 	constant score_count_width			: integer := 32;
 	subtype score_count_type			is std_logic_vector(score_count_width - 1 downto 0);

@@ -22,9 +22,9 @@ entity nexys4_tetris_demo is
 
 		hsync_o				: out	std_logic;
 		vsync_o				: out	std_logic;
-		vga_red_o			: out	std_logic_vector(vga_red_width   - 1 downto 0);
-		vga_green_o			: out	std_logic_vector(vga_green_width - 1 downto 0);
-		vga_blue_o			: out	std_logic_vector(vga_blue_width  - 1 downto 0);
+		vga_red_o			: out	VGA.colours.red.object;
+		vga_green_o			: out	VGA.colours.green.object;
+		vga_blue_o			: out	VGA.colours.blue.object;
 
 		btnL_i				: in	std_logic;
 		btnR_i				: in	std_logic;
@@ -45,7 +45,15 @@ architecture Behavioral of nexys4_tetris_demo is
 	signal tetrimino_operation_ack	: std_logic;
 	-- vga signals
 	signal vga_pixel_clock			: std_logic;
+	signal display                  : VGA.display.object;
 begin
+	-- assign output signals
+	hsync_o     <= display.sync.h;
+	vsync_o     <= display.sync.v;
+	vga_red_o   <= display.c.red;
+	vga_green_o <= display.c.green;
+	vga_blue_o  <= display.c.blue;
+
 	-- board reset is active low
 	reset_i					<= not reset_low_i;
 	-------------------------------------------------------
@@ -182,11 +190,7 @@ begin
 		reset_i					=> reset_i,
 
 		vga_pixel_clock_i		=> vga_pixel_clock,
-		hsync_o					=> hsync_o,
-		vsync_o					=> vsync_o,
-		vga_red_o				=> vga_red_o,
-		vga_green_o				=> vga_green_o,
-		vga_blue_o				=> vga_blue_o,
+		display                 => display,
 
 		active_operation_i		=> tetrimino_operation,
 		active_operation_ack_o	=> tetrimino_operation_ack,

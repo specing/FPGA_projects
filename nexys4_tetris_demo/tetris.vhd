@@ -19,11 +19,7 @@ entity tetris is
 		reset_i					: in	std_logic;
 
 		vga_pixel_clock_i		: in	std_logic;
-		hsync_o					: out	std_logic;
-		vsync_o					: out	std_logic;
-		vga_red_o				: out	std_logic_vector (vga_red_width   - 1 downto 0);
-		vga_green_o				: out	std_logic_vector (vga_green_width - 1 downto 0);
-		vga_blue_o				: out	std_logic_vector (vga_blue_width  - 1 downto 0);
+		display                 : out   VGA.display.object;
 
 		active_operation_i		: in	active_tetrimino_operations;
 		active_operation_ack_o	: out	std_logic;
@@ -215,8 +211,8 @@ begin
 		end if;
 	end process;
 
-	hsync_o							<= stage4_vga_hsync;
-	vsync_o							<= stage4_vga_vsync;
+	display.sync.h <= stage4_vga_hsync;
+	display.sync.v <= stage4_vga_vsync;
 
 	-- column must be from 0 to 16 * 16 - 1 =  0 .. 256 - 1 = 0 .. 255
 	-- row must be from 0 to 30 * 16 - 1 = 0 .. 480 - 1 = 0 .. 479
@@ -237,9 +233,9 @@ begin
 	begin
 		-- check if we are on display surface
 		if stage4_vga_enable_draw = '0' then
-			vga_red_o				<= "0000";
-			vga_green_o				<= "0000";
-			vga_blue_o				<= "0000";
+			display.c.red   <= "0000";
+			display.c.green <= "0000";
+			display.c.blue  <= "0000";
 		-- check if we have to draw static lines
 		elsif stage4_vga_column = std_logic_vector(to_unsigned(256, stage4_vga_column'length)) -- right of tetris
 		or stage4_vga_column = std_logic_vector(to_unsigned(0,   stage4_vga_column'length))
@@ -247,19 +243,19 @@ begin
 		or stage4_vga_row    = std_logic_vector(to_unsigned(0,   stage4_vga_row'length))
 		or stage4_vga_row    = std_logic_vector(to_unsigned(479, stage4_vga_row'length))
 		then
-			vga_red_o				<= "1000";
-			vga_green_o				<= "0000";
-			vga_blue_o				<= "0100";
+			display.c.red   <= "1000";
+			display.c.green <= "0000";
+			display.c.blue  <= "0100";
 		-- check if we are on the tetris block surface
 		elsif on_tetris_surface = '1' then
-			vga_red_o				<= stage4_block_red;
-			vga_green_o				<= stage4_block_green;
-			vga_blue_o				<= stage4_block_blue;
+			display.c.red   <= stage4_block_red;
+			display.c.green <= stage4_block_green;
+			display.c.blue  <= stage4_block_blue;
 		-- else don't draw anything.
 		else
-			vga_red_o				<= "0000";
-			vga_green_o				<= "0000";
-			vga_blue_o				<= "0000";
+			display.c.red   <= "0000";
+			display.c.green <= "0000";
+			display.c.blue  <= "0000";
 		end if;
 	end process;
 
