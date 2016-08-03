@@ -31,13 +31,13 @@ end tetris_block;
 
 architecture Behavioral of tetris_block is
 
-	constant ram_width						: integer := row_width + column_width;
-	constant ram_size						: integer := 2 ** (ram_width);
-
+	constant ram_width : integer := tetris.row.width + tetris.column.width;
+	constant ram_size  : integer := 2 ** (ram_width);
 	-------------------------------------------------------
 	----------------- Tetris Active Data ------------------
 	-------------------------------------------------------
-	-- 30x16x(tetrimino_shape_type size) RAM for storing block descriptors
+	-- number_of_rows*number_of_columns for storing block descriptors
+	-- of type tetrimino_shape_type + wasted space (if the sizes are not a power of two).
 	type tetrimino_block_storage_type is array (0 to ram_size - 1) of tetrimino_shape_type;
 	signal RAM : tetrimino_block_storage_type := (others => TETRIMINO_SHAPE_NONE);
 

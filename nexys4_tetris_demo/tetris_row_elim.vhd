@@ -65,15 +65,15 @@ architecture Behavioral of tetris_row_elim is
 	signal state, next_state			: fsm_states := state_start;
 
 	signal row_count_enable				: std_logic;
-	signal row_count					: std_logic_vector (row_width - 1 downto 0);
-	signal row_count_old				: std_logic_vector (row_width - 1 downto 0);
+	signal row_count                    : tetris.row.object;
+	signal row_count_old                : tetris.row.object;
 	signal row_count_at_top				: std_logic;
 
 	signal column_count_enable			: std_logic;
-	signal column_count					: std_logic_vector (column_width - 1 downto 0);
+	signal column_count                 : tetris.column.object;
 	signal column_count_at_top			: std_logic;
 
-	type ram_row_elim_type is array (0 to (2 ** row_width) - 1) of std_logic_vector (0 to row_elim_width - 1);
+	type ram_row_elim_type is array (0 to (2 ** tetris.row.width) - 1) of std_logic_vector (0 to row_elim_width - 1);
 	signal RAM_ROW_ELIM					: ram_row_elim_type := (others => (others => '0'));
 
 	type row_elim_mode_enum is
@@ -85,11 +85,11 @@ architecture Behavioral of tetris_row_elim is
 	);
 	signal row_elim_mode				: row_elim_mode_enum;
 
-	signal row_elim_read_address		: std_logic_vector (row_width - 1 downto 0);
+	signal row_elim_read_address        : tetris.row.object;
 	signal row_elim_read_data			: std_logic_vector (4 downto 0);
 
 	signal row_elim_write_enable		: std_logic;
-	signal row_elim_write_address		: std_logic_vector (row_width - 1 downto 0);
+	signal row_elim_write_address       : tetris.row.object;
 	signal row_elim_write_data			: std_logic_vector (4 downto 0);
 
 begin
@@ -147,7 +147,7 @@ begin
 	Inst_row_counter:		entity work.counter_until
 	generic map
 	(
-		width				=> row_width,
+		width               => tetris.row.width,
 		step				=> '0' -- downcounter
 	)
 	port map
@@ -155,8 +155,8 @@ begin
 		clock_i				=> clock_i,
 		reset_i				=> reset_i,
 		enable_i			=> row_count_enable,
-		reset_when_i		=> block_storage_row_type (to_unsigned (0, row_width)),
-		reset_value_i		=> block_storage_row_type (to_unsigned (number_of_rows - 1, row_width)),
+		reset_when_i        => tetris.row.object (to_unsigned (0, tetris.row.width)),
+		reset_value_i       => tetris.row.object (to_unsigned (tetris.row.max, tetris.row.width)),
 		count_o				=> row_count,
 		count_at_top_o		=> row_count_at_top,
 		overflow_o			=> open
@@ -172,15 +172,15 @@ begin
 		data_o				=> row_count_old
 	);
 
-	Inst_column_counter:	entity work.counter_until
-	generic map				(width => column_width)
+	Inst_column_counter:    entity work.counter_until
+	generic map             (width => tetris.column.width)
 	port map
 	(
 		clock_i				=> clock_i,
 		reset_i				=> reset_i,
 		enable_i			=> column_count_enable,
-		reset_when_i		=> block_storage_column_type (to_unsigned (number_of_columns - 1, column_width)),
-		reset_value_i		=> block_storage_column_type (to_unsigned (0, column_width)),
+		reset_when_i        => tetris.column.object (to_unsigned (tetris.column.max, tetris.column.width)),
+		reset_value_i       => tetris.column.object (to_unsigned (0, tetris.column.width)),
 		count_o				=> column_count,
 		count_at_top_o		=> column_count_at_top,
 		overflow_o			=> open

@@ -42,23 +42,19 @@ architecture Behavioral of tetris_active_element is
 	constant extended_column_width : integer := 5;
 	subtype extended_column_type is std_logic_vector (extended_column_width - 1 downto 0);
 
-	constant row0                        : block_storage_row_type
-	  := block_storage_row_type(to_unsigned(0, row_width));
-	constant row1                        : block_storage_row_type
-	  := block_storage_row_type(to_unsigned(1, row_width));
-	constant rowNm1                      : block_storage_row_type
-	  := block_storage_row_type(to_unsigned(number_of_rows - 1, row_width));
-	constant rowN                        : block_storage_row_type
-	  := block_storage_row_type(to_unsigned(number_of_rows, row_width));
+	constant row0   : tetris.row.object := tetris.row.object (to_unsigned(0, tetris.row.width));
+	constant row1   : tetris.row.object := tetris.row.object (to_unsigned(1, tetris.row.width));
+	constant rowNm1 : tetris.row.object := tetris.row.object (to_unsigned(tetris.row.max, tetris.row.width));
+	constant rowN   : tetris.row.object := tetris.row.object (to_unsigned(tetris.row.max + 1, tetris.row.width));
 
 	constant column0                     : extended_column_type
 	  := extended_column_type(to_unsigned(0, extended_column_width));
 	constant column1                     : extended_column_type
 	  := extended_column_type(to_unsigned(1, extended_column_width));
 	constant columnNm1                   : extended_column_type
-	  := extended_column_type(to_unsigned(number_of_columns - 1, extended_column_width));
+	  := extended_column_type(to_unsigned(tetris.column.max, extended_column_width));
 	constant columnN                     : extended_column_type
-	  := extended_column_type(to_unsigned(number_of_columns, extended_column_width));
+	  := extended_column_type(to_unsigned(tetris.column.max + 1, extended_column_width));
 
 
 	signal corner_row                   : block_storage_row_type;
@@ -183,8 +179,8 @@ begin
 			corner_column_operand <= corner_column;
 			tetrimino_shape_next  <= tetrimino_shape;
 		when TETRIMINO_NEW =>
-			corner_row_operand    <= block_storage_start_row;
-			corner_column_operand <= block_storage_start_column;
+			corner_row_operand    <= tetris.tetrimino_start_row;
+			corner_column_operand <= tetris.tetrimino_start_col;
 
 			case tetrimino_shape is
 			when "000" => tetrimino_shape_next <= "010";
