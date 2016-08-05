@@ -7,7 +7,7 @@ use		ieee.numeric_std.all;
 entity generic_register is
 	generic
 	(
-		reset_value		: integer := 0
+		reset_value     : natural := 0
 	);
 	port
 	(
@@ -24,7 +24,7 @@ end generic_register;
 architecture Behavioral of generic_register is
 
 	constant data_on_reset	: std_logic_vector(data_i'length - 1 downto 0)
-							:=std_logic_vector(to_unsigned(reset_value, data_i'length));
+	                        :=std_logic_vector(to_unsigned(reset_value, data_i'length));
 
 	signal data				: std_logic_vector(data_i'length - 1 downto 0)
 							:=data_on_reset;

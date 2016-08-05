@@ -237,7 +237,7 @@ begin
 	Inst_7seg:        entity work.seven_seg_display
 	generic map
 	(
-		f_clock       => 100_000_000.0,
+		f_clock       => 100_000_000,
 		num_of_digits => 8,
 		dim_top       => 3,
 		-- bit values for segment on

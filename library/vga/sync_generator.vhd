@@ -12,15 +12,17 @@ entity sync_generator is
 		-- for a 25 MHz pixel clock and 60 Hz scan frequency
 
 		-- how many pixel clock cycles are spent on the display surface
-		t_display			: integer := 640;
+		t_display			: positive := 640;
 		-- how many pixel clock cycles we wait before dropping SYNC current
-		t_fp				: integer := 16;
+		t_fp				: positive := 16;
 		-- how many pixel clock cycles we wait before starting drawing
-		t_bp				: integer := 16;
+		t_bp				: positive := 16;
 		-- how many pixel clock cycles are needed for the magnetic field to lapse
-		t_pw				: integer := 64;
+		t_pw				: positive := 64;
 
-		counter_width		: integer := 10
+		-- TODO(1): compute this on the fly (and possibly several of the above as well)
+		-- TODO(2): can it ever be natural (i.e. includes 0)?
+		counter_width		: positive := 10
 	);
 	port
 	(

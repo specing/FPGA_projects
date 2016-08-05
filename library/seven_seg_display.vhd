@@ -8,9 +8,9 @@ use		IEEE.numeric_std.all;
 entity seven_seg_display is
 	generic
 	(
-		f_clock			: real		:= 100_000_000.0;
-		num_of_digits	: integer	:= 8;
-		dim_top			: integer	:= 3;
+		f_clock         : positive; -- := 100_000_000;
+		num_of_digits   : positive; -- := 8;
+		dim_top         : natural; --  := 3;
 
 		-- bit values for segment on
 		-- Nexys 4's anodes are active low (have transistors for amplification)
@@ -37,16 +37,16 @@ architecture Behavioral of seven_seg_display is
 	constant anode_off			: std_logic := not anode_on;
 	constant cathode_off		: std_logic := not cathode_on;
 
-	constant prescaler_divisor	: real		:= f_clock / 1000.0; -- 1 milisekunda
-	constant prescaler_top		: integer	:= integer (FLOOR(prescaler_divisor)) - 1;
-	constant prescaler_width	: integer	:= integer (CEIL(LOG2( real(prescaler_top) ) ) );
+	constant prescaler_divisor  : positive := f_clock / 1000; -- 1 millisecond
+	constant prescaler_top      : natural  := integer (prescaler_divisor) - 1;
+	constant prescaler_width    : natural  := integer (CEIL(LOG2( real(prescaler_top) ) ) );
 	signal   prescaler_overflow	: std_logic;
 
 	signal   bcd				: std_logic_vector(3 downto 0);
 	signal   cathodes			: std_logic_vector(6 downto 0);
 	signal   anodes				: std_logic_vector(num_of_digits - 1 downto 0) := (0 => anode_on, others => anode_off);
 
-	constant dim_width			: integer	:= integer (CEIL(LOG2( real(dim_top + 1) ) ) );
+	constant dim_width          : natural := natural (CEIL(LOG2( real(dim_top + 1) ) ) );
 	signal   dim_overflow		: std_logic;
 
 begin

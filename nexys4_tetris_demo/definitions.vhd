@@ -8,8 +8,8 @@ use     ieee.math_real          .all;
 
 package definitions is
 
-	-- computers minimum vector width needed to store the given value
-	function compute_width (max : integer) return integer;
+	-- computes minimum vector width needed to store the given value
+	function compute_width (max : natural) return natural;
 
 	-- Tetris configuration
 	package config is
@@ -18,11 +18,11 @@ package definitions is
 		constant green_width : integer := 4;
 		constant blue_width  : integer := 4;
 		-- Tetris playing surface size
-		constant number_of_rows    : integer := 30;
-		constant number_of_columns : integer := 16;
+		constant number_of_rows    : positive := 30;
+		constant number_of_columns : positive := 16;
 		-- Tetrimino start position on the playing surface
-		constant tetrimino_start_row    : integer := 0;
-		constant tetrimino_start_column : integer := 6;
+		constant tetrimino_start_row    : natural := 0;
+		constant tetrimino_start_column : natural := 6;
 
 	end package config;
 
@@ -92,14 +92,14 @@ package definitions is
 	package tetris is
 		-- Seperate packages for row/column
 		package row is
-			constant max   : integer := config.number_of_rows - 1;
-			constant width : integer := compute_width (max);
+			constant max   : positive := config.number_of_rows - 1;
+			constant width : positive := compute_width (max);
 			-- Storage object
 			subtype object is std_logic_vector (width - 1 downto 0);
 		end package row;
 		package column is
-			constant max   : integer := config.number_of_columns - 1;
-			constant width : integer := compute_width (max);
+			constant max   : positive := config.number_of_columns - 1;
+			constant width : positive := compute_width (max);
 			-- Storage object
 			subtype object is std_logic_vector (width - 1 downto 0);
 		end package column;
@@ -211,9 +211,9 @@ end package definitions;
 
 package body definitions is
 
-	function compute_width (max : integer) return integer is
+	function compute_width (max : natural) return natural is
 	begin
-		return integer (CEIL (LOG2 (real (max) ) ) );
+		return natural (CEIL (LOG2 (real (max) ) ) );
 	end function compute_width;
 
 
