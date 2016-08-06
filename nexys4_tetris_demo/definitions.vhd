@@ -2,14 +2,13 @@ library ieee;
 use     ieee.std_logic_1164     .all;
 use     ieee.std_logic_unsigned .all;
 use     ieee.numeric_std        .all;
-use     ieee.math_real          .all;
+
+library flib;
+use flib.util;
 
 
 
 package definitions is
-
-	-- computes minimum vector width needed to store the given value
-	function compute_width (max : natural) return natural;
 
 	-- Tetris configuration
 	package config is
@@ -93,13 +92,13 @@ package definitions is
 		-- Seperate packages for row/column
 		package row is
 			constant max   : positive := config.number_of_rows - 1;
-			constant width : positive := compute_width (max);
+			constant width : positive := util.compute_width (max);
 			-- Storage object
 			subtype object is std_logic_vector (width - 1 downto 0);
 		end package row;
 		package column is
 			constant max   : positive := config.number_of_columns - 1;
-			constant width : positive := compute_width (max);
+			constant width : positive := util.compute_width (max);
 			-- Storage object
 			subtype object is std_logic_vector (width - 1 downto 0);
 		end package column;
@@ -210,12 +209,6 @@ end package definitions;
 
 
 package body definitions is
-
-	function compute_width (max : natural) return natural is
-	begin
-		return natural (CEIL (LOG2 (real (max) ) ) );
-	end function compute_width;
-
 
 	procedure get_colour (
 		shape: tetrimino_shape_type;
