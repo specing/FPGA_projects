@@ -5,6 +5,8 @@ use     ieee.numeric_std        .all;
 
 use     work.definitions        .all;
 
+library flib;
+
 
 
 entity tetris_row_elim is
@@ -174,7 +176,7 @@ begin
 		overflow_o			=> open
 	);
 
-	Inst_reg_old:			entity work.generic_register
+	Inst_reg_old: entity flib.generic_register
 	port map
 	(
 		clock_i				=> clock_i,
