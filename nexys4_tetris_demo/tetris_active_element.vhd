@@ -39,22 +39,24 @@ end tetris_active_element;
 
 architecture Behavioral of tetris_active_element is
 
+	alias ts is tetris.storage;
+
 	constant extended_column_width : integer := 5;
 	subtype extended_column_type is std_logic_vector (extended_column_width - 1 downto 0);
 
-	constant row0   : tetris.row.object := tetris.row.object (to_unsigned(0, tetris.row.width));
-	constant row1   : tetris.row.object := tetris.row.object (to_unsigned(1, tetris.row.width));
-	constant rowNm1 : tetris.row.object := tetris.row.object (to_unsigned(tetris.row.max, tetris.row.width));
-	constant rowN   : tetris.row.object := tetris.row.object (to_unsigned(tetris.row.max + 1, tetris.row.width));
+	constant row0   : ts.row.object := ts.row.object (to_unsigned(0, ts.row.width));
+	constant row1   : ts.row.object := ts.row.object (to_unsigned(1, ts.row.width));
+	constant rowNm1 : ts.row.object := ts.row.object (to_unsigned(ts.row.max,     ts.row.width));
+	constant rowN   : ts.row.object := ts.row.object (to_unsigned(ts.row.max + 1, ts.row.width));
 
 	constant column0                     : extended_column_type
 	  := extended_column_type(to_unsigned(0, extended_column_width));
 	constant column1                     : extended_column_type
 	  := extended_column_type(to_unsigned(1, extended_column_width));
 	constant columnNm1                   : extended_column_type
-	  := extended_column_type(to_unsigned(tetris.column.max, extended_column_width));
+	  := extended_column_type(to_unsigned(ts.column.max, extended_column_width));
 	constant columnN                     : extended_column_type
-	  := extended_column_type(to_unsigned(tetris.column.max + 1, extended_column_width));
+	  := extended_column_type(to_unsigned(ts.column.max + 1, extended_column_width));
 
 
 	signal corner_row                   : block_storage_row_type;
@@ -169,7 +171,18 @@ architecture Behavioral of tetris_active_element is
 	signal tetrimino_rotation_next      : tetrimino_rotation_type;
 	signal tetrimino_rotation_new       : tetrimino_rotation_type;
 
+	-- TODO compat
+	signal block_read_address_o  : tetris.storage.address.object;
+	signal block_write_address_o : tetris.storage.address.object;
+	signal active_address_i      : tetris.storage.address.object;
 begin
+	-- TODO compat
+	active_address_i.row <= active_row_i;
+	active_address_i.col <= active_column_i;
+	block_read_row_o     <= block_read_address_o.row;
+	block_read_column_o  <= block_read_address_o.col;
+	block_write_row_o    <= block_write_address_o.row;
+	block_write_column_o <= block_write_address_o.col;
 
 	process ( tetrimino_select, corner_row, corner_column, tetrimino_shape )
 	begin
@@ -599,14 +612,15 @@ begin
 	-------------------------------------------------------
 
 	process (
-		active_row_i,    block0_row,    block1_row,    block2_row,    block3_row,
-		active_column_i, block0_column, block1_column, block2_column, block3_column,
+		active_address_i,
+		block0_row,    block1_row,    block2_row,    block3_row,
+		block0_column, block1_column, block2_column, block3_column,
 		tetrimino_shape
 	) begin
-		if (active_row_i = block0_row and active_column_i = block0_column)
-		or (active_row_i = block1_row and active_column_i = block1_column)
-		or (active_row_i = block2_row and active_column_i = block2_column)
-		or (active_row_i = block3_row and active_column_i = block3_column)
+		if (active_address_i.row = block0_row and active_address_i.col = block0_column)
+		or (active_address_i.row = block1_row and active_address_i.col = block1_column)
+		or (active_address_i.row = block2_row and active_address_i.col = block2_column)
+		or (active_address_i.row = block3_row and active_address_i.col = block3_column)
 		then
 			active_data_o				<= tetrimino_shape;
 		else
@@ -614,25 +628,25 @@ begin
 		end if;
 	end process;
 
-	with block_select		select block_read_row_o <=
+	with block_select select block_read_address_o.row <=
 		block0_row_new			when BLOCK0,
 		block1_row_new			when BLOCK1,
 		block2_row_new			when BLOCK2,
 		block3_row_new			when BLOCK3;
 
-	with block_select                  select block_read_column_o <=
+	with block_select select block_read_address_o.col <=
 		block0_column_new(3 downto 0)    when BLOCK0,
 		block1_column_new(3 downto 0)    when BLOCK1,
 		block2_column_new(3 downto 0)    when BLOCK2,
 		block3_column_new(3 downto 0)    when BLOCK3;
 
-	with block_select		select block_write_row_o <=
+	with block_select select block_write_address_o.row <=
 		block0_row				when BLOCK0,
 		block1_row				when BLOCK1,
 		block2_row				when BLOCK2,
 		block3_row				when BLOCK3;
 
-	with block_select		select block_write_column_o	<=
+	with block_select select block_write_address_o.col <=
 		block0_column			when BLOCK0,
 		block1_column			when BLOCK1,
 		block2_column			when BLOCK2,

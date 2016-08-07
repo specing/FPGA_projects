@@ -89,39 +89,42 @@ package definitions is
 	);
 
 	package tetris is
-		-- Seperate packages for row/column
-		package row is
-			constant max   : positive := config.number_of_rows - 1;
-			constant width : positive := util.compute_width (max);
-			-- Storage object
-			subtype object is std_logic_vector (width - 1 downto 0);
-		end package row;
-		package column is
-			constant max   : positive := config.number_of_columns - 1;
-			constant width : positive := util.compute_width (max);
-			-- Storage object
-			subtype object is std_logic_vector (width - 1 downto 0);
-		end package column;
-		alias col is column;
+		package storage is
+			-- Seperate packages for row/column
+			package row is
+				constant max   : positive := config.number_of_rows - 1;
+				constant width : positive := util.compute_width (max);
+				-- Storage object
+				subtype object is std_logic_vector (width - 1 downto 0);
+			end package row;
+			package column is
+				constant max   : positive := config.number_of_columns - 1;
+				constant width : positive := util.compute_width (max);
+				-- Storage object
+				subtype object is std_logic_vector (width - 1 downto 0);
+			end package column;
+			-- short-hand alias
+			alias col is column;
 
-		package position is
-			type object is record
-				row : row.object;
-				col : column.object;
-			end record;
-		end package position;
+			package address is
+				type object is record
+					row : row.object;
+					col : column.object;
+				end record;
+				constant width : positive := row.width + column.width;
+			end package address;
+		end package storage;
 
 		-- default start positions
-		constant tetrimino_start_row : row.object :=
-		  row.object (to_unsigned (config.tetrimino_start_row, row.width));
-		constant tetrimino_start_col : col.object :=
-		  col.object (to_unsigned (config.tetrimino_start_column, col.width));
-
+		constant tetrimino_start_row : storage.row.object :=
+		  storage.row.object (to_unsigned (config.tetrimino_start_row, storage.row.width));
+		constant tetrimino_start_col : storage.col.object :=
+		  storage.col.object (to_unsigned (config.tetrimino_start_column, storage.col.width));
 	end package tetris;
 
 	-- Compatibility aliases, will be removed shortly
-	alias block_storage_row_type is tetris.row.object;
-	alias block_storage_column_type is tetris.column.object;
+	alias block_storage_row_type    is tetris.storage.row.object;
+	alias block_storage_column_type is tetris.storage.column.object;
 
 	-- it seems Xilinx does not like creating ROMs with enums in them.
 	subtype tetrimino_shape_type        is std_logic_vector (2 downto 0);

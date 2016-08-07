@@ -33,6 +33,8 @@ end tetris_row_elim;
 
 architecture Behavioral of tetris_row_elim is
 
+	alias ts is tetris.storage;
+
 	-- block descriptor
 	constant row_elim_width				: integer := 5;
 
@@ -64,15 +66,17 @@ architecture Behavioral of tetris_row_elim is
 	signal state, next_state			: fsm_states := state_start;
 
 	signal row_count_enable				: std_logic;
-	signal row_count                    : tetris.row.object;
-	signal row_count_old                : tetris.row.object;
+	signal row_count                    : ts.row.object;
+	signal row_count_old                : ts.row.object;
 	signal row_count_at_top				: std_logic;
 
 	signal column_count_enable			: std_logic;
-	signal column_count                 : tetris.column.object;
+	signal column_count                 : ts.column.object;
 	signal column_count_at_top			: std_logic;
 
-	type ram_row_elim_type is array (0 to (2 ** tetris.row.width) - 1) of std_logic_vector (0 to row_elim_width - 1);
+	type ram_row_elim_type is
+	  array (0 to (2 ** ts.row.width) - 1)
+	  of std_logic_vector (0 to row_elim_width - 1);
 	signal RAM_ROW_ELIM					: ram_row_elim_type := (others => (others => '0'));
 
 	type row_elim_mode_enum is
@@ -84,19 +88,28 @@ architecture Behavioral of tetris_row_elim is
 	);
 	signal row_elim_mode				: row_elim_mode_enum;
 
-	signal row_elim_read_address        : tetris.row.object;
+	signal row_elim_read_address        : ts.row.object;
 	signal row_elim_read_data			: std_logic_vector (4 downto 0);
 
 	signal row_elim_write_enable		: std_logic;
-	signal row_elim_write_address       : tetris.row.object;
+	signal row_elim_write_address       : ts.row.object;
 	signal row_elim_write_data			: std_logic_vector (4 downto 0);
 
+	-- TODO compat
+	signal block_read_address_o  : tetris.storage.address.object;
+	signal block_write_address_o : tetris.storage.address.object;
 begin
-	block_write_row_o					<= row_count_old;
-	block_write_column_o				<= column_count;
-	block_read_row_o					<= row_count;
-	block_read_column_o					<= column_count;
+	-- TODO compat
+	block_read_row_o     <= block_read_address_o.row;
+	block_read_column_o  <= block_read_address_o.col;
+	block_write_row_o    <= block_write_address_o.row;
+	block_write_column_o <= block_write_address_o.col;
 
+
+	block_write_address_o.row <= row_count_old;
+	block_write_address_o.col <= column_count;
+	block_read_address_o.row  <= row_count;
+	block_read_address_o.col  <= column_count;
 	-------------------------------------------------------
 	---------- logic for RAM for line elimination ---------
 	-------------------------------------------------------
@@ -146,7 +159,7 @@ begin
 	Inst_row_counter:		entity work.counter_until
 	generic map
 	(
-		width               => tetris.row.width,
+		width               => ts.row.width,
 		step				=> '0' -- downcounter
 	)
 	port map
@@ -154,8 +167,8 @@ begin
 		clock_i				=> clock_i,
 		reset_i				=> reset_i,
 		enable_i			=> row_count_enable,
-		reset_when_i        => tetris.row.object (to_unsigned (0, tetris.row.width)),
-		reset_value_i       => tetris.row.object (to_unsigned (tetris.row.max, tetris.row.width)),
+		reset_when_i        => ts.row.object (to_unsigned (0, ts.row.width)),
+		reset_value_i       => ts.row.object (to_unsigned (ts.row.max, ts.row.width)),
 		count_o				=> row_count,
 		count_at_top_o		=> row_count_at_top,
 		overflow_o			=> open
@@ -172,14 +185,14 @@ begin
 	);
 
 	Inst_column_counter:    entity work.counter_until
-	generic map             (width => tetris.column.width)
+	generic map             (width => ts.column.width)
 	port map
 	(
 		clock_i				=> clock_i,
 		reset_i				=> reset_i,
 		enable_i			=> column_count_enable,
-		reset_when_i        => tetris.column.object (to_unsigned (tetris.column.max, tetris.column.width)),
-		reset_value_i       => tetris.column.object (to_unsigned (0, tetris.column.width)),
+		reset_when_i        => ts.column.object (to_unsigned (ts.column.max, ts.column.width)),
+		reset_value_i       => ts.column.object (to_unsigned (0, ts.column.width)),
 		count_o				=> column_count,
 		count_at_top_o		=> column_count_at_top,
 		overflow_o			=> open
