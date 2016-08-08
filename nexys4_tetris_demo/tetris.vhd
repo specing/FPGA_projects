@@ -36,8 +36,7 @@ architecture Behavioral of tetris is
 	constant line_remove_counter_width	: integer := 5;
 
 	signal vga_sync                     : VGA.sync.object;
-	signal vga_column					: std_logic_vector (vga_column_width - 1 downto 0);
-	signal vga_row						: std_logic_vector (vga_row_width    - 1 downto 0);
+	signal vga_pixel_address            : vga.pixel.address.object;
 	signal vga_enable_draw				: std_logic;
 	signal vga_screen_end				: std_logic;
 	signal vga_off_screen				: std_logic;
@@ -46,8 +45,7 @@ architecture Behavioral of tetris is
 	signal on_tetris_surface			: std_logic;
 
 	signal stage1_vga_sync              : VGA.sync.object;
-	signal stage1_vga_column			: std_logic_vector (vga_column_width - 1 downto 0);
-	signal stage1_vga_row				: std_logic_vector (vga_row_width    - 1 downto 0);
+	signal stage1_vga_pixel_address     : vga.pixel.address.object;
 	signal stage1_vga_enable_draw		: std_logic;
 	signal stage1_vga_off_screen		: std_logic;
 	signal stage1_tetrimino_shape		: tetrimino_shape_type;
@@ -55,8 +53,7 @@ architecture Behavioral of tetris is
 	signal stage1_line_remove_counter	: std_logic_vector (line_remove_counter_width - 1 downto 0);
 
 	signal stage2_vga_sync              : VGA.sync.object;
-	signal stage2_vga_column			: std_logic_vector (vga_column_width - 1 downto 0);
-	signal stage2_vga_row				: std_logic_vector (vga_row_width    - 1 downto 0);
+	signal stage2_vga_pixel_address     : vga.pixel.address.object;
 	signal stage2_vga_enable_draw		: std_logic;
 	signal stage2_tetrimino_shape		: tetrimino_shape_type;
 	signal stage2_row_elim_data_out		: std_logic_vector (4 downto 1);
@@ -64,8 +61,7 @@ architecture Behavioral of tetris is
 	signal stage2_block_colours         : VGA.colours.object;
 
 	signal stage3_vga_sync              : VGA.sync.object;
-	signal stage3_vga_column			: std_logic_vector (vga_column_width - 1 downto 0);
-	signal stage3_vga_row				: std_logic_vector (vga_row_width    - 1 downto 0);
+	signal stage3_vga_pixel_address     : vga.pixel.address.object;
 	signal stage3_vga_enable_draw		: std_logic;
 	signal stage3_tetrimino_shape		: tetrimino_shape_type;
 	signal stage3_row_elim_data_out		: std_logic_vector (4 downto 1);
@@ -74,9 +70,8 @@ architecture Behavioral of tetris is
 	signal stage3_block_final_colours   : VGA.colours.object;
 
 	signal stage4_vga_sync              : VGA.sync.object;
+	signal stage4_vga_pixel_address     : vga.pixel.address.object;
 	signal stage4_block_colours         : VGA.colours.object;
-	signal stage4_vga_column			: std_logic_vector (vga_column_width - 1 downto 0);
-	signal stage4_vga_row				: std_logic_vector (vga_row_width    - 1 downto 0);
 	signal stage4_vga_enable_draw		: std_logic;
 	signal stage4_tetrimino_shape		: tetrimino_shape_type;
 	signal stage4_line_remove_counter	: std_logic_vector (line_remove_counter_width - 1 downto 0);
@@ -99,8 +94,8 @@ begin
 
 		hsync_o             => vga_sync.h,
 		vsync_o             => vga_sync.v,
-		col_o				=> vga_column,
-		row_o				=> vga_row,
+		col_o               => vga_pixel_address.col,
+		row_o               => vga_pixel_address.row,
 		en_draw_o			=> vga_enable_draw,
 
 		screen_end_o		=> vga_screen_end,
@@ -116,8 +111,7 @@ begin
 	begin
 		if rising_edge (clock_i) then
 			stage1_vga_sync         <= vga_sync;
-			stage1_vga_column		<= vga_column;
-			stage1_vga_row			<= vga_row;
+			stage1_vga_pixel_address<= vga_pixel_address;
 			stage1_vga_enable_draw	<= vga_enable_draw;
 			stage1_vga_off_screen	<= vga_off_screen;
 		end if;
@@ -132,8 +126,8 @@ begin
 
 		row_elim_data_o				=> stage1_row_elim_data_out,
 		tetrimino_shape_o			=> stage1_tetrimino_shape,
-		block_render_address_i.row  => stage1_vga_row (8 downto 4),
-		block_render_address_i.col  => stage1_vga_column (7 downto 4),
+		block_render_address_i.row  => stage1_vga_pixel_address.row (8 downto 4),
+		block_render_address_i.col  => stage1_vga_pixel_address.col (7 downto 4),
 
 		screen_finished_render_i	=> stage1_vga_off_screen,
 		active_operation_i			=> active_operation_i,
@@ -147,8 +141,7 @@ begin
 	begin
 		if rising_edge (clock_i) then
 			stage2_vga_sync         <= stage1_vga_sync;
-			stage2_vga_column		<= stage1_vga_column;
-			stage2_vga_row			<= stage1_vga_row;
+			stage2_vga_pixel_address<= stage1_vga_pixel_address;
 			stage2_vga_enable_draw	<= stage1_vga_enable_draw;
 			stage2_tetrimino_shape	<= stage1_tetrimino_shape;
 			stage2_row_elim_data_out<= stage1_row_elim_data_out (4 downto 1);
@@ -163,8 +156,7 @@ begin
 	begin
 		if rising_edge (clock_i) then
 			stage3_vga_sync         <= stage2_vga_sync;
-			stage3_vga_column		<= stage2_vga_column;
-			stage3_vga_row			<= stage2_vga_row;
+			stage3_vga_pixel_address<= stage2_vga_pixel_address;
 			stage3_vga_enable_draw	<= stage2_vga_enable_draw;
 
 			stage3_row_elim_data_out<= stage2_row_elim_data_out (4 downto 1);
@@ -182,8 +174,7 @@ begin
 	begin
 		if rising_edge (clock_i) then
 			stage4_vga_sync         <= stage3_vga_sync;
-			stage4_vga_column		<= stage3_vga_column;
-			stage4_vga_row			<= stage3_vga_row;
+			stage4_vga_pixel_address<= stage3_vga_pixel_address;
 			stage4_vga_enable_draw	<= stage3_vga_enable_draw;
 
 			stage4_block_colours    <= stage3_block_final_colours;
@@ -192,7 +183,7 @@ begin
 
 	-- column must be from 0 to 16 * 16 - 1 =  0 .. 256 - 1 = 0 .. 255
 	-- row must be from 0 to 30 * 16 - 1 = 0 .. 480 - 1 = 0 .. 479
-	with stage4_vga_column(vga_column_width - 1 downto 8) select on_tetris_surface <=
+	with stage4_vga_pixel_address.col(vga_column_width - 1 downto 8) select on_tetris_surface <=
 		'1' when "00",
 		'0' when others;
 
@@ -203,7 +194,7 @@ begin
 	-- main draw multiplexer
 	process
 	(
-		stage4_vga_enable_draw, stage4_vga_column, stage4_vga_row, stage4_block_colours,
+		stage4_vga_enable_draw, stage4_vga_pixel_address, stage4_block_colours,
 		on_tetris_surface
 	)
 	begin
@@ -213,11 +204,11 @@ begin
 			display.c.green <= "0000";
 			display.c.blue  <= "0000";
 		-- check if we have to draw static lines
-		elsif stage4_vga_column = std_logic_vector(to_unsigned(256, stage4_vga_column'length)) -- right of tetris
-		or stage4_vga_column = std_logic_vector(to_unsigned(0,   stage4_vga_column'length))
-		or stage4_vga_column = std_logic_vector(to_unsigned(639, stage4_vga_column'length))
-		or stage4_vga_row    = std_logic_vector(to_unsigned(0,   stage4_vga_row'length))
-		or stage4_vga_row    = std_logic_vector(to_unsigned(479, stage4_vga_row'length))
+		elsif stage4_vga_pixel_address.col = std_logic_vector(to_unsigned(256, stage4_vga_pixel_address.col'length)) -- right of tetris
+		or stage4_vga_pixel_address.col = std_logic_vector(to_unsigned(0,   stage4_vga_pixel_address.col'length))
+		or stage4_vga_pixel_address.col = std_logic_vector(to_unsigned(639, stage4_vga_pixel_address.col'length))
+		or stage4_vga_pixel_address.row = std_logic_vector(to_unsigned(0,   stage4_vga_pixel_address.row'length))
+		or stage4_vga_pixel_address.row = std_logic_vector(to_unsigned(479, stage4_vga_pixel_address.row'length))
 		then
 			display.c.red   <= "1000";
 			display.c.green <= "0000";
