@@ -16,13 +16,16 @@ package definitions is
 		constant red_width   : integer := 4;
 		constant green_width : integer := 4;
 		constant blue_width  : integer := 4;
+		-- Must be enough to hold onscreen pixels + front/back porch + dead time
+		constant vga_row_width    : integer := 10;
+		constant vga_column_width : integer := 10;
+
 		-- Tetris playing surface size
 		constant number_of_rows    : positive := 30;
 		constant number_of_columns : positive := 16;
 		-- Tetrimino start position on the playing surface
 		constant tetrimino_start_row    : natural := 0;
 		constant tetrimino_start_column : natural := 6;
-
 	end package config;
 
 
@@ -70,6 +73,27 @@ package definitions is
 			end record;
 		end package display;
 
+
+		package pixel is
+			package row is
+				alias width is config.vga_row_width;
+				subtype object is std_logic_vector (width - 1 downto 0);
+			end package row;
+
+			package column is
+				alias width is config.vga_column_width;
+				subtype object is std_logic_vector (width - 1 downto 0);
+			end package column;
+			-- short-hand alias
+			alias col is column;
+
+			package address is
+				type object is record
+					row : row.object;
+					col : column.object;
+				end record;
+			end package address;
+		end package pixel;
 	end package VGA;
 
 
