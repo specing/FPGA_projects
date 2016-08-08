@@ -8,11 +8,6 @@ use     work.definitions        .all;
 
 
 entity tetris is
-	generic
-	(
-		vga_row_width		: integer := 10;
-		vga_column_width	: integer := 10
-	);
 	port
 	(
 		clock_i					: in	std_logic;
@@ -83,8 +78,8 @@ begin
 	Inst_VGA_controller:	entity work.VGA_controller
 	GENERIC MAP
 	(
-		row_width			=> vga_row_width,
-		column_width		=> vga_column_width
+		row_width			=> vga.pixel.row.width,
+		column_width		=> vga.pixel.column.width
 	)
 	PORT MAP
 	(
@@ -183,7 +178,7 @@ begin
 
 	-- column must be from 0 to 16 * 16 - 1 =  0 .. 256 - 1 = 0 .. 255
 	-- row must be from 0 to 30 * 16 - 1 = 0 .. 480 - 1 = 0 .. 479
-	with stage4_vga_pixel_address.col(vga_column_width - 1 downto 8) select on_tetris_surface <=
+	with stage4_vga_pixel_address.col(stage4_vga_pixel_address.col'length - 1 downto 8) select on_tetris_surface <=
 		'1' when "00",
 		'0' when others;
 
