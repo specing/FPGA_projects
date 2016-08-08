@@ -45,14 +45,12 @@ architecture Behavioral of tetris is
 	signal stage1_vga_off_screen		: std_logic;
 	signal stage1_tetrimino_shape		: tetrimino_shape_type;
 	signal stage1_row_elim_data_out		: std_logic_vector (4 downto 0);
-	signal stage1_line_remove_counter	: std_logic_vector (line_remove_counter_width - 1 downto 0);
 
 	signal stage2_vga_sync              : VGA.sync.object;
 	signal stage2_vga_pixel_address     : vga.pixel.address.object;
 	signal stage2_vga_enable_draw		: std_logic;
 	signal stage2_tetrimino_shape		: tetrimino_shape_type;
 	signal stage2_row_elim_data_out		: std_logic_vector (4 downto 1);
-	signal stage2_line_remove_counter	: std_logic_vector (line_remove_counter_width - 1 downto 0);
 	signal stage2_block_colours         : VGA.colours.object;
 
 	signal stage3_vga_sync              : VGA.sync.object;
@@ -60,7 +58,6 @@ architecture Behavioral of tetris is
 	signal stage3_vga_enable_draw		: std_logic;
 	signal stage3_tetrimino_shape		: tetrimino_shape_type;
 	signal stage3_row_elim_data_out		: std_logic_vector (4 downto 1);
-	signal stage3_line_remove_counter	: std_logic_vector (line_remove_counter_width - 1 downto 0);
 	signal stage3_block_colours         : VGA.colours.object;
 	signal stage3_block_final_colours   : VGA.colours.object;
 
@@ -69,7 +66,6 @@ architecture Behavioral of tetris is
 	signal stage4_block_colours         : VGA.colours.object;
 	signal stage4_vga_enable_draw		: std_logic;
 	signal stage4_tetrimino_shape		: tetrimino_shape_type;
-	signal stage4_line_remove_counter	: std_logic_vector (line_remove_counter_width - 1 downto 0);
 
 	signal score_count					: score_count_type;
 
