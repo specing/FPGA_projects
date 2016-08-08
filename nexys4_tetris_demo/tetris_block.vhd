@@ -18,8 +18,7 @@ entity tetris_block is
 
 		row_elim_data_o				: out	std_logic_vector(4 downto 0);
 		tetrimino_shape_o			: out	tetrimino_shape_type;
-		block_row_i					: in	block_storage_row_type;
-		block_column_i				: in	block_storage_column_type;
+		block_render_address_i      : in    tetris.storage.address.object;
 
 		screen_finished_render_i	: in	std_logic;
 		active_operation_i			: in	active_tetrimino_operations;
@@ -113,12 +112,7 @@ architecture Behavioral of tetris_block is
 	signal game_start						: std_logic;
 	signal game_over						: std_logic;
 
-	-- TODO compat
-	signal block_render_address_i : ts.address.object;
 begin
-	-- TODO compat
-	block_render_address_i.row <= block_row_i;
-	block_render_address_i.col <= block_column_i;
 
 	Inst_score_counter: entity work.counter
 	generic map         ( width => score_count_width )

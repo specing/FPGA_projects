@@ -132,8 +132,8 @@ begin
 
 		row_elim_data_o				=> stage1_row_elim_data_out,
 		tetrimino_shape_o			=> stage1_tetrimino_shape,
-		block_row_i					=> stage1_vga_row (8 downto 4),
-		block_column_i				=> stage1_vga_column (7 downto 4),
+		block_render_address_i.row  => stage1_vga_row (8 downto 4),
+		block_render_address_i.col  => stage1_vga_column (7 downto 4),
 
 		screen_finished_render_i	=> stage1_vga_off_screen,
 		active_operation_i			=> active_operation_i,
