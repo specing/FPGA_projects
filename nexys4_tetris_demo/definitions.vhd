@@ -53,6 +53,12 @@ package definitions is
 				green : green.object;
 				blue  : blue.object;
 			end record;
+
+			constant all_off : object := (
+			  red   => (others => '0'),
+			  green => (others => '0'),
+			  blue  => (others => '0')
+			);
 		end package colours;
 
 

@@ -195,9 +195,7 @@ begin
 	begin
 		-- check if we are on display surface
 		if stage4_vga_enable_draw = '0' then
-			display.c.red   <= "0000";
-			display.c.green <= "0000";
-			display.c.blue  <= "0000";
+			display.c       <= vga.colours.all_off;
 		-- check if we have to draw static lines
 		elsif stage4_vga_pixel_address.col = std_logic_vector(to_unsigned(256, stage4_vga_pixel_address.col'length)) -- right of tetris
 		or stage4_vga_pixel_address.col = std_logic_vector(to_unsigned(0,   stage4_vga_pixel_address.col'length))
@@ -213,9 +211,7 @@ begin
 			display.c       <= stage4_block_colours;
 		-- else don't draw anything.
 		else
-			display.c.red   <= "0000";
-			display.c.green <= "0000";
-			display.c.blue  <= "0000";
+			display.c       <= vga.colours.all_off;
 		end if;
 	end process;
 
