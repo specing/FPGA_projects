@@ -54,10 +54,10 @@ architecture Behavioral of tetris_block is
 	signal ram_access_mux					: ram_access_mux_enum;
 
 	signal ram_write_enable					: std_logic;
-	signal ram_write_address				: std_logic_vector (ram_width - 1 downto 0);
+	signal ram_write_address                : ts.address.object;
 	signal ram_write_data					: tetrimino_shape_type;
 
-	signal ram_read_address					: std_logic_vector (ram_width - 1 downto 0);
+	signal ram_read_address                 : ts.address.object;
 	signal ram_read_data					: tetrimino_shape_type;
 
 
@@ -83,22 +83,19 @@ architecture Behavioral of tetris_block is
 	constant refresh_count_width			: natural := util.compute_width (refresh_count_top);
 	signal refresh_count_at_top				: std_logic;
 
-	signal row_elim_read_row				: block_storage_row_type;
+	signal row_elim_read_address            : ts.address.object;
 	signal row_elim_read_column				: block_storage_column_type;
 	signal row_elim_write_data				: tetrimino_shape_type;
 	signal row_elim_write_enable			: std_logic;
-	signal row_elim_write_row				: block_storage_row_type;
-	signal row_elim_write_column			: block_storage_column_type;
+	signal row_elim_write_address           : ts.address.object;
 
 	signal row_elim_start					: std_logic;
 	signal row_elim_ready					: std_logic;
 
 	signal active_write_data				: tetrimino_shape_type;
 	signal active_write_enable				: std_logic;
-	signal active_read_row					: block_storage_row_type;
-	signal active_read_column				: block_storage_column_type;
-	signal active_write_row					: block_storage_row_type;
-	signal active_write_column				: block_storage_column_type;
+	signal active_read_address              : ts.address.object;
+	signal active_write_address             : ts.address.object;
 
 	signal active_tetrimino_shape			: tetrimino_shape_type;
 	type active_tetrimino_command_mux_enum is
@@ -116,7 +113,12 @@ architecture Behavioral of tetris_block is
 	signal game_start						: std_logic;
 	signal game_over						: std_logic;
 
+	-- TODO compat
+	signal block_render_address_i : ts.address.object;
 begin
+	-- TODO compat
+	block_render_address_i.row <= block_row_i;
+	block_render_address_i.col <= block_column_i;
 
 	Inst_score_counter: entity work.counter
 	generic map         ( width => score_count_width )
@@ -136,17 +138,17 @@ begin
 	-------------------------------------------------------
 	--------------- logic for RAM for blocks --------------
 	-------------------------------------------------------
-
 	process (clock_i)
 	begin
 		if rising_edge (clock_i) then
 			if ram_write_enable = '1' then
-				RAM (conv_integer(ram_write_address)) <= ram_write_data;
+				RAM (conv_integer(ram_write_address.row & ram_write_address.col)) <= ram_write_data;
 			end if;
 		end if;
 	end process;
 
-	ram_read_data								<= RAM (conv_integer(ram_read_address));
+	ram_read_data <= RAM (conv_integer(ram_read_address.row & ram_read_address.col));
+
 
 	-- figure out who has access to it
 	with ram_access_mux							select ram_write_data <=
@@ -155,11 +157,13 @@ begin
 		active_write_data							when MUXSEL_ACTIVE_ELEMENT,
 		TETRIMINO_SHAPE_NONE						when others;
 
-	with ram_access_mux							select ram_write_address <=
-		"00000"            & "0000"					when MUXSEL_RENDER,
-		row_elim_write_row & row_elim_write_column	when MUXSEL_ROW_ELIM,
-		active_write_row   & active_write_column	when MUXSEL_ACTIVE_ELEMENT,
-		"00000"            & "0000"					when others;
+	--type address is record row : ts.row.object; col : ts.column.object; end record;
+	with ram_access_mux select ram_write_address <=
+	  active_write_address    when MUXSEL_ACTIVE_ELEMENT,
+	  ts.address.all_zeros    when MUXSEL_RENDER,
+	  row_elim_write_address  when MUXSEL_ROW_ELIM,
+	  ts.address.all_zeros    when others; -- This is unnecessary, but otherwise Vivado uses
+	  -- 2 more LUTs on xc7a100t ...
 
 	with ram_access_mux							select ram_write_enable <=
 		'0'											when MUXSEL_RENDER,
@@ -167,11 +171,13 @@ begin
 		active_write_enable							when MUXSEL_ACTIVE_ELEMENT,
 		'0'											when others;
 
-	with ram_access_mux							select ram_read_address <=
-		block_row_i       & block_column_i			when MUXSEL_RENDER,
-		row_elim_read_row & row_elim_read_column	when MUXSEL_ROW_ELIM,
-		active_read_row   & active_read_column		when MUXSEL_ACTIVE_ELEMENT,
-		"00000"           & "0000"					when others;
+	with ram_access_mux select ram_read_address <=
+	  active_read_address    when MUXSEL_ACTIVE_ELEMENT,
+	  block_render_address_i when MUXSEL_RENDER,
+	  row_elim_read_address  when MUXSEL_ROW_ELIM,
+	  ts.address.all_zeros   when others; -- This is unnecessary, but otherwise Vivado uses
+	  -- 30 more LUTs on xc7a100t. The same happens if any of the other three is used instead
+	  -- of ts.address.all_zeros ...
 
 
 	-------------------------------------------------------
@@ -188,12 +194,10 @@ begin
 		block_o								=> row_elim_write_data,
 		block_i								=> ram_read_data,
 		block_write_enable_o				=> row_elim_write_enable,
-		block_read_row_o					=> row_elim_read_row,
-		block_read_column_o					=> row_elim_read_column,
-		block_write_row_o					=> row_elim_write_row,
-		block_write_column_o				=> row_elim_write_column,
+		block_read_address_o                => row_elim_read_address,
+		block_write_address_o               => row_elim_write_address,
 
-		row_elim_address_i					=> block_row_i,
+		row_elim_address_i					=> block_render_address_i.row,
 		row_elim_data_o						=> row_elim_data_o,
 
 		fsm_start_i							=> row_elim_start,
@@ -210,15 +214,12 @@ begin
 		block_o								=> active_write_data,
 		block_i								=> ram_read_data,
 		block_write_enable_o				=> active_write_enable,
-		block_read_row_o					=> active_read_row,
-		block_read_column_o					=> active_read_column,
-		block_write_row_o					=> active_write_row,
-		block_write_column_o				=> active_write_column,
+		block_read_address_o                => active_read_address,
+		block_write_address_o               => active_write_address,
 
 		-- readout for drawing of active element
 		active_data_o						=> active_tetrimino_shape,
-		active_row_i						=> block_row_i,
-		active_column_i						=> block_column_i,
+		active_address_i					=> block_render_address_i,
 
 		-- communication with the main finite state machine
 		operation_i							=> active_operation,

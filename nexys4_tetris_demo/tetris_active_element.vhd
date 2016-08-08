@@ -17,15 +17,12 @@ entity tetris_active_element is
 		block_o						: out	tetrimino_shape_type;
 		block_i						: in	tetrimino_shape_type;
 		block_write_enable_o		: out	std_logic;
-		block_read_row_o			: out	block_storage_row_type;
-		block_read_column_o			: out	block_storage_column_type;
-		block_write_row_o			: out	block_storage_row_type;
-		block_write_column_o		: out	block_storage_column_type;
+		block_read_address_o        : out   tetris.storage.address.object;
+		block_write_address_o       : out   tetris.storage.address.object;
 
 		-- readout for drawing of active element
 		active_data_o				: out	tetrimino_shape_type;
-		active_row_i				: in	block_storage_row_type;
-		active_column_i				: in	block_storage_column_type;
+		active_address_i            : in    tetris.storage.address.object;
 
 		-- communication with the main finite state machine
 		operation_i					: in	active_tetrimino_operations;
@@ -171,18 +168,7 @@ architecture Behavioral of tetris_active_element is
 	signal tetrimino_rotation_next      : tetrimino_rotation_type;
 	signal tetrimino_rotation_new       : tetrimino_rotation_type;
 
-	-- TODO compat
-	signal block_read_address_o  : tetris.storage.address.object;
-	signal block_write_address_o : tetris.storage.address.object;
-	signal active_address_i      : tetris.storage.address.object;
 begin
-	-- TODO compat
-	active_address_i.row <= active_row_i;
-	active_address_i.col <= active_column_i;
-	block_read_row_o     <= block_read_address_o.row;
-	block_read_column_o  <= block_read_address_o.col;
-	block_write_row_o    <= block_write_address_o.row;
-	block_write_column_o <= block_write_address_o.col;
 
 	process ( tetrimino_select, corner_row, corner_column, tetrimino_shape )
 	begin

@@ -112,6 +112,10 @@ package definitions is
 					col : column.object;
 				end record;
 				constant width : positive := row.width + column.width;
+				constant all_zeros : object := (
+				  row => "00000",
+				  col => "0000"
+				);
 			end package address;
 		end package storage;
 

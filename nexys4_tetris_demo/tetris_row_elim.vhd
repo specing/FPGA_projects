@@ -19,10 +19,8 @@ entity tetris_row_elim is
 		block_o						: out	tetrimino_shape_type;
 		block_i						: in	tetrimino_shape_type;
 		block_write_enable_o		: out	std_logic;
-		block_read_row_o			: out	block_storage_row_type;
-		block_read_column_o			: out	block_storage_column_type;
-		block_write_row_o			: out	block_storage_row_type;
-		block_write_column_o		: out	block_storage_column_type;
+		block_read_address_o        : out   tetris.storage.address.object;
+		block_write_address_o       : out   tetris.storage.address.object;
 
 		row_elim_address_i			: in	std_logic_vector(4 downto 0);
 		row_elim_data_o				: out	std_logic_vector(4 downto 0);
@@ -97,17 +95,7 @@ architecture Behavioral of tetris_row_elim is
 	signal row_elim_write_address       : ts.row.object;
 	signal row_elim_write_data			: std_logic_vector (4 downto 0);
 
-	-- TODO compat
-	signal block_read_address_o  : tetris.storage.address.object;
-	signal block_write_address_o : tetris.storage.address.object;
 begin
-	-- TODO compat
-	block_read_row_o     <= block_read_address_o.row;
-	block_read_column_o  <= block_read_address_o.col;
-	block_write_row_o    <= block_write_address_o.row;
-	block_write_column_o <= block_write_address_o.col;
-
-
 	block_write_address_o.row <= row_count_old;
 	block_write_address_o.col <= column_count;
 	block_read_address_o.row  <= row_count;
