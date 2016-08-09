@@ -67,6 +67,7 @@ architecture Behavioral of tetris_render_pipeline is
 
 	signal score_count					: score_count_type;
 
+	signal tetrimino_shape_next         : tetrimino_shape_type;
 begin
 
 	Inst_VGA_controller:	entity work.VGA_controller
@@ -106,6 +107,15 @@ begin
 		end if;
 	end process;
 
+	Inst_tetris_next_tetrimino:     entity work.tetris_next_tetrimino
+	port map
+	(
+		clock_i                     => clock_i,
+		reset_i                     => reset_i,
+		-- for next tetrimino selection (random)
+		tetrimino_shape_next_o      => tetrimino_shape_next
+	);
+
 	-- obtain the block descriptor given row and column
 	Inst_tetris_block:				entity work.tetris_block
 	port map
@@ -117,6 +127,8 @@ begin
 		tetrimino_shape_o			=> stage1_tetrimino_shape,
 		block_render_address_i.row  => stage1_vga_pixel_address.row (8 downto 4),
 		block_render_address_i.col  => stage1_vga_pixel_address.col (7 downto 4),
+		-- for next tetrimino selection (random)
+		tetrimino_shape_next_i      => tetrimino_shape_next,
 
 		screen_finished_render_i	=> stage1_vga_off_screen,
 		active_operation_i			=> active_operation_i,

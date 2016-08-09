@@ -19,6 +19,8 @@ entity tetris_block is
 		row_elim_data_o             : out   tetris.row_elim.vga_compat.object;
 		tetrimino_shape_o			: out	tetrimino_shape_type;
 		block_render_address_i      : in    tetris.storage.address.object;
+		-- for next tetrimino selection (random)
+		tetrimino_shape_next_i      : in    tetrimino_shape_type;
 
 		screen_finished_render_i	: in	std_logic;
 		active_operation_i			: in	active_tetrimino_operations;
@@ -210,6 +212,9 @@ begin
 		block_write_enable_o				=> active_write_enable,
 		block_read_address_o                => active_read_address,
 		block_write_address_o               => active_write_address,
+
+		-- for next tetrimino selection (random)
+		tetrimino_shape_next_i              => tetrimino_shape_next_i,
 
 		-- readout for drawing of active element
 		active_data_o						=> active_tetrimino_shape,

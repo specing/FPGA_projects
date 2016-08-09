@@ -20,6 +20,9 @@ entity tetris_active_element is
 		block_read_address_o        : out   tetris.storage.address.object;
 		block_write_address_o       : out   tetris.storage.address.object;
 
+		-- for next tetrimino selection (random)
+		tetrimino_shape_next_i      : in    tetrimino_shape_type;
+
 		-- readout for drawing of active element
 		active_data_o				: out	tetrimino_shape_type;
 		active_address_i            : in    tetris.storage.address.object;
@@ -170,7 +173,8 @@ architecture Behavioral of tetris_active_element is
 
 begin
 
-	process ( tetrimino_select, corner_row, corner_column, tetrimino_shape )
+	process (corner_row, corner_column,
+	         tetrimino_select, tetrimino_shape, tetrimino_shape_next_i )
 	begin
 		case tetrimino_select is
 		when TETRIMINO_OLD =>
@@ -178,20 +182,11 @@ begin
 			corner_column_operand <= corner_column;
 			tetrimino_shape_next  <= tetrimino_shape;
 		when TETRIMINO_NEW =>
+			-- next tetrimino select (shape, position)
 			corner_row_operand    <= tetris.tetrimino_start_row;
 			corner_column_operand <= tetris.tetrimino_start_col;
-
-			case tetrimino_shape is
-			when "000" => tetrimino_shape_next <= "010";
-			when "001" => tetrimino_shape_next <= "010";
-			when "010" => tetrimino_shape_next <= "011";
-			when "011" => tetrimino_shape_next <= "100";
-			when "100" => tetrimino_shape_next <= "101";
-			when "101" => tetrimino_shape_next <= "110";
-			when "110" => tetrimino_shape_next <= "111";
-			when "111" => tetrimino_shape_next <= "001";
-			when others => report "Oops" severity FAILURE;
-			end case;
+			-- comes from the RNG
+			tetrimino_shape_next  <= tetrimino_shape_next_i;
 		end case;
 	end process;
 
