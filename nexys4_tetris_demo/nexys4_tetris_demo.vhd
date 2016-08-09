@@ -183,7 +183,7 @@ begin
 		overflow_o			=> vga_pixel_clock
 	);
 
-	Inst_tetris:				entity work.tetris
+	Inst_tetris_render_pipeline:entity work.tetris_render_pipeline
 	port map
 	(
 		clock_i					=> clock_i,

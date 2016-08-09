@@ -7,7 +7,7 @@ use     work.definitions        .all;
 
 
 
-entity tetris is
+entity tetris_render_pipeline is
 	port
 	(
 		clock_i					: in	std_logic;
@@ -22,11 +22,11 @@ entity tetris is
 		cathodes_o				: out	std_logic_vector(6 downto 0);
 		anodes_o				: out	std_logic_vector(7 downto 0)
 	);
-end tetris;
+end tetris_render_pipeline;
 
 
 
-architecture Behavioral of tetris is
+architecture Behavioral of tetris_render_pipeline is
 
 	constant line_remove_counter_width	: integer := 5;
 
