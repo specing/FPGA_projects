@@ -191,7 +191,7 @@ begin
 		if stage4_vga_enable_draw = '0' then
 			display.c       <= vga.colours.all_off;
 		-- check if we have to draw static lines
-		elsif stage4_vga_pixel_address.col = std_logic_vector(to_unsigned(256, stage4_vga_pixel_address.col'length)) -- right of tetris
+		elsif stage4_vga_pixel_address.col = std_logic_vector(to_unsigned(255, stage4_vga_pixel_address.col'length))
 		or stage4_vga_pixel_address.col = std_logic_vector(to_unsigned(0,   stage4_vga_pixel_address.col'length))
 		or stage4_vga_pixel_address.col = std_logic_vector(to_unsigned(639, stage4_vga_pixel_address.col'length))
 		or stage4_vga_pixel_address.row = std_logic_vector(to_unsigned(0,   stage4_vga_pixel_address.row'length))
