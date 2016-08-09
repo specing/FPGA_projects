@@ -26,6 +26,8 @@ package definitions is
 		-- Tetrimino start position on the playing surface
 		constant tetrimino_start_row    : natural := 0;
 		constant tetrimino_start_column : natural := 6;
+		-- Counter for visual effects when removing a full row
+		constant row_elim_counter_width : natural := 5;
 	end package config;
 
 
@@ -59,6 +61,11 @@ package definitions is
 			  green => (others => '0'),
 			  blue  => (others => '0')
 			);
+
+			-- Object that is wide enough to store all colour channels
+			package any is
+				constant width : natural := maximum (red.width, maximum (green.width, blue.width));
+			end package any;
 		end package colours;
 
 
@@ -154,6 +161,21 @@ package definitions is
 		  storage.row.object (to_unsigned (config.tetrimino_start_row, storage.row.width));
 		constant tetrimino_start_col : storage.col.object :=
 		  storage.col.object (to_unsigned (config.tetrimino_start_column, storage.col.width));
+
+		-- Full row elimination
+		package row_elim is
+			alias width is config.row_elim_counter_width;
+			subtype object is std_logic_vector (width - 1 downto 0);
+			package vga_compat is
+				subtype object is std_logic_vector
+				  (tetris.row_elim.width - 1 downto tetris.row_elim.width - vga.colours.any.width);
+
+				-- A simple function to return the compatibility object (aka the top part)
+				-- that is then merged with colours going to display
+				function to_compat (input : tetris.row_elim.object) return object;
+				-- ^ Implemented below in the package body
+			end package vga_compat;
+		end package row_elim;
 	end package tetris;
 
 	-- Compatibility aliases, will be removed shortly
@@ -275,5 +297,18 @@ package body definitions is
 		when OFF3 => return 3;
 		end case;
 	end function to_integer;
+
+
+	package body tetris is
+		package body row_elim is
+			package body vga_compat is
+				function to_compat (input : tetris.row_elim.object) return object is
+				begin
+--					return input (input'left downto input'left - object'left);
+					return input (object'range);
+				end to_compat;
+			end package body vga_compat;
+		end package body row_elim;
+	end package body tetris;
 
 end package body definitions;

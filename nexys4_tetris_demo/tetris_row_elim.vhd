@@ -22,8 +22,8 @@ entity tetris_row_elim is
 		block_read_address_o        : out   tetris.storage.address.object;
 		block_write_address_o       : out   tetris.storage.address.object;
 
-		row_elim_address_i			: in	std_logic_vector(4 downto 0);
-		row_elim_data_o				: out	std_logic_vector(4 downto 0);
+		row_elim_address_i          : in    tetris.storage.row.object;
+		row_elim_data_o             : out   tetris.row_elim.vga_compat.object;
 		fsm_start_i					: in	std_logic;
 		fsm_ready_o					: out	std_logic
 	);
@@ -34,9 +34,6 @@ end tetris_row_elim;
 architecture Behavioral of tetris_row_elim is
 
 	alias ts is tetris.storage;
-
-	-- block descriptor
-	constant row_elim_width				: integer := 5;
 
 	type ram_write_data_mux_enum is (
 		MUXSEL_MOVE_DOWN,
@@ -74,9 +71,7 @@ architecture Behavioral of tetris_row_elim is
 	signal column_count                 : ts.column.object;
 	signal column_count_at_top			: std_logic;
 
-	type ram_row_elim_type is
-	  array (0 to (2 ** ts.row.width) - 1)
-	  of std_logic_vector (0 to row_elim_width - 1);
+	type ram_row_elim_type is array (0 to (2 ** ts.row.width) - 1) of tetris.row_elim.object;
 	signal RAM_ROW_ELIM					: ram_row_elim_type := (others => (others => '0'));
 
 	type row_elim_mode_enum is
@@ -89,11 +84,11 @@ architecture Behavioral of tetris_row_elim is
 	signal row_elim_mode				: row_elim_mode_enum;
 
 	signal row_elim_read_address        : ts.row.object;
-	signal row_elim_read_data			: std_logic_vector (4 downto 0);
+	signal row_elim_read_data           : tetris.row_elim.object;
 
 	signal row_elim_write_enable		: std_logic;
 	signal row_elim_write_address       : ts.row.object;
-	signal row_elim_write_data			: std_logic_vector (4 downto 0);
+	signal row_elim_write_data          : tetris.row_elim.object;
 
 begin
 	block_write_address_o.row <= row_count_old;
@@ -112,8 +107,8 @@ begin
 		end if;
 	end process;
 
-	row_elim_read_data			<= RAM_ROW_ELIM (conv_integer(row_elim_read_address));
-	row_elim_data_o				<= row_elim_read_data;
+	row_elim_read_data <= RAM_ROW_ELIM (conv_integer(row_elim_read_address));
+	row_elim_data_o    <= tetris.row_elim.vga_compat.to_compat (row_elim_read_data);
 
 	with row_elim_mode			select row_elim_write_data <=
 		"00000"						when MUXSEL_ROW_ELIM_RENDER, -- N/A

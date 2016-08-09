@@ -16,7 +16,7 @@ entity tetris_block is
 		clock_i						: in	std_logic;
 		reset_i						: in	std_logic;
 
-		row_elim_data_o				: out	std_logic_vector(4 downto 0);
+		row_elim_data_o             : out   tetris.row_elim.vga_compat.object;
 		tetrimino_shape_o			: out	tetrimino_shape_type;
 		block_render_address_i      : in    tetris.storage.address.object;
 
