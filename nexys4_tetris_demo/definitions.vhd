@@ -210,6 +210,7 @@ package definitions is
 
 	-- first indexed by tetrimino_shape, then by tetrimino_rotation
 	-- data is row0, row1, row2, row3, col0, col1, col2, col3
+	-- and tells us which blocks relative to the "corner address" are filled
 	type tetrimino_init_row is          array(0 to 7) of corner_offset_enum;
 	-- 2**5 = 2**3 tetrimino shapes + 2**2 rotations
 	type tetrimino_init_data is         array(0 to (2**5) - 1) of tetrimino_init_row;

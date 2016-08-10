@@ -58,12 +58,14 @@ architecture Behavioral of tetris_render_pipeline is
 	signal stage3_row_elim_data_out     : tetris.row_elim.vga_compat.object;
 	signal stage3_block_colours         : VGA.colours.object;
 	signal stage3_block_final_colours   : VGA.colours.object;
+	signal stage3_draw_tetrimino_bb     : std_logic;
 
 	signal stage4_vga_sync              : VGA.sync.object;
 	signal stage4_vga_pixel_address     : vga.pixel.address.object;
 	signal stage4_block_colours         : VGA.colours.object;
 	signal stage4_vga_enable_draw		: std_logic;
 	signal stage4_tetrimino_shape		: tetrimino_shape_type;
+	signal stage4_draw_tetrimino_bb     : std_logic;
 
 	signal score_count					: score_count_type;
 
@@ -170,6 +172,33 @@ begin
 	stage3_block_final_colours.green <= stage3_block_colours.green or stage3_row_elim_data_out(4 downto 1);
 	stage3_block_final_colours.blue  <= stage3_block_colours.blue  or stage3_row_elim_data_out(4 downto 1);
 
+	-- figure out if we are on the next tetrimino screen
+	-- column 16 + 1space + 6(next tetrimino text) + 1space + padding = 24
+	-- = 011000|0000 pixel column to 011011|1111
+	-- row 000000|0000 to 000011|1111
+
+	-- figure out if we ough to draw the next tetrimino bounding box
+	Block_BlaBla: block
+		alias pa is stage3_vga_pixel_address;
+	begin
+		process (pa)
+		begin
+			-- upper row
+			if (pa.row = "0000000000" and pa.col (9 downto 6) = "0110")
+			-- lower row
+			or (pa.row = "0000111111" and pa.col (9 downto 6) = "0110")
+			-- left column
+			or (pa.col = "0110000000" and pa.row (9 downto 6) = "0000")
+			-- right column
+			or (pa.col = "0110111111" and pa.row (9 downto 6) = "0000")
+			then
+				stage3_draw_tetrimino_bb <= '1';
+			else
+				stage3_draw_tetrimino_bb <= '0';
+			end if;
+		end process;
+	end block;
+
 	-- Stage4: save row, column, hsync, vsync and en_draw + block desc, final RGB of block, line remove
 	process (clock_i)
 	begin
@@ -179,6 +208,7 @@ begin
 			stage4_vga_enable_draw	<= stage3_vga_enable_draw;
 
 			stage4_block_colours    <= stage3_block_final_colours;
+			stage4_draw_tetrimino_bb<= stage3_draw_tetrimino_bb;
 		end if;
 	end process;
 
@@ -195,13 +225,19 @@ begin
 	-- main draw multiplexer
 	process
 	(
-		stage4_vga_enable_draw, stage4_vga_pixel_address, stage4_block_colours,
+		stage4_vga_enable_draw, stage4_draw_tetrimino_bb,
+		stage4_vga_pixel_address, stage4_block_colours,
 		on_tetris_surface
 	)
 	begin
 		-- check if we are on display surface
 		if stage4_vga_enable_draw = '0' then
 			display.c       <= vga.colours.all_off;
+		-- check if we have to draw the next tetrimino bounding box
+		elsif stage4_draw_tetrimino_bb = '1' then
+			display.c.red   <= "0100";
+			display.c.green <= "1000";
+			display.c.blue  <= "0111";
 		-- check if we have to draw static lines
 		elsif stage4_vga_pixel_address.col = std_logic_vector(to_unsigned(255, stage4_vga_pixel_address.col'length))
 		or stage4_vga_pixel_address.col = std_logic_vector(to_unsigned(0,   stage4_vga_pixel_address.col'length))
