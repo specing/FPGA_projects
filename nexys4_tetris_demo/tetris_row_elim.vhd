@@ -159,7 +159,7 @@ begin
 		overflow_o			=> open
 	);
 
-	Inst_reg_old: entity flib.generic_register
+	Inst_reg_old: component flib.basic.generic_register
 	port map
 	(
 		clock_i				=> clock_i,

@@ -2,6 +2,9 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
+library flib;
+use flib.basic.all;
+
 
 
 entity generic_register is
@@ -23,11 +26,11 @@ end generic_register;
 
 architecture Behavioral of generic_register is
 
-    constant data_on_reset : std_logic_vector(data_i'length - 1 downto 0)
-                           :=std_logic_vector(to_unsigned(reset_value, data_i'length));
+    constant data_on_reset  : std_logic_vector(data_i'range)
+                            :=std_logic_vector(to_unsigned(reset_value, data_i'length));
 
-    signal data            : std_logic_vector(data_i'length - 1 downto 0)
-                           :=data_on_reset;
+    signal data             : std_logic_vector(data_i'range)
+                            :=data_on_reset;
 
 begin
 
