@@ -255,8 +255,6 @@ begin
             ram_write_data_mux      <= MUXSEL_ZERO;
             -- activate counter
             column_count_enable     <= '1';
-        when others =>
-            null;
         end case;
 
     end process;
@@ -338,8 +336,6 @@ begin
                 next_state <= state_check_row;
             end if;
 
-        when others =>
-            next_state <= state_start;
         end case;
     end process;
 
