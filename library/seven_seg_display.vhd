@@ -1,7 +1,8 @@
 library ieee;
 use ieee.std_logic_1164.all;
-use ieee.math_real.all;
 use ieee.numeric_std.all;
+
+library flib;
 
 
 
@@ -26,7 +27,7 @@ entity seven_seg_display is
         bcd_digits_i    : in     std_logic_vector (num_of_digits*4 - 1 downto 0);
 
         anodes_o        : out    std_logic_vector (num_of_digits - 1 downto 0);
-        cathodes_o      : out    std_logic_vector (6 downto 0)
+        cathodes_o      : out    std_logic_vector (6 downto 0) -- no dot
     );
 end seven_seg_display;
 
@@ -37,17 +38,17 @@ architecture Behavioral of seven_seg_display is
     constant anode_off          : std_logic := not anode_on;
     constant cathode_off        : std_logic := not cathode_on;
 
-    constant prescaler_divisor  : positive := f_clock / 1000; -- 1 millisecond
-    constant prescaler_top      : natural  := integer (prescaler_divisor) - 1;
-    constant prescaler_width    : natural  := integer (CEIL (LOG2 (real (prescaler_top) ) ) );
+    constant prescaler_divisor  : positive  := f_clock / 1000; -- 1 millisecond
+    constant prescaler_top      : natural   := integer (prescaler_divisor) - 1;
+    constant prescaler_width    : natural   := flib.util.compute_width (prescaler_top);
     signal   prescaler_overflow : std_logic;
 
     signal   bcd                : std_logic_vector (3 downto 0);
-    signal   cathodes           : std_logic_vector (6 downto 0);
+    signal   cathodes           : std_logic_vector (6 downto 0); -- no dot
     signal   anodes             : std_logic_vector (num_of_digits - 1 downto 0)
                                 := (0 => anode_on, others => anode_off);
 
-    constant dim_width          : natural := natural (CEIL (LOG2 (real (dim_top + 1) ) ) );
+    constant dim_width          : natural   := flib.util.compute_width (dim_top + 1);
     signal   dim_overflow       : std_logic;
 
 begin

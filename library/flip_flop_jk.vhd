@@ -4,6 +4,10 @@ use ieee.std_logic_1164.all;
 
 
 entity flip_flop_jk is
+    generic
+    (
+        reset_value : std_logic := '0'
+    );
     port
     (
         clock_i : in     std_logic;
@@ -27,7 +31,7 @@ begin
     begin
         if rising_edge (clock_i) then
             if reset_i = '1' then
-                q <= '0';
+                q <= reset_value;
             else
                 if j_i = '1' and k_i = '0' then
                     q <= '1';

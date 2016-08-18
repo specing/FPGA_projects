@@ -9,8 +9,8 @@ use ieee.std_logic_1164.all;
 entity seven_seg_digit is
     port
     (
-        bcd_i       : in     std_logic_vector (3 downto 0);
-        segment_o   : out    std_logic_vector (6 downto 0)
+        bcd_i       : in     std_logic_vector;
+        segment_o   : out    std_logic_vector
     );
 end seven_seg_digit;
 

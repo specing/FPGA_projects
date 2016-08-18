@@ -8,7 +8,7 @@ use ieee.std_logic_unsigned.all;
 entity counter is
     generic
     (
-        width           : integer := 8
+        width           : positive
     );
     port
     (

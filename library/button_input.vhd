@@ -8,7 +8,7 @@ use ieee.std_logic_unsigned.all;
 entity button_input is
     generic
     (
-        num_of_buttons  : integer := 1
+        num_of_buttons  : positive
     );
     port
     (

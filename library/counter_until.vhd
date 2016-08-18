@@ -8,7 +8,7 @@ use ieee.std_logic_unsigned.all;
 entity counter_until is
     generic
     (
-        width           : integer   := 10;
+        width           : positive;
         step            : std_logic := '1' -- up
     );
     port
