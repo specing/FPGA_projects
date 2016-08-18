@@ -158,7 +158,7 @@ begin
       ts.address.all_zeros      when MUXSEL_RENDER,
       row_elim_write_address    when MUXSEL_ROW_ELIM,
       ts.address.all_zeros      when others; -- This is unnecessary,
-	  -- but otherwise Vivado uses 2 more LUTs on xc7a100t ...
+      -- but otherwise Vivado uses 2 more LUTs on xc7a100t ...
 
     with ram_access_mux select ram_write_enable <=
       '0'                       when MUXSEL_RENDER,
@@ -171,8 +171,8 @@ begin
       block_render_address_i    when MUXSEL_RENDER,
       row_elim_read_address     when MUXSEL_ROW_ELIM,
       ts.address.all_zeros      when others; -- This is unnecessary,
-	  -- but otherwise Vivado uses 30 more LUTs on xc7a100t. The same happens
-	  -- if any of the other three is used instead of ts.address.all_zeros ...
+      -- but otherwise Vivado uses 30 more LUTs on xc7a100t. The same happens
+      -- if any of the other three is used instead of ts.address.all_zeros ...
 
 
     -------------------------------------------------------
