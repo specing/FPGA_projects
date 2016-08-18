@@ -14,11 +14,11 @@ entity generic_register is
     );
     port
     (
-        clock_i         : in    std_logic;
-        reset_i         : in    std_logic;
-        clock_enable_i  : in    std_logic;
-        data_i          : in    std_logic_vector;
-        data_o          : out   std_logic_vector
+        clock_i         : in     std_logic;
+        reset_i         : in     std_logic;
+        clock_enable_i  : in     std_logic;
+        data_i          : in     std_logic_vector;
+        data_o          : out    std_logic_vector
     );
 end generic_register;
 
@@ -26,10 +26,10 @@ end generic_register;
 
 architecture Behavioral of generic_register is
 
-    constant data_on_reset  : std_logic_vector(data_i'range)
-                            :=std_logic_vector(to_unsigned(reset_value, data_i'length));
+    constant data_on_reset  : std_logic_vector (data_i'range)
+                            :=std_logic_vector (to_unsigned (reset_value, data_i'length));
 
-    signal data             : std_logic_vector(data_i'range)
+    signal data             : std_logic_vector (data_i'range)
                             :=data_on_reset;
 
 begin
