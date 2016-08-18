@@ -150,8 +150,8 @@ package definitions is
                 end record;
                 constant width : positive := row.width + column.width;
                 constant all_zeros : object := (
-                  row => "00000",
-                  col => "0000"
+                  row => row.object (to_unsigned (0, row.width)),
+                  col => col.object (to_unsigned (0, col.width))
                 );
             end package address;
         end package storage;
@@ -166,6 +166,10 @@ package definitions is
         package row_elim is
             alias width is config.row_elim_counter_width;
             subtype object is std_logic_vector (width - 1 downto 0);
+            -- This constant is supposed to behave like 'high for std_logic: "11111"
+            -- 'high for std_logic_vector is instead the high array index
+            constant high : object := object (to_unsigned (2**width -1, width));
+
             package vga_compat is
                 subtype object is std_logic_vector
                   (tetris.row_elim.width - 1 downto tetris.row_elim.width - vga.colours.any.width);

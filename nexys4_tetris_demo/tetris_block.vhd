@@ -35,9 +35,8 @@ end tetris_block;
 architecture Behavioral of tetris_block is
 
     alias ts is tetris.storage;
-    alias ram_width is ts.address.width;
 
-    constant ram_size  : integer := 2 ** (ram_width);
+    constant ram_size  : integer := 2 ** ts.address.width;
     -------------------------------------------------------
     ----------------- Tetris Active Data ------------------
     -------------------------------------------------------

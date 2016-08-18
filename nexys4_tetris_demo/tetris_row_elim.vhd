@@ -303,7 +303,7 @@ begin
         -- logic that finds what row we have to remove and then fires
         -- removal down below
         when state_check_row =>
-            if row_elim_read_data = "11111" then
+            if row_elim_read_data = tetris.row_elim.high then
                 next_state <= state_pre_decrement_row;
             else
                 next_state <= state_check_row_decrement_row;
