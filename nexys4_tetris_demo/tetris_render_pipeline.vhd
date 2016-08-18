@@ -59,6 +59,7 @@ architecture Behavioral of tetris_render_pipeline is
     signal stage3_block_colours         : vga.colours.object;
     signal stage3_block_final_colours   : vga.colours.object;
     signal stage3_draw_tetrimino_bb     : std_logic;
+    signal stage3_text_dot              : std_logic;
 
     signal stage4_vga_sync              : vga.sync.object;
     signal stage4_vga_pixel_address     : vga.pixel.address.object;
@@ -66,6 +67,7 @@ architecture Behavioral of tetris_render_pipeline is
     signal stage4_vga_enable_draw       : std_logic;
     signal stage4_tetrimino_shape       : tetrimino_shape_type;
     signal stage4_draw_tetrimino_bb     : std_logic;
+    signal stage4_text_enable_draw      : std_logic;
 
     signal score_count                  : score_count_type;
 
@@ -198,6 +200,19 @@ begin
         end process;
     end block;
 
+    Inst_text: entity work.tetris_text
+    port map
+    (
+        clock_i                 => clock_i,
+        reset_i                 => reset_i,
+
+        read_address_i.row      => stage3_vga_pixel_address.row (stage3_vga_pixel_address.row'left downto stage3_vga_pixel_address.row'right + 4),
+        read_address_i.col      => stage3_vga_pixel_address.col (stage3_vga_pixel_address.col'left downto stage3_vga_pixel_address.col'right + 3),
+        read_subaddress_i.row   => stage3_vga_pixel_address.row (stage3_vga_pixel_address.row'right + 3 downto stage3_vga_pixel_address.row'right),
+        read_subaddress_i.col   => stage3_vga_pixel_address.col (stage3_vga_pixel_address.col'right + 2 downto stage3_vga_pixel_address.col'right),
+        read_dot_o              => stage3_text_dot
+    );
+
     -- Stage4: save row, column, hsync, vsync and en_draw + block desc, final RGB of block, line remove
     process (clock_i)
     begin
@@ -208,6 +223,8 @@ begin
 
             stage4_block_colours        <= stage3_block_final_colours;
             stage4_draw_tetrimino_bb    <= stage3_draw_tetrimino_bb;
+
+            stage4_text_enable_draw     <= stage3_text_dot;
         end if;
     end process;
 
@@ -224,7 +241,7 @@ begin
     -- main draw multiplexer
     process
     (
-        stage4_vga_enable_draw, stage4_draw_tetrimino_bb,
+        stage4_vga_enable_draw, stage4_draw_tetrimino_bb, stage4_text_enable_draw,
         stage4_vga_pixel_address, stage4_block_colours,
         on_tetris_surface
     )
@@ -232,6 +249,11 @@ begin
         -- check if we are on display surface
         if stage4_vga_enable_draw = '0' then
             display.c       <= vga.colours.all_off;
+        -- check if we have to draw text
+        elsif stage4_text_enable_draw = '1' then
+            display.c.red   <= "1000";
+            display.c.green <= "1000";
+            display.c.blue  <= "1000";
         -- check if we have to draw the next tetrimino bounding box
         elsif stage4_draw_tetrimino_bb = '1' then
             display.c.red   <= "0100";

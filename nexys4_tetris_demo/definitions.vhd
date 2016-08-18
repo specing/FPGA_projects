@@ -260,6 +260,137 @@ package definitions is
         (OFF2, OFF2, OFF1, OFF1,   OFF2, OFF1, OFF1, OFF2), -- rot180: "10"
         (OFF2, OFF1, OFF1, OFF2,   OFF1, OFF1, OFF2, OFF2)  -- rot270: "11"
     );
+
+
+
+    package letter is
+        type object is (
+            None,
+            one
+        );
+    end package letter;
+
+
+
+    package font is
+        -- addressed first by row (4 bit) then by column (3 bit)
+        -- total 2**7 = 128 dots per letter
+        package row is
+            constant width : natural := 4;
+            subtype object is std_logic_vector (width - 1 downto 0);
+        end package row;
+
+        package column is
+            constant width : natural := 3;
+            subtype object is std_logic_vector (width - 1 downto 0);
+        end package column;
+        -- as usual, a helpful alias
+        alias col is column;
+
+        package address is
+            type object is record
+                row : row.object;
+                col : column.object;
+            end record;
+        end package address;
+
+        -- mapping from letters to dots
+        function get_dot (l : in letter.object;
+                          r : in row.object;
+                          c : in col.object
+                         ) return std_logic;
+
+
+        -- Static font table
+        subtype pixel_row is std_logic_vector (0 to 2 ** col.width - 1);
+
+        type pixel_rows is
+          -- just one letter right now
+          array (0 to 2**row.width - 1) of
+          pixel_row;
+
+        constant font_for_None : pixel_rows := (
+           "00000000", -- 0
+           "00000000", -- 1
+           "00000000", -- 2
+           "00000000", -- 3
+           "00000000", -- 4
+           "00000000", -- 5
+           "00000000", -- 6
+           "00000000", -- 7
+           "00000000", -- 8
+           "00000000", -- 9
+           "00000000", -- a
+           "00000000", -- b
+           "00000000", -- c
+           "00000000", -- d
+           "00000000", -- e
+           "00000000" -- f
+          );
+        constant font_for_one : pixel_rows := (
+           "00000000", -- 0
+           "00000000", -- 1
+           "00000000", -- 2
+           "00000111", -- 3
+           "00001111", -- 4
+           "00011111", -- 5
+           "00111011", -- 6
+           "01110011", -- 7
+           "11100011", -- 8
+           "00000011", -- 9
+           "00000011", -- a
+           "00000011", -- b
+           "00000011", -- c
+           "00000011", -- d
+           "00000011", -- e
+           "00000011" -- f
+          );
+    end package font;
+
+
+
+    package letters is
+        -- How much text do we have to store? Whole screen is 640x480 further divided
+        -- into 16x16 blocks. Therefore there are 40 x 30 such blocks.
+        -- However, a letter box is 16x8, meaning we have to store 80 x 30 such letter boxes
+        -- from which we can deduce the size of row/col address lines
+        package row is
+            constant num_chars : natural := 480 / 16;
+            constant width     : natural := util.compute_width (num_chars - 1);
+            subtype object is std_logic_vector (width - 1 downto 0);
+        end package row;
+
+        package column is
+            constant num_chars : natural := 640 / 16 * 2;
+            constant width     : natural := util.compute_width (num_chars - 1);
+            subtype object is std_logic_vector (width - 1 downto 0);
+        end package column;
+        -- as usual, a helpful alias
+        alias col is column;
+
+        package address is
+            -- Now we can define the address types
+            type object is record
+                row : row.object;
+                col : col.object;
+            end record;
+
+            package combined is
+                -- and further, the total address width
+                constant width : natural := row.width + column.width;
+                -- and a combined storage object
+                subtype object is std_logic_vector (width - 1 downto 0);
+
+                function to_combined (o : address.object) return object;
+            end package combined;
+        end package address;
+
+        -- and the storage RAM/ROM type
+--        package storage is
+--            type sobject is array (0 to (2 ** address.combined.width) - 1) of letter.object;
+--        end package storage;
+    end package letters;
+
 end package definitions;
 
 
@@ -307,5 +438,40 @@ package body definitions is
             end package body vga_compat;
         end package body row_elim;
     end package body tetris;
+
+
+    package body font is
+        function get_pixel_rows (l : in letter.object) return pixel_rows is
+            use letter.all;
+        begin
+            case l is
+            when None => return font_for_None;
+            when one  => return font_for_one;
+            end case;
+        end get_pixel_rows;
+
+
+        function get_dot (l : in letter.object;
+                          r : in row.object;
+                          c : in col.object
+                         ) return std_logic is
+            constant prows : pixel_rows := get_pixel_rows (l);
+            constant prow  : pixel_row  := prows (conv_integer (r));
+        begin
+            return prow (conv_integer (c));
+        end get_dot;
+    end package body font;
+
+
+    package body letters is
+        package body address is
+            package body combined is
+                function to_combined (o : address.object) return object is
+                begin
+                    return o.row & o.col;
+                end;
+            end package body combined;
+        end package body address;
+    end package body letters;
 
 end package body definitions;
