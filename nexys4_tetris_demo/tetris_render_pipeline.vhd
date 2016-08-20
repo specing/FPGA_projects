@@ -5,6 +5,8 @@ use ieee.numeric_std.all;
 
 use work.definitions.all;
 
+library flib;
+
 
 
 entity tetris_render_pipeline is
@@ -75,7 +77,7 @@ architecture Behavioral of tetris_render_pipeline is
 
 begin
 
-    Inst_VGA_controller: entity work.VGA_controller
+    Inst_VGA_controller: component flib.vga.VGA_controller
     generic map
     (
         row_width       => vga.pixel.row.width,

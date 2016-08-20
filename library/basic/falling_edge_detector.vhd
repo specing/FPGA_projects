@@ -1,6 +1,9 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
+library flib;
+use flib.basic.all;
+
 
 
 entity falling_edge_detector is

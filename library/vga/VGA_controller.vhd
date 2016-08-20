@@ -1,6 +1,9 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
+library flib;
+use flib.vga.all;
+
 
 
 entity VGA_controller is

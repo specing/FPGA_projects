@@ -115,7 +115,7 @@ architecture Behavioral of tetris_block is
 
 begin
 
-    Inst_score_counter: entity work.counter
+    Inst_score_counter: component flib.basic.counter
     generic map         ( width => score_count_width )
     port map
     (
