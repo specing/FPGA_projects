@@ -5,16 +5,6 @@ use ieee.std_logic_1164.all;
 
 package basic is
 
-    component comparator is
-        port
-        (
-            a_i     : in     std_logic_vector;
-            b_i     : in     std_logic_vector;
-            eq_o    : out    std_logic
-        );
-    end component comparator;
-
-
     component counter is
         generic
         (

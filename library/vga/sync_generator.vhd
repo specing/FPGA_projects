@@ -1,6 +1,7 @@
 library ieee;
 use     ieee.std_logic_1164.all;
 use     ieee.numeric_std.all;
+use     ieee.numeric_std_unsigned.all;
 
 library flib;
 use flib.vga.all;
@@ -77,41 +78,18 @@ begin
         count_o         => scancounter
     );
 
-    -- signals when we fall off display
-    Inst_comparator_off_display: entity work.comparator
-    port map
-    (
-        a_i     => scancounter,
-        b_i     => std_logic_vector (to_unsigned (t_display, counter_width)),
-        eq_o    => sig_display_off
-    );
+    -- comparators
+    sig_display_off <= '1' when scancounter = To_SLV (t_display, counter_width)
+                  else '0';
 
-    -- signals when we have to turn off SYNC
-    Inst_comparator_off_fp: entity work.comparator
-    port map
-    (
-        a_i     => scancounter,
-        b_i     => std_logic_vector (to_unsigned (t_display + t_fp, counter_width)),
-        eq_o    => sig_sync_off
-    );
+    sig_sync_off    <= '1' when scancounter = To_SLV (t_display + t_fp, counter_width)
+                  else '0';
 
-    -- signals when to turn SYNC back on
-    Inst_comparator_off_pw: entity work.comparator
-    port map
-    (
-        a_i     => scancounter,
-        b_i     => std_logic_vector (to_unsigned (t_display + t_fp + t_pw, counter_width)),
-        eq_o    => sig_sync_on
-    );
+    sig_sync_on     <= '1' when scancounter = To_SLV (t_display + t_fp + t_pw, counter_width)
+                  else '0';
 
-    -- signals when we have to reset the count and start over
-    Inst_comparator_cycle: entity work.comparator
-    port map
-    (
-        a_i     => scancounter,
-        b_i     => std_logic_vector (to_unsigned (t_display + t_fp + t_pw + t_bp, counter_width)),
-        eq_o    => sig_display_on
-    );
+    sig_display_on  <= '1' when scancounter = To_SLV (t_display + t_fp + t_pw + t_bp, counter_width)
+                  else '0';
 
 
     process (sig_display_on, sig_display_off, draw_on)
