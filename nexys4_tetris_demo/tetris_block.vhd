@@ -310,11 +310,7 @@ begin
             active_tetrimino_command_mux    <= ATC_USER_INPUT;
         when state_active_element_input_ack =>
             active_operation_ack_o          <= '1';
-
-        when others =>
-            null;
         end case;
-
     end process;
 
     -- FSM next state
@@ -373,12 +369,7 @@ begin
             end if;
         when state_active_element_input_ack =>
             next_state <= state_start;
-
-        when others =>
-            next_state <= state_start;
         end case;
-
     end process;
-
 
 end Behavioral;
