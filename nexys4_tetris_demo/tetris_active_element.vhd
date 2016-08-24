@@ -386,11 +386,7 @@ begin
             active_address_write_enable     <= '1';
         when state_writeback =>
             active_address_write_enable     <= '1';
-
-        when others =>
-            null;
         end case;
-
     end process;
 
     -- FSM next state
@@ -567,9 +563,6 @@ begin
                 next_state <= state_start;
             end if;
         when state_writeback =>
-            next_state <= state_start;
-
-        when others =>
             next_state <= state_start;
         end case;
     end process;
