@@ -25,14 +25,14 @@ architecture Behavioral of tetris_text is
     -- storage type
     type storage_object is array (0 to 2 ** letters.address.combined.width - 1) of letter.object;
     -- storage space
-    signal ram : storage_object := (others => letter.None);
+    signal ram : storage_object := (others => letter.space);
 
     -- R/W signals
     signal write_enable             : std_logic := '1';
     signal write_address            : letters.address.object;
     signal write_address_combined   : letters.address.combined.object;
     signal read_address_combined    : letters.address.combined.object;
-    signal write_data               : letter.object := letter.one;
+    signal write_data               : letter.object := letter.N_upper;
     signal read_data                : letter.object;
 
 begin
