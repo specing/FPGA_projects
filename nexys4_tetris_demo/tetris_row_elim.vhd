@@ -114,22 +114,19 @@ begin
       "00000"                   when MUXSEL_ROW_ELIM_RENDER, -- N/A
       row_elim_read_data + '1'  when MUXSEL_ROW_ELIM_INCREMENT,
       row_elim_read_data        when MUXSEL_ROW_ELIM_MOVE_DOWN,
-      "00000"                   when MUXSEL_ROW_ELIM_ZERO,
-      "00000"                   when others;
+      "00000"                   when MUXSEL_ROW_ELIM_ZERO;
 
     with row_elim_mode select row_elim_write_address <=
       "00000"                   when MUXSEL_ROW_ELIM_RENDER, -- N/A
       row_count                 when MUXSEL_ROW_ELIM_INCREMENT,
       row_count_old             when MUXSEL_ROW_ELIM_MOVE_DOWN,
-      row_count_old             when MUXSEL_ROW_ELIM_ZERO,
-      "00000"                   when others;
+      row_count_old             when MUXSEL_ROW_ELIM_ZERO;
 
     with row_elim_mode select row_elim_read_address <=
       row_elim_address_i        when MUXSEL_ROW_ELIM_RENDER,
       row_count                 when MUXSEL_ROW_ELIM_INCREMENT,
       row_count                 when MUXSEL_ROW_ELIM_MOVE_DOWN,
-      "00000"                   when MUXSEL_ROW_ELIM_ZERO, -- N/A
-      "00000"                   when others;
+      "00000"                   when MUXSEL_ROW_ELIM_ZERO; -- N/A
 
     with ram_write_data_mux select block_o <=
       block_i                   when MUXSEL_MOVE_DOWN,
