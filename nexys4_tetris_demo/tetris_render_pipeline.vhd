@@ -6,6 +6,7 @@ use ieee.numeric_std.all;
 use work.definitions.all;
 
 library flib;
+use flib.vga.VGA_controller;
 
 
 
