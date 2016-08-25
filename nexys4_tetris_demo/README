@@ -1,0 +1,7 @@
+uni_vga.vhd has to be generated from the UNI-VGA package before the tetris demo can be compiled:
+
+1) download http://www.inp.nsk.su/~bolkhov/files/fonts/univga/
+2) git clone https://github.com/specing/bdf2vhdl
+3) cd bdf2vhdl
+4) make
+5) ./bdf2vhdl -n uni_vga -b < /path/to/uni_vga/u_vga16.bdf > /path/to/FPGA_projects/nexys4_tetris_demo/uni_vga.vhd

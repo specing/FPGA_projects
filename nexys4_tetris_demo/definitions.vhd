@@ -273,15 +273,17 @@ package definitions is
 
 
     package font is
+        -- real font package, externally generated
+        alias data is work.uni_vga;
         -- addressed first by row (4 bit) then by column (3 bit)
         -- total 2**7 = 128 dots per letter
         package row is
-            constant width : natural := 4;
+            constant width : natural := util.compute_width (data.character_height);
             subtype object is std_logic_vector (width - 1 downto 0);
         end package row;
 
         package column is
-            constant width : natural := 3;
+            constant width : natural := util.compute_width (data.character_width);
             subtype object is std_logic_vector (width - 1 downto 0);
         end package column;
         -- as usual, a helpful alias
@@ -300,50 +302,11 @@ package definitions is
                           c : in col.object
                          ) return std_logic;
 
+        type font_storage is array (letter.None to letter.one) of data.pixel_rows;
 
-        -- Static font table
-        subtype pixel_row is std_logic_vector (0 to 2 ** col.width - 1);
-
-        type pixel_rows is
-          -- just one letter right now
-          array (0 to 2**row.width - 1) of
-          pixel_row;
-
-        constant font_for_None : pixel_rows := (
-           "00000000", -- 0
-           "00000000", -- 1
-           "00000000", -- 2
-           "00000000", -- 3
-           "00000000", -- 4
-           "00000000", -- 5
-           "00000000", -- 6
-           "00000000", -- 7
-           "00000000", -- 8
-           "00000000", -- 9
-           "00000000", -- a
-           "00000000", -- b
-           "00000000", -- c
-           "00000000", -- d
-           "00000000", -- e
-           "00000000" -- f
-          );
-        constant font_for_one : pixel_rows := (
-           "00000000", -- 0
-           "00000000", -- 1
-           "00000000", -- 2
-           "00000111", -- 3
-           "00001111", -- 4
-           "00011111", -- 5
-           "00111011", -- 6
-           "01110011", -- 7
-           "11100011", -- 8
-           "00000011", -- 9
-           "00000011", -- a
-           "00000011", -- b
-           "00000011", -- c
-           "00000011", -- d
-           "00000011", -- e
-           "00000011" -- f
+        constant font_data : font_storage := (
+           letter.None => data.glyph_for_20_space,
+           letter.one  => data.glyph_for_31_one
           );
     end package font;
 
@@ -441,22 +404,12 @@ package body definitions is
 
 
     package body font is
-        function get_pixel_rows (l : in letter.object) return pixel_rows is
-            use letter.all;
-        begin
-            case l is
-            when None => return font_for_None;
-            when one  => return font_for_one;
-            end case;
-        end get_pixel_rows;
-
-
         function get_dot (l : in letter.object;
                           r : in row.object;
                           c : in col.object
                          ) return std_logic is
-            constant prows : pixel_rows := get_pixel_rows (l);
-            constant prow  : pixel_row  := prows (conv_integer (r));
+            constant prows : data.pixel_rows := font_data (l);
+            constant prow  : data.pixel_row  := prows (conv_integer (r));
         begin
             return prow (conv_integer (c));
         end get_dot;
