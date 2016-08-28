@@ -70,12 +70,12 @@ architecture Behavioral of tetris_block is
         state_full_row_elim,
         state_full_row_elim_wait,
         -- move down
-        state_active_element_MD,
-        state_active_element_MD_wait,
+        state_active_tetrimino_MD,
+        state_active_tetrimino_MD_wait,
         -- user input
-        state_active_element_input,
-        state_active_element_input_wait,
-        state_active_element_input_ack
+        state_active_tetrimino_input,
+        state_active_tetrimino_input_wait,
+        state_active_tetrimino_input_ack
     );
     signal state, next_state : fsm_states := state_wait_for_initial_input;
 
@@ -198,26 +198,22 @@ begin
         fsm_ready_o             => row_elim_ready
     );
 
-    Inst_active_element: entity work.tetris_active_element
+    Inst_active_tetrimino: entity work.tetris_active_tetrimino
     port map
     (
         clock_i                 => clock_i,
         reset_i                 => reset_i,
-
         -- communication with main RAM
         block_o                 => active_write_data,
         block_i                 => ram_read_data,
         block_write_enable_o    => active_write_enable,
         block_read_address_o    => active_read_address,
         block_write_address_o   => active_write_address,
-
         -- for next tetrimino selection (random)
         tetrimino_shape_next_i  => tetrimino_shape_next_i,
-
-        -- readout for drawing of active element
+        -- readout for drawing of active tetrimino
         active_data_o           => active_tetrimino_shape,
         active_address_i        => block_render_address_i,
-
         -- communication with the main finite state machine
         operation_i             => active_operation,
         fsm_start_i             => active_start,
@@ -293,22 +289,22 @@ begin
         when state_full_row_elim_wait =>
             ram_access_mux                  <= MUXSEL_ROW_ELIM;
 
-        when state_active_element_MD =>
+        when state_active_tetrimino_MD =>
             active_start                    <= '1';
             ram_access_mux                  <= MUXSEL_ACTIVE_ELEMENT;
             active_tetrimino_command_mux    <= ATC_MOVE_DOWN;
-        when state_active_element_MD_wait =>
+        when state_active_tetrimino_MD_wait =>
             ram_access_mux                  <= MUXSEL_ACTIVE_ELEMENT;
             active_tetrimino_command_mux    <= ATC_MOVE_DOWN;
 
-        when state_active_element_input =>
+        when state_active_tetrimino_input =>
             active_start                    <= '1';
             ram_access_mux                  <= MUXSEL_ACTIVE_ELEMENT;
             active_tetrimino_command_mux    <= ATC_USER_INPUT;
-        when state_active_element_input_wait =>
+        when state_active_tetrimino_input_wait =>
             ram_access_mux                  <= MUXSEL_ACTIVE_ELEMENT;
             active_tetrimino_command_mux    <= ATC_USER_INPUT;
-        when state_active_element_input_ack =>
+        when state_active_tetrimino_input_ack =>
             active_operation_ack_o          <= '1';
         end case;
     end process;
@@ -344,30 +340,30 @@ begin
         when state_full_row_elim_wait =>
             if row_elim_ready = '1' then
                 if refresh_count_at_top = '1' then
-                    next_state <= state_active_element_MD;
+                    next_state <= state_active_tetrimino_MD;
                 else
-                    next_state <= state_active_element_input;
+                    next_state <= state_active_tetrimino_input;
                 end if;
             end if;
 
-        when state_active_element_MD =>
-            next_state <= state_active_element_MD_wait;
-        when state_active_element_MD_wait =>
+        when state_active_tetrimino_MD =>
+            next_state <= state_active_tetrimino_MD_wait;
+        when state_active_tetrimino_MD_wait =>
             if active_ready = '1' then
                 if game_over = '1' then
                     next_state <= state_wait_for_initial_input;
                 else
-                    next_state <= state_active_element_input;
+                    next_state <= state_active_tetrimino_input;
                 end if;
             end if;
 
-        when state_active_element_input =>
-            next_state <= state_active_element_input_wait;
-        when state_active_element_input_wait =>
+        when state_active_tetrimino_input =>
+            next_state <= state_active_tetrimino_input_wait;
+        when state_active_tetrimino_input_wait =>
             if active_ready = '1' then
-                next_state <= state_active_element_input_ack;
+                next_state <= state_active_tetrimino_input_ack;
             end if;
-        when state_active_element_input_ack =>
+        when state_active_tetrimino_input_ack =>
             next_state <= state_start;
         end case;
     end process;

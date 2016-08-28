@@ -7,7 +7,7 @@ use work.definitions.all;
 
 
 
-entity tetris_active_element is
+entity tetris_active_tetrimino is
     port
     (
         clock_i                 : in     std_logic;
@@ -20,7 +20,7 @@ entity tetris_active_element is
         block_write_address_o   : out    tetris.storage.address.object;
         -- for next tetrimino selection (random)
         tetrimino_shape_next_i  : in     tetrimino_shape_type;
-        -- readout for drawing of active element
+        -- readout for drawing of active tetrimino
         active_data_o           : out    tetrimino_shape_type;
         active_address_i        : in     tetris.storage.address.object;
         -- communication with the main finite state machine
@@ -29,11 +29,11 @@ entity tetris_active_element is
         fsm_ready_o             : out    std_logic;
         fsm_game_over_o         : out    std_logic
     );
-end tetris_active_element;
+end tetris_active_tetrimino;
 
 
 
-architecture Behavioral of tetris_active_element is
+architecture Behavioral of tetris_active_tetrimino is
 
     alias ts is tetris.storage;
 

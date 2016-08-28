@@ -37,7 +37,7 @@ architecture behavior of testbench_active_tetrimino is
 
 begin
 
-    uut: entity work.tetris_active_element
+    uut: entity work.tetris_active_tetrimino
     port map
     (
         clock_i                 => clock_i,
