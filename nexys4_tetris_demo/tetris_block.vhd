@@ -1,7 +1,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
-use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
+use ieee.numeric_std_unsigned.all;
 
 library flib;
 use flib.util;
@@ -137,12 +137,12 @@ begin
     begin
         if rising_edge (clock_i) then
             if ram_write_enable = '1' then
-                RAM (conv_integer(ram_write_address.row & ram_write_address.col)) <= ram_write_data;
+                RAM (to_integer (ram_write_address.row & ram_write_address.col)) <= ram_write_data;
             end if;
         end if;
     end process;
 
-    ram_read_data <= RAM (conv_integer(ram_read_address.row & ram_read_address.col));
+    ram_read_data <= RAM (to_integer (ram_read_address.row & ram_read_address.col));
 
 
     -- figure out who has access to it

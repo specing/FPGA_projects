@@ -1,7 +1,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
-use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
+use ieee.numeric_std_unsigned.all;
 
 library flib;
 use flib.util;
@@ -494,9 +494,9 @@ package body definitions is
                           c : in col.object
                          ) return std_logic is
             constant prows : data.pixel_rows := font_data (l);
-            constant prow  : data.pixel_row  := prows (conv_integer (r));
+            constant prow  : data.pixel_row  := prows (to_integer (r));
         begin
-            return prow (conv_integer (c));
+            return prow (to_integer (c));
         end get_dot;
     end package body font;
 

@@ -1,7 +1,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
-use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
+use ieee.numeric_std_unsigned.all;
 
 use work.definitions.all;
 
@@ -215,7 +215,7 @@ begin
       corner_column_operand     when ZERO;
 
     -- compute next tetrimino block addresses
-    next_tetrimino_init_row <= tetrimino_init_rom (conv_integer (
+    next_tetrimino_init_row <= tetrimino_init_rom (to_integer (
       tetrimino_shape_next & tetrimino_rotation_new));
 
     -- 8 registers for storing new rows and columns

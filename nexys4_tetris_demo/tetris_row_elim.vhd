@@ -1,7 +1,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
-use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
+use ieee.numeric_std_unsigned.all;
 
 use work.definitions.all;
 
@@ -103,12 +103,12 @@ begin
     begin
         if rising_edge (clock_i) then
             if row_elim_write_enable = '1' then
-                RAM_ROW_ELIM (conv_integer (row_elim_write_address)) <= row_elim_write_data;
+                RAM_ROW_ELIM (to_integer (row_elim_write_address)) <= row_elim_write_data;
             end if;
         end if;
     end process;
 
-    row_elim_read_data <= RAM_ROW_ELIM (conv_integer (row_elim_read_address));
+    row_elim_read_data <= RAM_ROW_ELIM (to_integer (row_elim_read_address));
     row_elim_data_o    <= tetris.row_elim.vga_compat.to_compat (row_elim_read_data);
 
     with row_elim_mode select row_elim_write_data <=

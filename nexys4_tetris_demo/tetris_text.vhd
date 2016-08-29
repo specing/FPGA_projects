@@ -1,6 +1,6 @@
 library ieee;
 use ieee.std_logic_1164.all;
-use ieee.std_logic_unsigned.all;
+use ieee.numeric_std_unsigned.all;
 
 use work.definitions.all;
 
@@ -49,13 +49,12 @@ begin
     begin
         if rising_edge (clock_i) then
             if write_enable = '1' then
-                ram (conv_integer(write_address_combined)) <= write_data;
+                ram (to_integer (write_address_combined)) <= write_data;
             end if;
         end if;
     end process;
 
-    read_data   <= ram (conv_integer(read_address_combined));
-
+    read_data   <= ram (to_integer (read_address_combined));
     read_dot_o  <= font.get_dot (read_data, read_subaddress_i.row, read_subaddress_i.col);
 
 end Behavioral;
