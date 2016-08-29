@@ -237,8 +237,8 @@ begin
         clock_i         => clock_i,
         reset_i         => reset_i,
         enable_i        => screen_finished_render_i,
-        reset_when_i    => std_logic_vector (to_unsigned (refresh_count_top, refresh_count_width)),
-        reset_value_i   => std_logic_vector (to_unsigned (0,                 refresh_count_width)),
+        reset_when_i    => To_SLV (refresh_count_top, refresh_count_width),
+        reset_value_i   => To_SLV (0,                 refresh_count_width),
         count_o         => open,
         count_at_top_o  => refresh_count_at_top,
         overflow_o      => open

@@ -1,6 +1,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use ieee.numeric_std_unsigned.all;
 
 library flib;
 
@@ -73,8 +74,8 @@ begin
         clock_i         => clock_i,
         reset_i         => reset_i,
         enable_i        => '1',
-        reset_when_i    => std_logic_vector (to_unsigned (prescaler_top, prescaler_width)),
-        reset_value_i   => std_logic_vector (to_unsigned (0, prescaler_width)),
+        reset_when_i    => To_SLV (prescaler_top, prescaler_width),
+        reset_value_i   => To_SLV (0,             prescaler_width),
         count_o         => open,
         count_at_top_o  => open,
         overflow_o      => prescaler_overflow
@@ -89,15 +90,15 @@ begin
         clock_i         => clock_i,
         reset_i         => reset_i,
         enable_i        => '1',
-        reset_when_i    => std_logic_vector (to_unsigned (dim_top, dim_width)),
-        reset_value_i   => std_logic_vector (to_unsigned (0, dim_width)),
+        reset_when_i    => To_SLV (dim_top, dim_width),
+        reset_value_i   => To_SLV (0,       dim_width),
         count_o         => open,
         count_at_top_o  => open,
         overflow_o      => dim_overflow
     );
 
     with dim_overflow select anodes_o <=
-      anodes when '1', --std_logic_vector(to_unsigned(0, dim_width)),
+      anodes when '1', -- To_SLV (0, dim_width),
       (others => anode_off) when others;
 
 

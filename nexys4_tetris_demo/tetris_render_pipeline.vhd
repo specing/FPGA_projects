@@ -1,6 +1,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use ieee.numeric_std_unsigned.all;
 
 use work.definitions.all;
 
@@ -262,11 +263,11 @@ begin
             display.c.green <= "1000";
             display.c.blue  <= "0111";
         -- check if we have to draw static lines
-        elsif stage4_vga_pixel_address.col = std_logic_vector(to_unsigned(255, stage4_vga_pixel_address.col'length))
-        or    stage4_vga_pixel_address.col = std_logic_vector(to_unsigned(0,   stage4_vga_pixel_address.col'length))
-        or    stage4_vga_pixel_address.col = std_logic_vector(to_unsigned(639, stage4_vga_pixel_address.col'length))
-        or    stage4_vga_pixel_address.row = std_logic_vector(to_unsigned(0,   stage4_vga_pixel_address.row'length))
-        or    stage4_vga_pixel_address.row = std_logic_vector(to_unsigned(479, stage4_vga_pixel_address.row'length))
+        elsif stage4_vga_pixel_address.col = To_SLV (255, stage4_vga_pixel_address.col'length)
+        or    stage4_vga_pixel_address.col = To_SLV (0,   stage4_vga_pixel_address.col'length)
+        or    stage4_vga_pixel_address.col = To_SLV (639, stage4_vga_pixel_address.col'length)
+        or    stage4_vga_pixel_address.row = To_SLV (0,   stage4_vga_pixel_address.row'length)
+        or    stage4_vga_pixel_address.row = To_SLV (479, stage4_vga_pixel_address.row'length)
         then
             display.c.red   <= "1000";
             display.c.green <= "0000";

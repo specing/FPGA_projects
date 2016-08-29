@@ -1,6 +1,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use ieee.numeric_std_unsigned.all;
 
 library flib;
 use flib.basic.all;
@@ -27,7 +28,7 @@ end generic_register;
 architecture Behavioral of generic_register is
 
     constant data_on_reset  : std_logic_vector (data_i'range)
-                            :=std_logic_vector (to_unsigned (reset_value, data_i'length));
+                            :=To_SLV (reset_value, data_i'length);
 
     signal data             : std_logic_vector (data_i'range)
                             :=data_on_reset;

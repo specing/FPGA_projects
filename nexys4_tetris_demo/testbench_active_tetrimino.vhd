@@ -1,6 +1,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use ieee.numeric_std_unsigned.all;
 
 
 
@@ -78,8 +79,8 @@ begin
 
         for row in 0 to 31 loop
             for col in 0 to 15 loop
-                active_row_i    <= std_logic_vector (to_unsigned (row, 5));
-                active_column_i <= std_logic_vector (to_unsigned (column, 4));
+                active_row_i    <= To_SLV (row, 5);
+                active_column_i <= To_SLV (col, 4);
                 wait for 4 * clock_i_period;
             end loop;
         end loop;
