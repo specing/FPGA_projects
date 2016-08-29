@@ -79,7 +79,8 @@ architecture Behavioral of tetris_block is
     );
     signal state, next_state : fsm_states := state_wait_for_initial_input;
 
-    constant refresh_count_top      : natural := 59; --255;
+    -- Note: this is supposed to decrease the more points we have
+    constant refresh_count_top      : natural := config.vga.refresh_rate - 1;
     constant refresh_count_width    : natural := util.compute_width (refresh_count_top);
     signal refresh_count_at_top     : std_logic;
 

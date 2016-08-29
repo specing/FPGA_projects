@@ -19,6 +19,10 @@ package definitions is
         -- Must be enough to hold onscreen pixels + front/back porch + dead time
         constant vga_row_width    : integer := 10;
         constant vga_column_width : integer := 10;
+        --
+        package vga is
+            constant refresh_rate : natural := 60; -- Hz
+        end package vga;
 
         -- Tetris playing surface size
         constant number_of_rows    : positive := 30;
