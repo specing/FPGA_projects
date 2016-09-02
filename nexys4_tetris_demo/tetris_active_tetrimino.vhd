@@ -404,15 +404,14 @@ begin
         case state is
         when state_start =>
             if fsm_start_i = '1' then
-                case operation_i is
-                when ATO_NONE =>                     next_state <= state_start;
-                when ATO_DROP_DOWN =>                next_state <= state_MD_addresses;
-                when ATO_MOVE_DOWN =>                next_state <= state_MD_addresses;
-                when ATO_MOVE_LEFT =>                next_state <= state_ML_addresses;
-                when ATO_MOVE_RIGHT =>               next_state <= state_MR_addresses;
-                when ATO_ROTATE_CLOCKWISE =>         next_state <= state_RC_rotation;
-                when ATO_ROTATE_COUNTER_CLOCKWISE => next_state <= state_RCC_rotation;
-                end case;
+                with operation_i select next_state <=
+                  state_start        when ATO_NONE,
+                  state_MD_addresses when ATO_DROP_DOWN,
+                  state_MD_addresses when ATO_MOVE_DOWN,
+                  state_ML_addresses when ATO_MOVE_LEFT,
+                  state_MR_addresses when ATO_MOVE_RIGHT,
+                  state_RC_rotation  when ATO_ROTATE_CLOCKWISE,
+                  state_RCC_rotation when ATO_ROTATE_COUNTER_CLOCKWISE;
             end if;
 
         when state_NT_new_addresses =>
