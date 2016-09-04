@@ -74,6 +74,14 @@ architecture Behavioral of tetris_render_pipeline is
 
     signal score_count                  : score_count_type;
 
+
+    signal stage2_nt_shape              : tetrimino_shape_type;
+    signal stage3_nt_shape              : tetrimino_shape_type;
+    signal stage3_nt_colours            : vga.colours.object;
+    signal stage4_nt_colours            : vga.colours.object;
+    signal stage3_nt_enable_draw        : std_logic;
+    signal stage4_nt_enable_draw        : std_logic;
+
     -- New Tetrimino
     signal nt_shape                     : tetrimino_shape_type;
     signal nt_retrieved                 : std_logic;
@@ -123,6 +131,9 @@ begin
         -- for Next Tetrimino selection (random)
         nt_shape_o              => nt_shape,
         nt_retrieved_i          => nt_retrieved,
+        -- render pipeline
+        render_shape_o          => stage2_nt_shape,
+        render_address_i        => stage3_vga_pixel_address
     );
 
     -- obtain the block descriptor given row and column
@@ -172,8 +183,16 @@ begin
 
             stage3_row_elim_data_out    <= stage2_row_elim_data_out;
             stage3_block_colours        <= stage2_block_colours;
+
+            stage3_nt_shape             <= stage2_nt_shape;
         end if;
     end process;
+
+    get_colour (stage3_nt_shape,
+                stage3_nt_colours.red,
+                stage3_nt_colours.green,
+                stage3_nt_colours.blue
+               );
 
     -- Merge row elimination colours
     stage3_block_final_colours.red   <= stage3_block_colours.red   or stage3_row_elim_data_out(4 downto 1);
@@ -185,27 +204,32 @@ begin
     -- = 011000|0000 pixel column to 011011|1111
     -- row 000000|0000 to 000011|1111
 
-    -- figure out if we ough to draw the next tetrimino bounding box
-    Block_BlaBla: block
+    -- figure out if we have to draw the next tetrimino bounding box
+    process (all)
         alias pa is stage3_vga_pixel_address;
+
+        alias pa_common_row is pa.row (pa.row'high    downto pa.row'low + 6);
+        alias pa_inside_row is pa.row (pa.row'low + 5 downto pa.row'low);
+
+        alias pa_common_col is pa.col (pa.col'high    downto pa.col'low + 6);
+        alias pa_inside_col is pa.col (pa.col'low + 5 downto pa.col'low);
     begin
-        process (pa)
-        begin
-            -- upper row
-            if (pa.row = "0000000000" and pa.col (9 downto 6) = "0110")
-            -- lower row
-            or (pa.row = "0000111111" and pa.col (9 downto 6) = "0110")
-            -- left column
-            or (pa.col = "0110000000" and pa.row (9 downto 6) = "0000")
-            -- right column
-            or (pa.col = "0110111111" and pa.row (9 downto 6) = "0000")
-            then
+        if pa_common_row = "0000" and pa_common_col = "0110" then
+            stage3_nt_enable_draw <= '1';
+
+            if   pa_inside_row = "000000" or pa_inside_row = "111111" -- upper and lower row
+              or pa_inside_col = "000000" or pa_inside_col = "111111" -- left and right column
+              then
                 stage3_draw_tetrimino_bb <= '1';
             else
                 stage3_draw_tetrimino_bb <= '0';
             end if;
-        end process;
-    end block;
+
+        else
+            stage3_draw_tetrimino_bb <= '0';
+            stage3_nt_enable_draw <= '0';
+        end if;
+    end process;
 
     Inst_text: entity work.tetris_text
     port map
@@ -232,6 +256,9 @@ begin
             stage4_draw_tetrimino_bb    <= stage3_draw_tetrimino_bb;
 
             stage4_text_enable_draw     <= stage3_text_dot;
+
+            stage4_nt_colours           <= stage3_nt_colours;
+            stage4_nt_enable_draw       <= stage3_nt_enable_draw;
         end if;
     end process;
 
@@ -249,6 +276,7 @@ begin
     process
     (
         stage4_vga_enable_draw, stage4_draw_tetrimino_bb, stage4_text_enable_draw,
+        stage4_nt_enable_draw, stage4_nt_colours,
         stage4_vga_pixel_address, stage4_block_colours,
         on_tetris_surface
     )
@@ -279,6 +307,8 @@ begin
         -- check if we are on the tetris block surface
         elsif on_tetris_surface = '1' then
             display.c       <= stage4_block_colours;
+        elsif stage4_nt_enable_draw then
+            display.c       <= stage4_nt_colours;
         -- else don't draw anything.
         else
             display.c       <= vga.colours.all_off;
