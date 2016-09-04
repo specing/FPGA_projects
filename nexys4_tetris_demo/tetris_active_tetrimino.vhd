@@ -18,8 +18,9 @@ entity tetris_active_tetrimino is
         block_write_enable_o    : out    std_logic;
         block_read_address_o    : out    tetris.storage.address.object;
         block_write_address_o   : out    tetris.storage.address.object;
-        -- for next tetrimino selection (random)
-        tetrimino_shape_next_i  : in     tetrimino_shape_type;
+        -- for Next Tetrimino selection (random)
+        nt_shape_i              : in     tetrimino_shape_type;
+        nt_retrieved_o          : out    std_logic;
         -- readout for drawing of active tetrimino
         active_data_o           : out    tetrimino_shape_type;
         active_address_i        : in     tetris.storage.address.object;
@@ -165,19 +166,21 @@ architecture Behavioral of tetris_active_tetrimino is
 begin
 
     process (corner_row, corner_column,
-             tetrimino_select, tetrimino_shape, tetrimino_shape_next_i )
+             tetrimino_select, tetrimino_shape, nt_shape_i )
     begin
         case tetrimino_select is
         when TETRIMINO_OLD =>
             corner_row_operand      <= corner_row;
             corner_column_operand   <= corner_column;
             tetrimino_shape_next    <= tetrimino_shape;
+            nt_retrieved_o          <= '0';
         when TETRIMINO_NEW =>
             -- next tetrimino select (shape, position)
             corner_row_operand      <= tetris.tetrimino_start_row;
             corner_column_operand   <= tetris.tetrimino_start_col;
             -- comes from the RNG
-            tetrimino_shape_next    <= tetrimino_shape_next_i;
+            tetrimino_shape_next    <= nt_shape_i;
+            nt_retrieved_o          <= '1'; -- confirm retrieving new shape
         end case;
     end process;
 
