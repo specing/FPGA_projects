@@ -13,7 +13,7 @@ entity sync_generator is
     (
         -- these values depend on the input clock and scan frequencies
         -- The following defaults are HSYNC ones
-        -- for a 25 MHz pixel clock and 60 Hz scan frequency
+        -- for a 25 MHz pixel clock and 60 Hz scan frequency on 640x480 resolution display.
 
         -- how many pixel clock cycles are spent on the display surface
         t_display       : positive := 640;

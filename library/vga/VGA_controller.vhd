@@ -33,21 +33,14 @@ end VGA_controller;
 
 architecture Behavioral of VGA_controller is
 
-    signal colclock         : std_logic; -- aka. pixel clock
+    alias colclock is pixelclock_i;
     signal rowclock         : std_logic;
-
-    signal counter_prescale : std_logic_vector (1 downto 0);
-    signal row              : std_logic_vector (row_width - 1 downto 0);
-    signal col              : std_logic_vector (column_width - 1 downto 0);
 
     signal en_draw_row      : std_logic;
     signal en_draw_col      : std_logic;
 
 begin
 
-    -- export signals
-    row_o       <= row;
-    col_o       <= col;
     -- draw only when both HSYNC and VSYNC modules say so
     en_draw_o   <= en_draw_row and en_draw_col;
 
@@ -60,8 +53,6 @@ begin
         input_i     => en_draw_row,
         output_o    => off_screen_o
     );
-
-    colclock <= pixelclock_i;
 
     Inst_hsync: entity work.sync_generator
     generic map
@@ -80,7 +71,7 @@ begin
         sync_o          => hsync_o,
         sig_cycle_o     => rowclock,
         en_draw_o       => en_draw_col,
-        pixel_pos_o     => col
+        pixel_pos_o     => col_o
     );
 
 
@@ -88,8 +79,8 @@ begin
     generic map
     (
         t_display       => 480,
-        t_fp            => 10, --10,
-        t_bp            => 29, --29,
+        t_fp            => 10,
+        t_bp            => 29,
         t_pw            => 2,
         counter_width   => row_width
     )
@@ -101,7 +92,7 @@ begin
         sync_o          => vsync_o,
         sig_cycle_o     => screen_end_o,
         en_draw_o       => en_draw_row,
-        pixel_pos_o     => row
+        pixel_pos_o     => row_o
     );
 
 end Behavioral;
