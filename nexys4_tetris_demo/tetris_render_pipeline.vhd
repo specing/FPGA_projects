@@ -34,7 +34,6 @@ architecture Behavioral of tetris_render_pipeline is
     signal vga_sync                     : vga.sync.object;
     signal vga_pixel_address            : vga.pixel.address.object;
     signal vga_enable_draw              : std_logic;
-    signal vga_screen_end               : std_logic;
     signal vga_off_screen               : std_logic;
 
     -- pipeline stuff
@@ -106,7 +105,7 @@ begin
         row_o           => vga_pixel_address.row,
         en_draw_o       => vga_enable_draw,
 
-        screen_end_o    => vga_screen_end,
+        screen_end_o    => open,
         off_screen_o    => vga_off_screen
     );
     -------------------------------------------------------
