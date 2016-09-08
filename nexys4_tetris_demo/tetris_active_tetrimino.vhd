@@ -125,11 +125,9 @@ architecture Behavioral of tetris_active_tetrimino is
         -- MR... MOVE_RIGHT
         state_MR_addresses,
         -- RC... ROTATE_CLOCKWISE
-        state_RC_rotation,
         state_RC_addresses,
         state_RC_addresses_check,
         -- RCC... ROTATE_COUNTER_CLOCKWISE
-        state_RCC_rotation,
         state_RCC_addresses,
         state_RCC_addresses_check,
         -- check contents of cells (generic) and go back to start on failure
@@ -361,15 +359,11 @@ begin
             corner_column_operation         <= PLUS_ONE;
             new_address_write_enable        <= '1';
 
-        when state_RC_rotation =>
-            null;
         when state_RC_addresses =>
             new_address_write_enable        <= '1';
         when state_RC_addresses_check =>
             null;
 
-        when state_RCC_rotation =>
-            null;
         when state_RCC_addresses =>
             new_address_write_enable        <= '1';
         when state_RCC_addresses_check =>
@@ -413,8 +407,8 @@ begin
                   state_MD_addresses when ATO_MOVE_DOWN,
                   state_ML_addresses when ATO_MOVE_LEFT,
                   state_MR_addresses when ATO_MOVE_RIGHT,
-                  state_RC_rotation  when ATO_ROTATE_CLOCKWISE,
-                  state_RCC_rotation when ATO_ROTATE_COUNTER_CLOCKWISE;
+                  state_RC_addresses when ATO_ROTATE_CLOCKWISE,
+                  state_RCC_addresses when ATO_ROTATE_COUNTER_CLOCKWISE;
             end if;
 
         when state_NT_new_addresses =>
@@ -503,8 +497,6 @@ begin
                 next_state <= state_check_contents0;
             end if;
 
-        when state_RC_rotation =>
-            next_state <= state_RC_addresses;
         when state_RC_addresses =>
             next_state <= state_RC_addresses_check;
         when state_RC_addresses_check =>
@@ -517,8 +509,6 @@ begin
                 next_state <= state_check_contents0;
             end if;
 
-        when state_RCC_rotation =>
-            next_state <= state_RCC_addresses;
         when state_RCC_addresses =>
             next_state <= state_RCC_addresses_check;
         when state_RCC_addresses_check =>
