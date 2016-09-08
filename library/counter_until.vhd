@@ -37,6 +37,9 @@ begin
     overflow_o      <= count_at_top and enable_i;
     count_at_top_o  <= count_at_top;
 
+    count_at_top <= '1' when count = reset_when_i
+               else '0';
+
     process (clock_i)
     begin
         if rising_edge (clock_i) then
@@ -53,15 +56,6 @@ begin
                     end if;
                 end if;
             end if;
-        end if;
-    end process;
-
-    process (count, reset_when_i)
-    begin
-        if count = reset_when_i then
-            count_at_top <= '1';
-        else
-            count_at_top <= '0';
         end if;
     end process;
 
