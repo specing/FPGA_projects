@@ -37,7 +37,7 @@ entity sync_generator is
         sync_o          : out    std_logic; -- output of HSYNC
         sig_cycle_o     : out    std_logic; -- row clock -- enable for vsync
 
-        en_draw_o       : out    std_logic; -- enable drawing (on display surface)
+        enable_draw_o   : out    std_logic; -- enable drawing (on display surface)
         pixel_pos_o     : out    std_logic_vector (counter_width - 1 downto 0)
     );
 end sync_generator;
@@ -94,11 +94,11 @@ begin
     process (sig_display_on, sig_display_off, draw_on)
     begin
         if sig_display_on = '1' then
-            en_draw_o <= '1';
+            enable_draw_o <= '1';
         elsif draw_on = '1' and sig_display_off = '0' then
-            en_draw_o <= '1';
+            enable_draw_o <= '1';
         else
-            en_draw_o <= '0';
+            enable_draw_o <= '0';
         end if;
     end process;
 

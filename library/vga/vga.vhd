@@ -34,7 +34,7 @@ package vga is
             sync_o          : out    std_logic; -- output of HSYNC
             sig_cycle_o     : out    std_logic; -- row clock -- enable for vsync
 
-            en_draw_o       : out    std_logic; -- enable drawing (on display surface)
+            enable_draw_o   : out    std_logic; -- enable drawing (on display surface)
             pixel_pos_o     : out    std_logic_vector (counter_width - 1 downto 0)
         );
     end component sync_generator;
@@ -51,13 +51,14 @@ package vga is
             clock_i         : in     std_logic;
             reset_i         : in     std_logic;
             pixelclock_i    : in     std_logic;
-
+            -- Vertical and Horizontal SYNC
             vsync_o         : out    std_logic;
             hsync_o         : out    std_logic;
+            -- Pixel address on the virtual screen
             col_o           : out    std_logic_vector (column_width - 1 downto 0);
             row_o           : out    std_logic_vector (row_width - 1 downto 0);
             -- signals where we are
-            en_draw_o       : out    std_logic;
+            enable_draw_o   : out    std_logic;-- signals that we are on the active display area
             screen_end_o    : out    std_logic -- signals the end of drawing (1-cycle pulse)
         );
     end component VGA_controller;

@@ -98,13 +98,14 @@ begin
         clock_i         => clock_i,
         reset_i         => reset_i,
         pixelclock_i    => vga_pixel_clock_i,
-
+        -- Vertical and Horizontal SYNC
         hsync_o         => vga_sync.h,
         vsync_o         => vga_sync.v,
+        -- Pixel address on the virtual screen
         col_o           => vga_pixel_address.col,
         row_o           => vga_pixel_address.row,
         -- signals where we are
-        en_draw_o       => vga_enable_draw,
+        enable_draw_o   => vga_enable_draw,
         screen_end_o    => vga_off_screen
     );
     -------------------------------------------------------
