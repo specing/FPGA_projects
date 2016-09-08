@@ -56,10 +56,9 @@ package vga is
             hsync_o         : out    std_logic;
             col_o           : out    std_logic_vector (column_width - 1 downto 0);
             row_o           : out    std_logic_vector (row_width - 1 downto 0);
+            -- signals where we are
             en_draw_o       : out    std_logic;
-
-            screen_end_o    : out    std_logic;
-            off_screen_o    : out    std_logic
+            screen_end_o    : out    std_logic -- signals the end of drawing (1-cycle pulse)
         );
     end component VGA_controller;
 

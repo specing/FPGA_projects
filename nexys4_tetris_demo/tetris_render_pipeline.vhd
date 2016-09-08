@@ -103,10 +103,9 @@ begin
         vsync_o         => vga_sync.v,
         col_o           => vga_pixel_address.col,
         row_o           => vga_pixel_address.row,
+        -- signals where we are
         en_draw_o       => vga_enable_draw,
-
-        screen_end_o    => open,
-        off_screen_o    => vga_off_screen
+        screen_end_o    => vga_off_screen
     );
     -------------------------------------------------------
     ----------------- Rendering pipeline ------------------

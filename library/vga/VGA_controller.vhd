@@ -22,10 +22,9 @@ entity VGA_controller is
         hsync_o         : out    std_logic;
         col_o           : out    std_logic_vector (column_width - 1 downto 0);
         row_o           : out    std_logic_vector (row_width - 1 downto 0);
+        -- signals where we are
         en_draw_o       : out    std_logic;
-
-        screen_end_o    : out    std_logic;
-        off_screen_o    : out    std_logic
+        screen_end_o    : out    std_logic -- signals the end of drawing (1-cycle pulse)
     );
 end VGA_controller;
 
@@ -43,16 +42,6 @@ begin
 
     -- draw only when both HSYNC and VSYNC modules say so
     en_draw_o   <= en_draw_row and en_draw_col;
-
-    -- we are off screen when en_draw_row goes 0
-    Inst_FED: entity work.falling_edge_detector
-    port map
-    (
-        clock_i     => clock_i,
-        reset_i     => reset_i,
-        input_i     => en_draw_row,
-        output_o    => off_screen_o
-    );
 
     Inst_hsync: entity work.sync_generator
     generic map
