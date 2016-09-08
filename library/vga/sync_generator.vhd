@@ -49,8 +49,6 @@ architecture Behavioral of sync_generator is
     signal scancounter          : std_logic_vector (counter_width - 1 downto 0);
     signal scancounter_reset    : std_logic;
 
-    signal sig_cycle            : std_logic;
-
     signal sig_sync_off         : std_logic;
     signal sig_sync_on          : std_logic;
     signal sig_display_off      : std_logic;
@@ -59,9 +57,10 @@ architecture Behavioral of sync_generator is
     signal sync_on              : std_logic;
     signal draw_on              : std_logic;
 
+    alias sig_cycle is sig_display_on;
+
 begin
     sig_cycle_o         <= sig_cycle;
-    sig_cycle           <= sig_display_on;
 
     scancounter_reset   <= reset_i or sig_cycle;
     pixel_pos_o         <= scancounter;
