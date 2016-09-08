@@ -217,7 +217,7 @@ begin
 
     -- compute next tetrimino block addresses
     next_tetrimino_init_row <= tetrimino_init_rom (to_integer (
-      tetrimino_shape_next & tetrimino_rotation_new));
+      tetrimino_shape_next & tetrimino_rotation_next));
 
     -- 8 registers for storing new rows and columns
     process (clock_i)
@@ -235,15 +235,10 @@ begin
                 block1_column_new   <= ("0" & corner_column_next) + to_integer (next_tetrimino_init_row (5));
                 block2_column_new   <= ("0" & corner_column_next) + to_integer (next_tetrimino_init_row (6));
                 block3_column_new   <= ("0" & corner_column_next) + to_integer (next_tetrimino_init_row (7));
-                tetrimino_shape_new <= tetrimino_shape_next;
-            end if;
-        end if;
-    end process;
 
-    process (clock_i)
-    begin
-        if rising_edge (clock_i) then
-            tetrimino_rotation_new <= tetrimino_rotation_next;
+                tetrimino_shape_new     <= tetrimino_shape_next;
+                tetrimino_rotation_new  <= tetrimino_rotation_next;
+            end if;
         end if;
     end process;
     -------------------------------------------------------
