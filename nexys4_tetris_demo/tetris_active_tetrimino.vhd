@@ -129,10 +129,11 @@ architecture Behavioral of tetris_active_tetrimino is
         state_MR_addresses,
         -- RC... ROTATE_CLOCKWISE
         state_RC_addresses,
-        state_RC_addresses_check,
         -- RCC... ROTATE_COUNTER_CLOCKWISE
         state_RCC_addresses,
-        state_RCC_addresses_check,
+        -- check new addresses of the four square's,
+        -- go back to start on failure or proceed to state_check_contents0.
+        state_check_new_addresses,
         -- check contents of cells (generic) and go back to start on failure
         state_check_contents0,
         state_check_contents1,
@@ -357,14 +358,12 @@ begin
 
         when state_RC_addresses =>
             new_address_write_enable        <= '1';
-        when state_RC_addresses_check =>
-            null;
-
         when state_RCC_addresses =>
             new_address_write_enable        <= '1';
-        when state_RCC_addresses_check =>
-            null;
 
+        -- generic
+        when state_check_new_addresses =>
+            null;
         -- generic check contents
         when state_check_contents0 =>
             block_select                    <= BLOCK0;
@@ -491,8 +490,11 @@ begin
             end if;
 
         when state_RC_addresses =>
-            next_state <= state_RC_addresses_check;
-        when state_RC_addresses_check =>
+            next_state <= state_check_new_addresses;
+        when state_RCC_addresses =>
+            next_state <= state_check_new_addresses;
+
+        when state_check_new_addresses =>
             -- left means 16-31 are invalid; right means 30 and 31 are invalid
             -- both are dependent on the playing field being 16 columns by 32 rows!
             if block0_column_new(4) = '1' or block0_row_new(4 downto 1) = "1111"
@@ -503,19 +505,6 @@ begin
             else
                 next_state <= state_check_contents0;
             end if;
-
-        when state_RCC_addresses =>
-            next_state <= state_RCC_addresses_check;
-        when state_RCC_addresses_check =>
-            if block0_column_new(4) = '1' or block0_row_new(4 downto 1) = "1111"
-            or block1_column_new(4) = '1' or block1_row_new(4 downto 1) = "1111"
-            or block2_column_new(4) = '1' or block2_row_new(4 downto 1) = "1111"
-            or block3_column_new(4) = '1' or block3_row_new(4 downto 1) = "1111" then
-                next_state <= state_start;
-            else
-                next_state <= state_check_contents0;
-            end if;
-
         -- generic check contents, goes to start on error
         when state_check_contents0 =>
             if block_i = TETRIMINO_SHAPE_NONE then
