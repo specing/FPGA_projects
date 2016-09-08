@@ -131,7 +131,6 @@ begin
     with active_tetrimino_shape select tetrimino_shape_o <=
       ram_read_data          when TETRIMINO_SHAPE_NONE,
       active_tetrimino_shape when others;
-
     -------------------------------------------------------
     --------------- logic for RAM for blocks --------------
     -------------------------------------------------------
@@ -175,12 +174,9 @@ begin
       ts.address.all_zeros      when others; -- This is unnecessary,
       -- but otherwise Vivado uses 30 more LUTs on xc7a100t. The same happens
       -- if any of the other three is used instead of ts.address.all_zeros ...
-
-
     -------------------------------------------------------
     --------------------- sub modules ---------------------
     -------------------------------------------------------
-
     Inst_tetris_row_elim: entity work.tetris_row_elim
     port map
     (
@@ -229,11 +225,9 @@ begin
       ATO_NONE              when ATC_DISABLED,
       ATO_MOVE_DOWN         when ATC_MOVE_DOWN,
       active_operation_i    when ATC_USER_INPUT;
-
     -------------------------------------------------------
     -------------- support counters for FSM ---------------
     -------------------------------------------------------
-
     Inst_refresh_counter: entity work.counter_until
     generic map (width => refresh_count_width)
     port map
@@ -247,11 +241,9 @@ begin
         count_at_top_o  => refresh_count_at_top,
         overflow_o      => open
     );
-
     -------------------------------------------------------
     ------------------------- FSM -------------------------
     -------------------------------------------------------
-
     -- FSM state change process
     process (clock_i)
     begin
@@ -335,7 +327,6 @@ begin
         when state_start =>
             -- active only one clock
             if screen_finished_render_i = '1' then
-            --refresh_count_overflow = '1' then
                 next_state <= state_full_row_elim;
             end if;
 
