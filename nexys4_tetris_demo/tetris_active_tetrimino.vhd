@@ -36,6 +36,9 @@ end tetris_active_tetrimino;
 
 architecture Behavioral of tetris_active_tetrimino is
 
+    -- TODO: Move address checking to after new addresses are obtained
+    -- TODO: have a counter produce block_select so as to vacuum 4-state groups into one
+
     alias ts is tetris.storage;
 
     constant extended_column_width : integer := 5;
@@ -162,8 +165,8 @@ architecture Behavioral of tetris_active_tetrimino is
     signal tetrimino_rotation_new   : tetrimino_rotation_type;
 
 begin
-
-    process (corner_row, corner_column,
+    -- Combinatorially determine stuff in case we have to load new tetrimino
+    COMB_NT: process (corner_row, corner_column,
              tetrimino_select, tetrimino_shape, nt_shape_i )
     begin
         case tetrimino_select is
@@ -182,8 +185,8 @@ begin
         end case;
     end process;
 
-    -- determine next orientation
-    process ( operation_i, tetrimino_rotation )
+    -- Combinatorially determine next tetrimino rotation
+    COMB_NEXT_ROTATION: process ( operation_i, tetrimino_rotation )
     begin
         case operation_i is
         when ATO_ROTATE_CLOCKWISE =>
@@ -220,7 +223,7 @@ begin
       tetrimino_shape_next & tetrimino_rotation_next));
 
     -- 8 registers for storing new rows and columns
-    process (clock_i)
+    SAVE_NEW_DATA: process (clock_i)
     begin
         if rising_edge (clock_i) then
             if new_address_write_enable = '1' then
@@ -245,7 +248,7 @@ begin
     ---------------- active tetrimino data ----------------
     -------------------------------------------------------
     -- 8 registers for storing active rows and columns
-    process (clock_i)
+    SAVE_ACTIVE_DATA: process (clock_i)
     begin
         if rising_edge (clock_i) then
             if active_address_write_enable = '1' then
@@ -269,8 +272,7 @@ begin
     -------------------------------------------------------
     ------------------------- FSM -------------------------
     -------------------------------------------------------
-    -- FSM state change process
-    process (clock_i)
+    FSM_STATE_CHANGE: process (clock_i)
     begin
         if rising_edge (clock_i) then
             if reset_i = '1' then
@@ -281,8 +283,7 @@ begin
         end if;
     end process;
 
-    -- FSM output
-    process (state)
+    FSM_OUTPUT: process (state)
     begin
 
         fsm_ready_o                         <= '0';
@@ -381,15 +382,12 @@ begin
         end case;
     end process;
 
-    -- FSM next state
-    process
-    (
+    FSM_NEXT_STATE: process (
         state, fsm_start_i, operation_i, block_i,
         block0_row, block0_row_new, block0_column, block0_column_new,
         block1_row, block1_row_new, block1_column, block1_column_new,
         block2_row, block2_row_new, block2_column, block2_column_new,
-        block3_row, block3_row_new, block3_column, block3_column_new
-    )
+        block3_row, block3_row_new, block3_column, block3_column_new)
     begin
         next_state <= state;
 
@@ -397,12 +395,12 @@ begin
         when state_start =>
             if fsm_start_i = '1' then
                 with operation_i select next_state <=
-                  state_start        when ATO_NONE,
-                  state_MD_addresses when ATO_DROP_DOWN,
-                  state_MD_addresses when ATO_MOVE_DOWN,
-                  state_ML_addresses when ATO_MOVE_LEFT,
-                  state_MR_addresses when ATO_MOVE_RIGHT,
-                  state_RC_addresses when ATO_ROTATE_CLOCKWISE,
+                  state_start         when ATO_NONE,
+                  state_MD_addresses  when ATO_DROP_DOWN,
+                  state_MD_addresses  when ATO_MOVE_DOWN,
+                  state_ML_addresses  when ATO_MOVE_LEFT,
+                  state_MR_addresses  when ATO_MOVE_RIGHT,
+                  state_RC_addresses  when ATO_ROTATE_CLOCKWISE,
                   state_RCC_addresses when ATO_ROTATE_COUNTER_CLOCKWISE;
             end if;
 
@@ -495,6 +493,8 @@ begin
         when state_RC_addresses =>
             next_state <= state_RC_addresses_check;
         when state_RC_addresses_check =>
+            -- left means 16-31 are invalid; right means 30 and 31 are invalid
+            -- both are dependent on the playing field being 16 columns by 32 rows!
             if block0_column_new(4) = '1' or block0_row_new(4 downto 1) = "1111"
             or block1_column_new(4) = '1' or block1_row_new(4 downto 1) = "1111"
             or block2_column_new(4) = '1' or block2_row_new(4 downto 1) = "1111"
@@ -556,7 +556,7 @@ begin
     -------------------------------------------------------
     ---------- determine what to put on screen ------------
     -------------------------------------------------------
-    process (
+    ACTIVE_RENDER: process (
         active_address_i,
         block0_row,    block1_row,    block2_row,    block3_row,
         block0_column, block1_column, block2_column, block3_column,
