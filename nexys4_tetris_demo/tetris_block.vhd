@@ -112,7 +112,6 @@ architecture Behavioral of tetris_block is
     signal active_start : std_logic;
     signal active_ready : std_logic;
 
-    signal game_start   : std_logic;
     signal game_over    : std_logic;
 
 begin
@@ -122,7 +121,7 @@ begin
     port map
     (
         clock_i         => clock_i,
-        reset_i         => game_start,
+        reset_i         => reset_i,
         count_enable_i  => active_write_enable, -- temporary?
         count_o         => score_count_o
     );
@@ -259,7 +258,6 @@ begin
     -- FSM output
     process (state)
     begin
-
         ram_access_mux                      <= MUXSEL_RENDER;
 
         row_elim_start                      <= '0';
@@ -267,13 +265,10 @@ begin
         active_tetrimino_command_mux        <= ATC_DISABLED;
         active_operation_ack_o              <= '0';
 
-        game_start                          <= '0';
-
         case state is
         when state_wait_for_initial_input =>
             null;
         when state_confirm_start =>
-            game_start                      <= '1';
             -- clear key press
             active_operation_ack_o          <= '1';
         when state_start =>
