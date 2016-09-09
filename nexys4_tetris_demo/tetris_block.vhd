@@ -89,24 +89,25 @@ architecture Behavioral of tetris_block is
     signal ram_clear_finished   : std_logic;
     signal ram_clear_address    : ts.address.object;
     signal ram_clear_caddress   : std_logic_vector (ts.address.width - 1 downto 0);
+    -- Signals for row elimination
+    signal row_elim_read_address    : ts.address.object;
+    signal row_elim_write_data      : tetrimino_shape_type;
+    signal row_elim_write_enable    : std_logic;
+    signal row_elim_write_address   : ts.address.object;
+    signal row_elim_start           : std_logic;
+    signal row_elim_ready           : std_logic;
+    -- Signals for active element
     -- Note: this is supposed to decrease the more points we have
     constant refresh_count_top      : natural := config.vga.refresh_rate - 1;
     constant refresh_count_width    : natural := util.compute_width (refresh_count_top);
     signal refresh_count_at_top     : std_logic;
 
-    signal row_elim_read_address    : ts.address.object;
-    signal row_elim_read_column     : block_storage_column_type;
-    signal row_elim_write_data      : tetrimino_shape_type;
-    signal row_elim_write_enable    : std_logic;
-    signal row_elim_write_address   : ts.address.object;
-
-    signal row_elim_start           : std_logic;
-    signal row_elim_ready           : std_logic;
-
+    signal active_read_address      : ts.address.object;
     signal active_write_data        : tetrimino_shape_type;
     signal active_write_enable      : std_logic;
-    signal active_read_address      : ts.address.object;
     signal active_write_address     : ts.address.object;
+    signal active_start : std_logic;
+    signal active_ready : std_logic;
 
     signal active_tetrimino_shape   : tetrimino_shape_type;
     type active_tetrimino_command_mux_enum is
@@ -118,8 +119,6 @@ architecture Behavioral of tetris_block is
     signal active_tetrimino_command_mux : active_tetrimino_command_mux_enum;
     signal active_operation             : active_tetrimino_operations;
 
-    signal active_start : std_logic;
-    signal active_ready : std_logic;
 
     signal game_over    : std_logic;
 
@@ -280,8 +279,7 @@ begin
     -------------------------------------------------------
     ------------------------- FSM -------------------------
     -------------------------------------------------------
-    -- FSM state change process
-    process (clock_i)
+    FSM_STATE_CHANGE: process (clock_i)
     begin
         if rising_edge (clock_i) then
             if reset_i = '1' then
@@ -292,8 +290,7 @@ begin
         end if;
     end process;
 
-    -- FSM output
-    process (state)
+    FSM_OUTPUT: process (state)
     begin
         ram_access_mux                      <= MUXSEL_RENDER;
 
@@ -343,10 +340,7 @@ begin
         end case;
     end process;
 
-    -- FSM next state
-    process
-    (
-        state,
+    FSM_NEXT_STATE: process (state,
         screen_finished_render_i, refresh_count_at_top,
         ram_clear_finished, row_elim_ready,
         active_ready, active_operation_i, game_over)
