@@ -48,6 +48,7 @@ architecture Behavioral of tetris_block is
 
     type ram_access_mux_enum is
     (
+        MUXSEL_RAM_CLEAR,
         MUXSEL_RENDER,
         MUXSEL_ROW_ELIM,
         MUXSEL_ACTIVE_ELEMENT
@@ -64,6 +65,9 @@ architecture Behavioral of tetris_block is
 
     type fsm_states is
     (
+        -- RAM clearing
+        state_clear_ram,
+        -- Various game start states
         state_wait_for_initial_input,
         state_confirm_start,
         state_start,
@@ -78,8 +82,13 @@ architecture Behavioral of tetris_block is
         state_active_tetrimino_input_wait,
         state_active_tetrimino_input_ack
     );
-    signal state, next_state : fsm_states := state_wait_for_initial_input;
+    signal state, next_state : fsm_states := state_clear_ram;
 
+    -- Signals for RAM clearing logic
+    signal ram_clear_enable     : std_logic;
+    signal ram_clear_finished   : std_logic;
+    signal ram_clear_address    : ts.address.object;
+    signal ram_clear_caddress   : std_logic_vector (ts.address.width - 1 downto 0);
     -- Note: this is supposed to decrease the more points we have
     constant refresh_count_top      : natural := config.vga.refresh_rate - 1;
     constant refresh_count_width    : natural := util.compute_width (refresh_count_top);
@@ -143,17 +152,18 @@ begin
     end process;
 
     ram_read_data <= RAM (to_integer (ram_read_address.row & ram_read_address.col));
-
-
-    -- figure out who has access to it
+    -------------------------------------------------------
+    ------------- RAM access [de]multiplexers -------------
+    -------------------------------------------------------
     with ram_access_mux select ram_write_data <=
+      TETRIMINO_SHAPE_NONE      when MUXSEL_RAM_CLEAR,
       TETRIMINO_SHAPE_NONE      when MUXSEL_RENDER,
       row_elim_write_data       when MUXSEL_ROW_ELIM,
       active_write_data         when MUXSEL_ACTIVE_ELEMENT,
       TETRIMINO_SHAPE_NONE      when others;
 
-    --type address is record row : ts.row.object; col : ts.column.object; end record;
     with ram_access_mux select ram_write_address <=
+      ram_clear_address         when MUXSEL_RAM_CLEAR,
       active_write_address      when MUXSEL_ACTIVE_ELEMENT,
       ts.address.all_zeros      when MUXSEL_RENDER,
       row_elim_write_address    when MUXSEL_ROW_ELIM,
@@ -161,18 +171,45 @@ begin
       -- but otherwise Vivado uses 2 more LUTs on xc7a100t ...
 
     with ram_access_mux select ram_write_enable <=
+      '1'                       when MUXSEL_RAM_CLEAR,
       '0'                       when MUXSEL_RENDER,
       row_elim_write_enable     when MUXSEL_ROW_ELIM,
       active_write_enable       when MUXSEL_ACTIVE_ELEMENT,
       '0'                       when others;
 
     with ram_access_mux select ram_read_address <=
+      ts.address.all_zeros      when MUXSEL_RAM_CLEAR,
       active_read_address       when MUXSEL_ACTIVE_ELEMENT,
       block_render_address_i    when MUXSEL_RENDER,
       row_elim_read_address     when MUXSEL_ROW_ELIM,
       ts.address.all_zeros      when others; -- This is unnecessary,
       -- but otherwise Vivado uses 30 more LUTs on xc7a100t. The same happens
       -- if any of the other three is used instead of ts.address.all_zeros ...
+    -------------------------------------------------------
+    ------------- logic to clear RAM on reset -------------
+    -------------------------------------------------------
+    -- Workaround due to VHDL not allowing "ram_clear_address.row & ram_clear_address.col"
+    -- on the output port count_o down below.
+    ram_clear_address.row <= ram_clear_caddress (ts.address.width - 1 downto ts.col.width);
+    ram_clear_address.col <= ram_clear_caddress (ts.col.width - 1 downto 0);
+
+    Inst_ram_clear_counter: entity work.counter_until
+    generic map
+    (
+        width   => ts.address.width,
+        step    => '1' -- upcounter
+    )
+    port map
+    (
+        clock_i         => clock_i,
+        reset_i         => '0', -- This counter implements reset, we don't want to reset it!
+        enable_i        => ram_clear_enable,
+        reset_when_i    => To_SLV (ram_size - 1, ts.address.width),
+        reset_value_i   => To_SLV (0,            ts.address.width),
+        count_o         => ram_clear_caddress,
+        count_at_top_o  => open,
+        overflow_o      => ram_clear_finished
+    );
     -------------------------------------------------------
     --------------------- sub modules ---------------------
     -------------------------------------------------------
@@ -248,7 +285,7 @@ begin
     begin
         if rising_edge (clock_i) then
             if reset_i = '1' then
-                state <= state_wait_for_initial_input;
+                state <= state_clear_ram;
             else
                 state <= next_state;
             end if;
@@ -264,8 +301,14 @@ begin
         active_start                        <= '0';
         active_tetrimino_command_mux        <= ATC_DISABLED;
         active_operation_ack_o              <= '0';
+        ram_clear_enable                    <= '0';
 
         case state is
+        -- RAM clearing
+        when state_clear_ram =>
+            ram_access_mux                  <= MUXSEL_RAM_CLEAR;
+            ram_clear_enable                <= '1';
+
         when state_wait_for_initial_input =>
             null;
         when state_confirm_start =>
@@ -305,13 +348,18 @@ begin
     (
         state,
         screen_finished_render_i, refresh_count_at_top,
-        row_elim_ready,    active_ready,
-        active_operation_i, game_over
-    )
+        ram_clear_finished, row_elim_ready,
+        active_ready, active_operation_i, game_over)
     begin
         next_state <= state;
 
         case state is
+        -- RAM clearing
+        when state_clear_ram =>
+            if ram_clear_finished = '1' then
+                next_state <= state_wait_for_initial_input;
+            end if;
+
         when state_wait_for_initial_input =>
             if active_operation_i /= ATO_NONE then
                 next_state <= state_confirm_start;
