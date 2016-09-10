@@ -51,7 +51,7 @@ architecture Behavioral of tetris_block is
         MUXSEL_RAM_CLEAR,
         MUXSEL_RENDER,
         MUXSEL_ROW_ELIM,
-        MUXSEL_ACTIVE_ELEMENT
+        MUXSEL_ACTIVE_TETRIMINO
     );
     signal ram_access_mux       : ram_access_mux_enum;
 
@@ -96,7 +96,7 @@ architecture Behavioral of tetris_block is
     signal row_elim_write_address   : ts.address.object;
     signal row_elim_start           : std_logic;
     signal row_elim_ready           : std_logic;
-    -- Signals for active element
+    -- Signals for active tetrimino
     -- Note: this is supposed to decrease the more points we have
     constant refresh_count_top      : natural := config.vga.refresh_rate - 1;
     constant refresh_count_width    : natural := util.compute_width (refresh_count_top);
@@ -158,11 +158,11 @@ begin
       TETRIMINO_SHAPE_NONE      when MUXSEL_RAM_CLEAR,
       TETRIMINO_SHAPE_NONE      when MUXSEL_RENDER,
       row_elim_write_data       when MUXSEL_ROW_ELIM,
-      active_write_data         when MUXSEL_ACTIVE_ELEMENT;
+      active_write_data         when MUXSEL_ACTIVE_TETRIMINO;
 
     with ram_access_mux select ram_write_address <=
       ram_clear_address         when MUXSEL_RAM_CLEAR,
-      active_write_address      when MUXSEL_ACTIVE_ELEMENT,
+      active_write_address      when MUXSEL_ACTIVE_TETRIMINO,
       ts.address.all_zeros      when MUXSEL_RENDER,
       row_elim_write_address    when MUXSEL_ROW_ELIM;
 
@@ -170,11 +170,11 @@ begin
       '1'                       when MUXSEL_RAM_CLEAR,
       '0'                       when MUXSEL_RENDER,
       row_elim_write_enable     when MUXSEL_ROW_ELIM,
-      active_write_enable       when MUXSEL_ACTIVE_ELEMENT;
+      active_write_enable       when MUXSEL_ACTIVE_TETRIMINO;
 
     with ram_access_mux select ram_read_address <=
       ts.address.all_zeros      when MUXSEL_RAM_CLEAR,
-      active_read_address       when MUXSEL_ACTIVE_ELEMENT,
+      active_read_address       when MUXSEL_ACTIVE_TETRIMINO,
       block_render_address_i    when MUXSEL_RENDER,
       row_elim_read_address     when MUXSEL_ROW_ELIM;
     -------------------------------------------------------
@@ -315,18 +315,18 @@ begin
 
         when state_active_tetrimino_MD =>
             active_start                    <= '1';
-            ram_access_mux                  <= MUXSEL_ACTIVE_ELEMENT;
+            ram_access_mux                  <= MUXSEL_ACTIVE_TETRIMINO;
             active_tetrimino_command_mux    <= ATC_MOVE_DOWN;
         when state_active_tetrimino_MD_wait =>
-            ram_access_mux                  <= MUXSEL_ACTIVE_ELEMENT;
+            ram_access_mux                  <= MUXSEL_ACTIVE_TETRIMINO;
             active_tetrimino_command_mux    <= ATC_MOVE_DOWN;
 
         when state_active_tetrimino_input =>
             active_start                    <= '1';
-            ram_access_mux                  <= MUXSEL_ACTIVE_ELEMENT;
+            ram_access_mux                  <= MUXSEL_ACTIVE_TETRIMINO;
             active_tetrimino_command_mux    <= ATC_USER_INPUT;
         when state_active_tetrimino_input_wait =>
-            ram_access_mux                  <= MUXSEL_ACTIVE_ELEMENT;
+            ram_access_mux                  <= MUXSEL_ACTIVE_TETRIMINO;
             active_tetrimino_command_mux    <= ATC_USER_INPUT;
         when state_active_tetrimino_input_ack =>
             active_operation_ack_o          <= '1';
