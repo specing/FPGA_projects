@@ -44,7 +44,7 @@ architecture Behavioral of tetris_block is
     -- number_of_rows*number_of_columns for storing block descriptors
     -- of type tetrimino_shape_type + wasted space (if the sizes are not a power of two).
     type tetrimino_block_storage_type is array (0 to ram_size - 1) of tetrimino_shape_type;
-    signal RAM : tetrimino_block_storage_type := (others => TETRIMINO_SHAPE_NONE);
+    signal RAM : tetrimino_block_storage_type;
 
     type ram_access_mux_enum is
     (
