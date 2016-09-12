@@ -114,7 +114,6 @@ architecture Behavioral of tetris_block is
     signal active_tetrimino_shape   : tetrimino_shape_type;
     type active_tetrimino_command_mux_enum is
     (
-        ATC_DISABLED,
         ATC_MOVE_DOWN,
         ATC_USER_INPUT
     );
@@ -252,7 +251,6 @@ begin
     );
 
     with active_tetrimino_command_mux select active_operation <=
-      ATO_NONE              when ATC_DISABLED,
       ATO_MOVE_DOWN         when ATC_MOVE_DOWN,
       active_operation_i    when ATC_USER_INPUT;
     -------------------------------------------------------
@@ -291,7 +289,7 @@ begin
 
         row_elim_start                      <= '0';
         active_start                        <= '0';
-        active_tetrimino_command_mux        <= ATC_DISABLED;
+        active_tetrimino_command_mux        <= ATC_MOVE_DOWN;
         active_operation_ack_o              <= '0';
         ram_clear_enable                    <= '0';
 
