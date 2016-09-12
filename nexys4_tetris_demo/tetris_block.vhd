@@ -80,7 +80,9 @@ architecture Behavioral of tetris_block is
         -- user input
         state_active_tetrimino_input,
         state_active_tetrimino_input_wait,
-        state_active_tetrimino_input_ack
+        state_active_tetrimino_input_ack,
+        -- the end
+        state_game_over
     );
     signal state, next_state : fsm_states := state_clear_ram;
 
@@ -330,6 +332,9 @@ begin
             active_tetrimino_command_mux    <= ATC_USER_INPUT;
         when state_active_tetrimino_input_ack =>
             active_operation_ack_o          <= '1';
+        -- end
+        when state_game_over =>
+            null;
         end case;
     end process;
 
@@ -376,7 +381,7 @@ begin
         when state_active_tetrimino_MD_wait =>
             if active_ready = '1' then
                 if game_over = '1' then
-                    next_state <= state_wait_for_initial_input;
+                    next_state <= state_game_over;
                 else
                     next_state <= state_active_tetrimino_input;
                 end if;
@@ -390,6 +395,10 @@ begin
             end if;
         when state_active_tetrimino_input_ack =>
             next_state <= state_start;
+
+        -- end
+        when state_game_over =>
+            next_state <= state_game_over; -- stay here until reset.
         end case;
     end process;
 
