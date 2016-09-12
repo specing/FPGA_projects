@@ -120,20 +120,37 @@ architecture Behavioral of tetris_block is
     signal active_tetrimino_command_mux : active_tetrimino_command_mux_enum;
     signal active_operation             : active_tetrimino_operations;
 
-
     signal game_over    : std_logic;
+
+    -- sc = score count
+    constant sc_number_of_counters : natural := score_count_width/4;
+    -- +1 due to last overflow_o
+    signal sc_enables : std_logic_vector (0 to sc_number_of_counters - 1 + 1);
 
 begin
 
-    Inst_score_counter: component flib.basic.counter
-    generic map         ( width => score_count_width )
-    port map
-    (
-        clock_i         => clock_i,
-        reset_i         => reset_i,
-        count_enable_i  => active_write_enable, -- temporary?
-        count_o         => score_count_o
-    );
+    SCORE_COUNTERS_DECIMAL: for index in 0 to score_count_width/4 - 1 generate
+    begin
+        Inst_score_counter: entity work.counter_until
+        generic map
+        (
+            width   => 4,
+            step    => '1' -- upcounter
+        )
+        port map
+        (
+            clock_i         => clock_i,
+            reset_i         => reset_i,
+            enable_i        => sc_enables (index),
+            reset_when_i    => To_SLV (9, 4),
+            reset_value_i   => To_SLV (0, 4),
+            count_o         => score_count_o (4*(index+1) - 1 downto 4*index),
+            count_at_top_o  => open,
+            overflow_o      => sc_enables (index+1)
+        );
+    end generate;
+    -- first enable in series
+    sc_enables (0) <= active_write_enable; -- temporarily permanent!
 
     -- determine what goes out on screen
     with active_tetrimino_shape select tetrimino_shape_o <=
