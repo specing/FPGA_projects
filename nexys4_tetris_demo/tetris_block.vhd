@@ -380,8 +380,10 @@ begin
             if active_ready = '1' then
                 if game_over = '1' then
                     next_state <= state_game_over;
-                else
+                elsif active_operation_i /= ATO_NONE then
                     next_state <= state_active_tetrimino_input;
+                else
+                    next_state <= state_start;
                 end if;
             end if;
 
