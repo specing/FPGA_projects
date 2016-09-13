@@ -315,7 +315,7 @@ begin
         when state_clear_ram =>
             ram_access_mux                  <= MUXSEL_RAM_CLEAR;
             ram_clear_enable                <= '1';
-
+        -------------------------------------------------------------
         when state_wait_for_initial_input =>
             null;
         when state_confirm_start =>
@@ -323,13 +323,13 @@ begin
             active_operation_ack_o          <= '1';
         when state_start =>
             ram_access_mux                  <= MUXSEL_RENDER;
-
+        -------------------------------------------------------------
         when state_full_row_elim =>
             row_elim_start                  <= '1';
             ram_access_mux                  <= MUXSEL_ROW_ELIM;
         when state_full_row_elim_wait =>
             ram_access_mux                  <= MUXSEL_ROW_ELIM;
-
+        -------------------------------------------------------------
         when state_active_tetrimino_MD =>
             active_start                    <= '1';
             ram_access_mux                  <= MUXSEL_ACTIVE_TETRIMINO;
@@ -337,7 +337,7 @@ begin
         when state_active_tetrimino_MD_wait =>
             ram_access_mux                  <= MUXSEL_ACTIVE_TETRIMINO;
             active_tetrimino_command_mux    <= ATC_MOVE_DOWN;
-
+        -------------------------------------------------------------
         when state_active_tetrimino_input =>
             active_start                    <= '1';
             ram_access_mux                  <= MUXSEL_ACTIVE_TETRIMINO;
@@ -347,7 +347,7 @@ begin
             active_tetrimino_command_mux    <= ATC_USER_INPUT;
         when state_active_tetrimino_input_ack =>
             active_operation_ack_o          <= '1';
-        -- end
+        -------------------------------------------------------------
         when state_game_over =>
             null;
         end case;
@@ -366,7 +366,7 @@ begin
             if ram_clear_finished = '1' then
                 next_state <= state_wait_for_initial_input;
             end if;
-
+        -------------------------------------------------------------
         when state_wait_for_initial_input =>
             if active_operation_i /= ATO_NONE then
                 next_state <= state_confirm_start;
@@ -379,7 +379,7 @@ begin
             if screen_finished_render_i = '1' then
                 next_state <= state_full_row_elim;
             end if;
-
+        -------------------------------------------------------------
         when state_full_row_elim =>
             next_state <= state_full_row_elim_wait;
         when state_full_row_elim_wait =>
@@ -390,7 +390,7 @@ begin
                     next_state <= state_active_tetrimino_input;
                 end if;
             end if;
-
+        -------------------------------------------------------------
         when state_active_tetrimino_MD =>
             next_state <= state_active_tetrimino_MD_wait;
         when state_active_tetrimino_MD_wait =>
@@ -403,7 +403,7 @@ begin
                     next_state <= state_start;
                 end if;
             end if;
-
+        -------------------------------------------------------------
         when state_active_tetrimino_input =>
             next_state <= state_active_tetrimino_input_wait;
         when state_active_tetrimino_input_wait =>
@@ -412,8 +412,7 @@ begin
             end if;
         when state_active_tetrimino_input_ack =>
             next_state <= state_start;
-
-        -- end
+        -------------------------------------------------------------
         when state_game_over =>
             next_state <= state_game_over; -- stay here until reset.
         end case;

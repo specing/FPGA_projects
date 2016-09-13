@@ -38,7 +38,9 @@ architecture Behavioral of tetris_active_tetrimino is
 
     -- TODO: Move address checking to after new addresses are obtained
     -- TODO: have a counter produce block_select so as to vacuum 4-state groups into one
-
+    -- TODO: join Move Down and normal check_contentsX states based on operation_i?
+    --       ^ uses two more LUTs, saved in git stash
+    -- TODO: the 8 constants below look weird and there are some hardcoded values in FSM next state.
     alias ts is tetris.storage;
 
     constant extended_column_width : integer := 5;
