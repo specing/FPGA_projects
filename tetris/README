@@ -1,0 +1,35 @@
+UNI-VGA
+-------
+
+uni_vga.vhd has to be generated from the UNI-VGA package before the tetris demo can be compiled:
+
+1) download http://www.inp.nsk.su/~bolkhov/files/fonts/univga/
+2) git clone https://github.com/specing/bdf2vhdl
+3) cd bdf2vhdl
+4) make
+5) ./bdf2vhdl -n uni_vga -b < /path/to/uni_vga/u_vga16.bdf > /path/to/FPGA_projects/tetris/uni_vga.vhd
+
+
+Building tetris for Digilent Nexys4
+-----------------------------------
+
+Due to use of VHDL-2008 only Vivado is supported
+(developed with v2016.2 SW build 1577090 on 2016.06.02).
+
+1) Open Vivado and create a new project.
+   (with a build directory stored elsewhere as Vivado creates a ton of files).
+
+2) Generate uni_vga.vhd as described above
+
+3) Include all files from directories tetris/ and tetris/board/Nexys4.
+   Select all files in "Libraries" view and right click -> "Set File Type" to VHDL2008.
+   Set top_level as "Top module name" on the "Project Summary" screen.
+   Click on "Add Sources" -> "Add or Create Constraints" -> select pin_map.xdc from tetris/board/Nexys4.
+
+4) Add directory library/, this time with subdirectories.
+   Put all newly added files into library "flib"
+     (There used to be a button for this accessible by right clicking on
+     the file, but it seems to have disappeared).
+   Change all newly added files's type to VHDL2008.
+
+5) Press the "Generate Bitstream" button.

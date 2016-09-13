@@ -1,13 +1,12 @@
 library ieee;
 use ieee.std_logic_1164.all;
-use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
 
 use work.definitions.all;
 
 
 
-entity nexys4_tetris_demo is
+entity top_level is
     generic
     (
         row_width       : integer := 10;
@@ -34,11 +33,11 @@ entity nexys4_tetris_demo is
         anode_o         : out    std_logic_vector (7 downto 0);
         cathode_o       : out    std_logic_vector (0 to 6)
     );
-end nexys4_tetris_demo;
+end top_level;
 
 
 
-architecture Behavioral of nexys4_tetris_demo is
+architecture Behavioral of top_level is
     signal reset_i                  : std_logic;
     signal tetrimino_operation      : active_tetrimino_operations;
     signal tetrimino_operation_ack  : std_logic;
