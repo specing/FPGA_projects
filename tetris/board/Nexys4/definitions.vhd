@@ -455,14 +455,15 @@ package body definitions is
     ) is
     begin
         case shape is
-        when TETRIMINO_SHAPE_NONE       => red <= X"0"; green <= X"0"; blue <= X"0";
-        when TETRIMINO_SHAPE_PIPE       => red <= X"0"; green <= X"F"; blue <= X"F";
-        when TETRIMINO_SHAPE_L_LEFT     => red <= X"0"; green <= X"0"; blue <= X"F";
-        when TETRIMINO_SHAPE_L_RIGHT    => red <= X"F"; green <= X"A"; blue <= X"0";
-        when TETRIMINO_SHAPE_Z_LEFT     => red <= X"F"; green <= X"0"; blue <= X"0";
-        when TETRIMINO_SHAPE_Z_RIGHT    => red <= X"0"; green <= X"F"; blue <= X"0";
-        when TETRIMINO_SHAPE_T          => red <= X"F"; green <= X"0"; blue <= X"F";
-        when TETRIMINO_SHAPE_SQUARE     => red <= X"F"; green <= X"F"; blue <= X"0";
+        when TETRIMINO_SHAPE_NONE       => red <= X"0"; green <= X"0"; blue <= X"0"; -- black #000000
+        when TETRIMINO_SHAPE_PIPE       => red <= X"0"; green <= X"F"; blue <= X"F"; -- cyan #00FFFF
+        when TETRIMINO_SHAPE_L_LEFT     => red <= X"0"; green <= X"0"; blue <= X"F"; -- blue #0000FF
+        when TETRIMINO_SHAPE_L_RIGHT    => red <= X"F"; green <= X"8"; blue <= X"0"; -- orange #FF7F00
+        when TETRIMINO_SHAPE_Z_LEFT     => red <= X"F"; green <= X"0"; blue <= X"0"; -- red #FF0000
+        -- lime (#BFFF00) looked very close to yellow
+        when TETRIMINO_SHAPE_Z_RIGHT    => red <= X"0"; green <= X"F"; blue <= X"0"; -- green #00FF00
+        when TETRIMINO_SHAPE_T          => red <= X"9"; green <= X"0"; blue <= X"F"; -- purple #8F00FF
+        when TETRIMINO_SHAPE_SQUARE     => red <= X"F"; green <= X"F"; blue <= X"0"; -- yellow #FFFF00
         when others                     => report "Oops" severity FAILURE;
         end case;
     end procedure get_colour;
