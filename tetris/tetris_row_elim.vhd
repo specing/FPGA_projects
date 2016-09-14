@@ -38,7 +38,7 @@ architecture Behavioral of tetris_row_elim is
 
     type ram_write_data_mux_enum is (
         MUXSEL_MOVE_DOWN,
-        MUXSEL_ZERO
+        MUXSEL_NONE
     );
     signal ram_write_data_mux   : ram_write_data_mux_enum;
 
@@ -131,7 +131,7 @@ begin
 
     with ram_write_data_mux select block_o <=
       block_i                   when MUXSEL_MOVE_DOWN,
-      TETRIMINO_SHAPE_NONE      when others;
+      TETRIMINO_SHAPE_NONE      when MUXSEL_NONE;
     -------------------------------------------------------
     -------------- support counters for FSM ---------------
     -------------------------------------------------------
@@ -250,7 +250,7 @@ begin
             row_elim_write_enable   <= '1';
             -- enable writes
             block_write_enable_o    <= '1';
-            ram_write_data_mux      <= MUXSEL_ZERO;
+            ram_write_data_mux      <= MUXSEL_NONE;
             -- activate counter
             column_count_enable     <= '1';
         end case;
