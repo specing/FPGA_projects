@@ -4,15 +4,12 @@ use ieee.numeric_std.all;
 
 use work.definitions.all;
 
+library flib;
+use flib.vga.VGA_controller;
+
 
 
 entity top_level is
-    generic
-    (
-        row_width       : integer := 10;
-        column_width    : integer := 10;
-        num_of_buttons  : integer := 5
-    );
     port
     (
         clock_i         : in     std_logic;
@@ -41,9 +38,16 @@ architecture Behavioral of top_level is
     signal reset_i                  : std_logic;
     signal tetrimino_operation      : active_tetrimino_operations;
     signal tetrimino_operation_ack  : std_logic;
-    -- vga signals
+
+    -- VGA misc signals
     signal vga_pixel_clock          : std_logic;
+    -- VGA pipelined output signals (sync and colour lines)
     signal display                  : vga.display.object;
+    -- VGA module signals telling us where we are on the screen
+    signal vga_pixel_address        : vga.pixel.address.object;
+    signal vga_enable_draw          : std_logic;
+    signal vga_off_screen           : std_logic;
+    signal vga_sync                 : vga.sync.object;
 begin
     -- assign output signals
     hsync_o     <= display.sync.h;
@@ -58,6 +62,7 @@ begin
     ------------------------ INPUT ------------------------
     -------------------------------------------------------
     INPUT_LOGIC: block
+        constant num_of_buttons : integer := 5;
         subtype button_vector is std_logic_vector (num_of_buttons - 1 downto 0);
         signal buttons_joined   : button_vector;
         signal buttons          : button_vector;
@@ -166,7 +171,6 @@ begin
     ----------------------- SCREEN ------------------------
     -------------------------------------------------------
     -- prescale the main clock to obtain the "pixel clock"
-    -- /4 for nexys 4
     Inst_counter_pixelclockprescale: entity work.counter_until
     generic map         (width => 2)
     port map
@@ -174,20 +178,48 @@ begin
         clock_i         => clock_i,
         reset_i         => reset_i,
         enable_i        => '1',
-        reset_when_i    => "11",
+        reset_when_i    => "11", -- /4 here
         reset_value_i   => "00",
         count_o         => open,
         count_at_top_o  => open,
         overflow_o      => vga_pixel_clock
     );
 
+    Inst_VGA_controller: component flib.vga.VGA_controller
+    generic map
+    (
+        row_width       => vga.pixel.row.width,
+        column_width    => vga.pixel.column.width
+    )
+    port map
+    (
+        clock_i         => clock_i,
+        reset_i         => reset_i,
+        pixelclock_i    => vga_pixel_clock,
+        -- Vertical and Horizontal SYNC
+        hsync_o         => vga_sync.h,
+        vsync_o         => vga_sync.v,
+        -- Pixel address on the virtual screen
+        col_o           => vga_pixel_address.col,
+        row_o           => vga_pixel_address.row,
+        -- signals where we are
+        enable_draw_o   => vga_enable_draw,
+        screen_end_o    => vga_off_screen
+    );
+    -------------------------------------------------------------------------
+    ------------------ include board independent top level ------------------
+    -------------------------------------------------------------------------
     Inst_tetris_render_pipeline: entity work.tetris_render_pipeline
     port map
     (
         clock_i                 => clock_i,
         reset_i                 => reset_i,
-
-        vga_pixel_clock_i       => vga_pixel_clock,
+        -- VGA module signals telling us where we are on the screen
+        vga_pixel_address       => vga_pixel_address,
+        vga_enable_draw         => vga_enable_draw,
+        vga_off_screen          => vga_off_screen,
+        vga_sync                => vga_sync,
+        -- VGA pipelined output signals (sync and colour lines)
         display                 => display,
 
         active_operation_i      => tetrimino_operation,

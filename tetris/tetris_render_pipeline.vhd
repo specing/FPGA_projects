@@ -5,9 +5,6 @@ use ieee.numeric_std_unsigned.all;
 
 use work.definitions.all;
 
-library flib;
-use flib.vga.VGA_controller;
-
 
 
 entity tetris_render_pipeline is
@@ -15,8 +12,12 @@ entity tetris_render_pipeline is
     (
         clock_i                 : in     std_logic;
         reset_i                 : in     std_logic;
-
-        vga_pixel_clock_i       : in     std_logic;
+        -- VGA module signals telling us where we are on the screen
+        vga_pixel_address       : in     vga.pixel.address.object;
+        vga_enable_draw         : in     std_logic;
+        vga_off_screen          : in     std_logic;
+        vga_sync                : in     vga.sync.object;
+        -- VGA pipelined output signals (sync and colour lines)
         display                 : out    vga.display.object;
 
         active_operation_i      : in     active_tetrimino_operations;
@@ -30,12 +31,6 @@ end tetris_render_pipeline;
 
 
 architecture Behavioral of tetris_render_pipeline is
-
-    signal vga_sync                     : vga.sync.object;
-    signal vga_pixel_address            : vga.pixel.address.object;
-    signal vga_enable_draw              : std_logic;
-    signal vga_off_screen               : std_logic;
-
     -- pipeline stuff
     signal on_tetris_surface            : std_logic;
 
@@ -86,31 +81,6 @@ architecture Behavioral of tetris_render_pipeline is
     signal nt_retrieved                 : std_logic;
 
 begin
-
-    Inst_VGA_controller: component flib.vga.VGA_controller
-    generic map
-    (
-        row_width       => vga.pixel.row.width,
-        column_width    => vga.pixel.column.width
-    )
-    port map
-    (
-        clock_i         => clock_i,
-        reset_i         => reset_i,
-        pixelclock_i    => vga_pixel_clock_i,
-        -- Vertical and Horizontal SYNC
-        hsync_o         => vga_sync.h,
-        vsync_o         => vga_sync.v,
-        -- Pixel address on the virtual screen
-        col_o           => vga_pixel_address.col,
-        row_o           => vga_pixel_address.row,
-        -- signals where we are
-        enable_draw_o   => vga_enable_draw,
-        screen_end_o    => vga_off_screen
-    );
-    -------------------------------------------------------
-    ----------------- Rendering pipeline ------------------
-    -------------------------------------------------------
     -- Stage1: save  row, column, hsync, vsync and en_draw from the VGA module
     process (clock_i)
     begin
