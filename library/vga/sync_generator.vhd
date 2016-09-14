@@ -116,22 +116,24 @@ begin
     Inst_flip_flop_jk_sync: entity work.flip_flop_jk
     port map
     (
-        clock_i => clock_i,
-        reset_i => reset_i,
-        j_i     => sig_sync_on,
-        k_i     => sig_sync_off,
-        q_o     => sync_on
+        clock_i         => clock_i,
+        reset_i         => reset_i,
+        reset_value_i   => '0',
+        j_i             => sig_sync_on,
+        k_i             => sig_sync_off,
+        q_o             => sync_on
     );
 
 
     Inst_flip_flop_jk_draw: entity work.flip_flop_jk
     port map
     (
-        clock_i => clock_i,
-        reset_i => reset_i,
-        j_i     => sig_display_on,
-        k_i     => sig_display_off,
-        q_o     => draw_on
+        clock_i         => clock_i,
+        reset_i         => reset_i,
+        reset_value_i   => '1', -- start drawing right away
+        j_i             => sig_display_on,
+        k_i             => sig_display_off,
+        q_o             => draw_on
     );
 
 end Behavioral;

@@ -21,17 +21,14 @@ package basic is
 
 
     component flip_flop_jk is
-        generic
-        (
-            reset_value : std_logic := '0'
-        );
         port
         (
-            clock_i : in     std_logic;
-            reset_i : in     std_logic;
-            j_i     : in     std_logic;
-            k_i     : in     std_logic;
-            q_o     : out    std_logic
+            clock_i         : in     std_logic;
+            reset_i         : in     std_logic;
+            reset_value_i   : in     std_logic;
+            j_i             : in     std_logic;
+            k_i             : in     std_logic;
+            q_o             : out    std_logic
         );
     end component flip_flop_jk;
 
