@@ -129,10 +129,8 @@ architecture Behavioral of tetris_active_tetrimino is
         state_ML_addresses,
         -- MR... MOVE_RIGHT
         state_MR_addresses,
-        -- RC... ROTATE_CLOCKWISE
-        state_RC_addresses,
-        -- RCC... ROTATE_COUNTER_CLOCKWISE
-        state_RCC_addresses,
+        -- common new address save states for ROTATE_CLOCKWISE and ROTATE_COUNTER_CLOCKWISE
+        state_ROT_addresses,
         -- check new addresses of the four square's,
         -- go back to start on failure or proceed to state_check_contents0.
         state_check_new_addresses,
@@ -358,9 +356,7 @@ begin
             corner_column_operation         <= PLUS_ONE;
             new_address_write_enable        <= '1';
 
-        when state_RC_addresses =>
-            new_address_write_enable        <= '1';
-        when state_RCC_addresses =>
+        when state_ROT_addresses =>
             new_address_write_enable        <= '1';
 
         -- generic
@@ -401,8 +397,7 @@ begin
                   state_MD_addresses  when ATO_MOVE_DOWN,
                   state_ML_addresses  when ATO_MOVE_LEFT,
                   state_MR_addresses  when ATO_MOVE_RIGHT,
-                  state_RC_addresses  when ATO_ROTATE_CLOCKWISE,
-                  state_RCC_addresses when ATO_ROTATE_COUNTER_CLOCKWISE;
+                  state_ROT_addresses when ATO_ROTATE_CLOCKWISE | ATO_ROTATE_COUNTER_CLOCKWISE;
             end if;
 
         when state_NT_new_addresses =>
@@ -491,9 +486,7 @@ begin
                 next_state <= state_check_contents0;
             end if;
 
-        when state_RC_addresses =>
-            next_state <= state_check_new_addresses;
-        when state_RCC_addresses =>
+        when state_ROT_addresses =>
             next_state <= state_check_new_addresses;
 
         when state_check_new_addresses =>
