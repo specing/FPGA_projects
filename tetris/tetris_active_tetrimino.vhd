@@ -39,7 +39,7 @@ architecture Behavioral of tetris_active_tetrimino is
     -- TODO: Move address checking to after new addresses are obtained
     -- TODO: have a counter produce block_select so as to vacuum 4-state groups into one
     -- TODO: join Move Down and normal check_contentsX states based on operation_i?
-    --       ^ uses two more LUTs, saved in git stash
+    --       ^ uses two more LUTs, saved in git stash -- investigate why
     -- TODO: the 8 constants below look weird and there are some hardcoded values in FSM next state.
     alias ts is tetris.storage;
 
@@ -117,7 +117,8 @@ architecture Behavioral of tetris_active_tetrimino is
         state_MD_check_contents1,
         state_MD_check_contents2,
         state_MD_check_contents3,
-          -- for DROP_DOWN
+          -- for DROP_DOWN. This state has to be separate as input operation
+          -- in new tetrimino state series could still be DROP_DOWN
         state_MD_writeback,
           -- when MOVE_DOWN fails, transfer active tetrimino to ram
           -- and go to NEW_TETRIMINO
@@ -218,12 +219,14 @@ begin
       corner_column_operand + 1 when PLUS_ONE,
       corner_column_operand - 1 when MINUS_ONE,
       corner_column_operand     when ZERO;
+    -------------------------------------------------------------------------
+    ----------------------- New active tetrimino data -----------------------
+    -------------------------------------------------------------------------
+    -- retrieve next tetrimino init row
+    next_tetrimino_init_row <= tetrimino_init_rom (
+      to_integer (tetrimino_shape_next & tetrimino_rotation_next)
+    );
 
-    -- compute next tetrimino block addresses
-    next_tetrimino_init_row <= tetrimino_init_rom (to_integer (
-      tetrimino_shape_next & tetrimino_rotation_next));
-
-    -- 8 registers for storing new rows and columns
     SAVE_NEW_DATA: process (clock_i)
     begin
         if rising_edge (clock_i) then
@@ -245,9 +248,9 @@ begin
             end if;
         end if;
     end process;
-    -------------------------------------------------------
-    ---------------- active tetrimino data ----------------
-    -------------------------------------------------------
+    -------------------------------------------------------------------------
+    ------------------------- Active tetrimino data -------------------------
+    -------------------------------------------------------------------------
     -- 8 registers for storing active rows and columns
     SAVE_ACTIVE_DATA: process (clock_i)
     begin
@@ -270,9 +273,9 @@ begin
             end if;
         end if;
     end process;
-    -------------------------------------------------------
-    ------------------------- FSM -------------------------
-    -------------------------------------------------------
+    -------------------------------------------------------------------------
+    ----------------- Active tetrimino Finite State Machine -----------------
+    -------------------------------------------------------------------------
     FSM_STATE_CHANGE: process (clock_i)
     begin
         if rising_edge (clock_i) then
@@ -393,8 +396,7 @@ begin
             if fsm_start_i = '1' then
                 with operation_i select next_state <=
                   state_start         when ATO_NONE,
-                  state_MD_addresses  when ATO_DROP_DOWN,
-                  state_MD_addresses  when ATO_MOVE_DOWN,
+                  state_MD_addresses  when ATO_DROP_DOWN | ATO_MOVE_DOWN,
                   state_ML_addresses  when ATO_MOVE_LEFT,
                   state_MR_addresses  when ATO_MOVE_RIGHT,
                   state_ROT_addresses when ATO_ROTATE_CLOCKWISE | ATO_ROTATE_COUNTER_CLOCKWISE;
@@ -525,8 +527,7 @@ begin
             else
                 next_state <= state_start;
             end if;
-
-        -- write the new addresses
+        -- commit changes to the active tetrimino registers
         when state_MD_writeback =>
             if operation_i = ATO_DROP_DOWN then -- keep moving down
                 next_state <= state_MD_addresses;
@@ -537,9 +538,9 @@ begin
             next_state <= state_start;
         end case;
     end process;
-    -------------------------------------------------------
-    ---------- determine what to put on screen ------------
-    -------------------------------------------------------
+    -------------------------------------------------------------------------
+    --------- Determine which of the four squares we have to render ---------
+    -------------------------------------------------------------------------
     ACTIVE_RENDER: process (
         active_address_i,
         block0_row,    block1_row,    block2_row,    block3_row,
@@ -556,13 +557,14 @@ begin
             active_data_o <= TETRIMINO_SHAPE_NONE;
         end if;
     end process;
-
+    -------------------------------------------------------------------------
+    ------------------ Playing field access [multiplexers] ------------------
+    -------------------------------------------------------------------------
     with block_select select block_read_address_o.row <=
       block0_row_new when BLOCK0,
       block1_row_new when BLOCK1,
       block2_row_new when BLOCK2,
       block3_row_new when BLOCK3;
-
     with block_select select block_read_address_o.col <=
       block0_column_new (3 downto 0) when BLOCK0,
       block1_column_new (3 downto 0) when BLOCK1,
@@ -574,13 +576,13 @@ begin
       block1_row    when BLOCK1,
       block2_row    when BLOCK2,
       block3_row    when BLOCK3;
-
     with block_select select block_write_address_o.col <=
       block0_column when BLOCK0,
       block1_column when BLOCK1,
       block2_column when BLOCK2,
       block3_column when BLOCK3;
 
+    -- We can only save the current tetrimino
     block_o <= tetrimino_shape;
 
 end Behavioral;
