@@ -15,16 +15,16 @@ entity tetris_row_elim is
     (
         clock_i                 : in     std_logic;
         reset_i                 : in     std_logic;
-
-        -- communication with main RAM
+        -- communication with playing field RAM
         block_o                 : out    tetrimino_shape_type;
         block_i                 : in     tetrimino_shape_type;
         block_write_enable_o    : out    std_logic;
         block_read_address_o    : out    tetris.storage.address.object;
         block_write_address_o   : out    tetris.storage.address.object;
-
+        -- render pipeline access
         row_elim_address_i      : in     tetris.storage.row.object;
         row_elim_data_o         : out    tetris.row_elim.vga_compat.object;
+        -- playing field FSM synchronisation signals
         fsm_start_i             : in     std_logic;
         fsm_ready_o             : out    std_logic
     );
@@ -99,7 +99,7 @@ begin
     -------------------------------------------------------
     ---------- logic for RAM for line elimination ---------
     -------------------------------------------------------
-    process (clock_i)
+    RAM_SAVE: process (clock_i)
     begin
         if rising_edge (clock_i) then
             if row_elim_write_enable = '1' then
@@ -179,8 +179,7 @@ begin
     -------------------------------------------------------
     ------------------------- FSM -------------------------
     -------------------------------------------------------
-    -- FSM state change process
-    process (clock_i)
+    FSM_STATE_CHANGE: process (clock_i)
     begin
         if rising_edge (clock_i) then
             if reset_i = '1' then
@@ -191,9 +190,7 @@ begin
         end if;
     end process;
 
-
-    -- FSM output
-    process (state)
+    FSM_OUTPUT: process (state)
     begin
         fsm_ready_o             <= '0';
 
@@ -257,8 +254,7 @@ begin
 
     end process;
 
-    -- FSM next state
-    process (state,
+    FSM_NEXT_STATE: process (state,
         block_i, row_elim_read_data,
         fsm_start_i,
         row_count_at_top, column_count_at_top)
