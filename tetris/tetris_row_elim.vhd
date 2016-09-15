@@ -47,7 +47,6 @@ architecture Behavioral of tetris_row_elim is
         state_start,
 
         state_check_block,
-        state_check_block_increment_column,
         state_check_block_increment_column_til_end,
         state_increment_row_elim,
         state_check_block_decrement_row,
@@ -209,8 +208,6 @@ begin
 
         -- logic that increments block removal counters (row_elim)
         when state_check_block =>
-            null;
-        when state_check_block_increment_column =>
             column_count_enable     <= '1';
         when state_check_block_increment_column_til_end =>
             column_count_enable     <= '1';
@@ -271,18 +268,12 @@ begin
         when state_check_block =>
             if block_i = TETRIMINO_SHAPE_NONE then
                 next_state <= state_check_block_increment_column_til_end;
-            else
-                next_state <= state_check_block_increment_column;
+            elsif column_count_at_top = '1' then
+                next_state <= state_increment_row_elim;
             end if;
         when state_check_block_increment_column_til_end =>
             if column_count_at_top = '1' then
                 next_state <= state_check_block_decrement_row;
-            end if;
-        when state_check_block_increment_column =>
-            if column_count_at_top = '1' then
-                next_state <= state_increment_row_elim;
-            else
-                next_state <= state_check_block;
             end if;
         when state_increment_row_elim =>
             next_state <= state_check_block_decrement_row;
