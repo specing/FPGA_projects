@@ -45,19 +45,15 @@ architecture Behavioral of tetris_row_elim is
     type fsm_states is
     (
         state_start,
-
+        -- logic that increments block removal counters (row_elim)
         state_check_block,
         state_check_block_increment_column_til_end,
         state_increment_row_elim,
         state_check_block_decrement_row,
-
+        -- logic that finds what row we have to remove and then fires removal down below
         state_check_row,
-        state_check_row_decrement_row,
-
-        state_pre_decrement_row,
         state_move_block_down,
         state_decrement_row,
-
         state_zero_upper_row
     );
     signal state, next_state    : fsm_states := state_start;
@@ -221,13 +217,9 @@ begin
         -- removal down below
         when state_check_row =>
             row_elim_mode           <= MUXSEL_ROW_ELIM_INCREMENT; -- same r addr
-        when state_check_row_decrement_row =>
             row_count_enable        <= '1';
 
         -- logic that moves blocks down by one
-        when state_pre_decrement_row =>
-            row_count_enable        <= '1';
-
         when state_move_block_down =>
             -- enable writes
             block_write_enable_o    <= '1';
@@ -285,25 +277,15 @@ begin
                 next_state <= state_check_block;
             end if;
 
-        -- logic that finds what row we have to remove and then fires
-        -- removal down below
+        -- logic that finds what row we have to remove and then fires removal down below
         when state_check_row =>
             if row_elim_read_data = tetris.row_elim.high then
-                next_state <= state_pre_decrement_row;
-            else
-                next_state <= state_check_row_decrement_row;
-            end if;
-        when state_check_row_decrement_row =>
-            if row_count_at_top = '1' then
+                next_state <= state_move_block_down;
+            elsif row_count_at_top = '1' then
                 next_state <= state_start;
-            else
-                next_state <= state_check_row;
             end if;
 
         -- logic that moves blocks down by one
-        when state_pre_decrement_row =>
-            next_state <= state_move_block_down;
-
         when state_move_block_down =>
             if column_count_at_top = '1' then
                 next_state <= state_decrement_row;
