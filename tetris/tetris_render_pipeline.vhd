@@ -163,11 +163,27 @@ begin
                 stage3_nt_colours.blue
                );
 
-    -- Merge row elimination colours
-    stage3_block_final_colours.red   <= stage3_block_colours.red   or stage3_row_elim_data_out(4 downto 1);
-    stage3_block_final_colours.green <= stage3_block_colours.green or stage3_row_elim_data_out(4 downto 1);
-    stage3_block_final_colours.blue  <= stage3_block_colours.blue  or stage3_row_elim_data_out(4 downto 1);
-
+    -- This process implements the final stage of the row elimination "fade-in" effect
+    ROW_ELIM_MERGE: block -- Merge row elimination colours
+        -- The following is for the cheap (or) effect
+        alias s3_bc     is stage3_block_colours;
+        alias s3_redo   is stage3_row_elim_data_out;
+        alias ti        is to_integer [std_logic_vector return natural];
+    begin
+        stage3_block_final_colours.red   <= s3_bc.red   or s3_redo;
+        stage3_block_final_colours.green <= s3_bc.green or s3_redo;
+        stage3_block_final_colours.blue  <= s3_bc.blue  or s3_redo;
+        /*
+        -- On the other hand, the code below can be used instead for a visually correct (max)
+        -- effect at the expense of more hardware resources used.
+        stage3_block_final_colours.red   <= s3_bc.red   when ti (s3_bc.red)   > ti (s3_redo)
+                                       else s3_redo;
+        stage3_block_final_colours.green <= s3_bc.green when ti (s3_bc.green) > ti (s3_redo)
+                                       else s3_redo;
+        stage3_block_final_colours.blue  <= s3_bc.blue  when ti (s3_bc.blue)  > ti (s3_redo)
+                                       else s3_redo;
+        */
+    end block;
     -- figure out if we are on the next tetrimino screen
     -- column 16 + 1space + 6(next tetrimino text) + 1space + padding = 24
     -- = 011000|0000 pixel column to 011011|1111
