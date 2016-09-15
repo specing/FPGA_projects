@@ -146,8 +146,8 @@ begin
         clock_i         => clock_i,
         reset_i         => reset_i,
         enable_i        => row_count_enable,
-        reset_when_i    => ts.row.object (to_unsigned (0, ts.row.width)),
-        reset_value_i   => ts.row.object (to_unsigned (ts.row.max, ts.row.width)),
+        reset_when_i    => To_SLV (0,          ts.row.width),
+        reset_value_i   => To_SLV (ts.row.max, ts.row.width),
         count_o         => row_count,
         count_at_top_o  => row_count_at_top,
         overflow_o      => open
@@ -170,8 +170,8 @@ begin
         clock_i         => clock_i,
         reset_i         => reset_i,
         enable_i        => column_count_enable,
-        reset_when_i    => ts.column.object (to_unsigned (ts.column.max, ts.column.width)),
-        reset_value_i   => ts.column.object (to_unsigned (0, ts.column.width)),
+        reset_when_i    => To_SLV (ts.column.max, ts.column.width),
+        reset_value_i   => To_SLV (0,             ts.column.width),
         count_o         => column_count,
         count_at_top_o  => column_count_at_top,
         overflow_o      => open
