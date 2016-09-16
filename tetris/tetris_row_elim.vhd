@@ -47,7 +47,6 @@ architecture Behavioral of tetris_row_elim is
         state_start,
         -- logic that increments block removal counters (row_elim)
         state_check_block,
-        state_check_block_increment_column_til_end,
         state_increment_row_elim,
         state_check_block_decrement_row,
         -- logic that finds what row we have to remove and then fires removal down below
@@ -163,7 +162,7 @@ begin
     port map
     (
         clock_i         => clock_i,
-        reset_i         => reset_i,
+        reset_i         => reset_i or row_count_enable,
         enable_i        => column_count_enable,
         reset_when_i    => To_SLV (ts.column.max, ts.column.width),
         reset_value_i   => To_SLV (0,             ts.column.width),
@@ -204,8 +203,6 @@ begin
 
         -- logic that increments block removal counters (row_elim)
         when state_check_block =>
-            column_count_enable     <= '1';
-        when state_check_block_increment_column_til_end =>
             column_count_enable     <= '1';
         when state_increment_row_elim =>
             row_elim_mode           <= MUXSEL_ROW_ELIM_INCREMENT;
@@ -259,13 +256,9 @@ begin
         -- logic that increments block removal counters (row_elim)
         when state_check_block =>
             if block_i = TETRIMINO_SHAPE_NONE then
-                next_state <= state_check_block_increment_column_til_end;
+                next_state <= state_check_block_decrement_row;
             elsif column_count_at_top = '1' then
                 next_state <= state_increment_row_elim;
-            end if;
-        when state_check_block_increment_column_til_end =>
-            if column_count_at_top = '1' then
-                next_state <= state_check_block_decrement_row;
             end if;
         when state_increment_row_elim =>
             next_state <= state_check_block_decrement_row;
