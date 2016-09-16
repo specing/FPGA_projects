@@ -32,8 +32,6 @@ end tetris_render_pipeline;
 
 architecture Behavioral of tetris_render_pipeline is
     -- pipeline stuff
-    signal on_tetris_surface            : std_logic;
-
     signal stage1_vga_sync              : vga.sync.object;
     signal stage1_vga_pixel_address     : vga.pixel.address.object;
     signal stage1_vga_enable_draw       : std_logic;
@@ -59,7 +57,6 @@ architecture Behavioral of tetris_render_pipeline is
     signal stage3_text_dot              : std_logic;
 
     signal stage4_vga_sync              : vga.sync.object;
-    signal stage4_vga_pixel_address     : vga.pixel.address.object;
     signal stage4_block_colours         : vga.colours.object;
     signal stage4_vga_enable_draw       : std_logic;
     signal stage4_tetrimino_shape       : tetrimino_shape_type;
@@ -68,6 +65,12 @@ architecture Behavioral of tetris_render_pipeline is
 
     signal score_count                  : score_count_type;
 
+    -- s = stage; X = level; r = register, n = next value (comb)
+    signal s3n_on_tetris_surface        : std_logic;
+    signal s4r_on_tetris_surface        : std_logic;
+
+    signal s3n_draw_frame               : std_logic;
+    signal s4r_draw_frame               : std_logic;
 
     signal stage2_nt_shape              : tetrimino_shape_type;
     signal stage3_nt_shape              : tetrimino_shape_type;
@@ -229,42 +232,43 @@ begin
         read_dot_o              => stage3_text_dot
     );
 
+    -- column must be from 0 to 16 * 16 - 1 =  0 .. 256 - 1 = 0 .. 255
+    -- row must be from 0 to 30 * 16 - 1 = 0 .. 480 - 1 = 0 .. 479
+    with stage3_vga_pixel_address.col(stage3_vga_pixel_address.col'length - 1 downto 8) select s3n_on_tetris_surface <=
+      '1' when "00",
+      '0' when others;
+
+    s3n_draw_frame <= '1' when stage3_vga_pixel_address.col = To_SLV (255, stage3_vga_pixel_address.col'length)
+                 else '1' when stage3_vga_pixel_address.col = To_SLV (0,   stage3_vga_pixel_address.col'length)
+                 else '1' when stage3_vga_pixel_address.col = To_SLV (639, stage3_vga_pixel_address.col'length)
+                 else '1' when stage3_vga_pixel_address.row = To_SLV (0,   stage3_vga_pixel_address.row'length)
+                 else '1' when stage3_vga_pixel_address.row = To_SLV (479, stage3_vga_pixel_address.row'length)
+                 else '0';
     -- Stage4: save row, column, hsync, vsync and en_draw + block desc, final RGB of block, line remove
     process (clock_i)
     begin
         if rising_edge (clock_i) then
             stage4_vga_sync             <= stage3_vga_sync;
-            stage4_vga_pixel_address    <= stage3_vga_pixel_address;
             stage4_vga_enable_draw      <= stage3_vga_enable_draw;
 
             stage4_block_colours        <= stage3_block_final_colours;
             stage4_draw_tetrimino_bb    <= stage3_draw_tetrimino_bb;
+            s4r_on_tetris_surface       <= s3n_on_tetris_surface;
 
             stage4_text_enable_draw     <= stage3_text_dot;
+            s4r_draw_frame              <= s3n_draw_frame;
 
             stage4_nt_colours           <= stage3_nt_colours;
             stage4_nt_enable_draw       <= stage3_nt_enable_draw;
         end if;
     end process;
 
-    -- column must be from 0 to 16 * 16 - 1 =  0 .. 256 - 1 = 0 .. 255
-    -- row must be from 0 to 30 * 16 - 1 = 0 .. 480 - 1 = 0 .. 479
-    with stage4_vga_pixel_address.col(stage4_vga_pixel_address.col'length - 1 downto 8) select on_tetris_surface <=
-      '1' when "00",
-      '0' when others;
-
     -- ==========================
     -- figure out what to display
     -- ==========================
     display.sync <= stage4_vga_sync;
     -- main draw multiplexer
-    process
-    (
-        stage4_vga_enable_draw, stage4_draw_tetrimino_bb, stage4_text_enable_draw,
-        stage4_nt_enable_draw, stage4_nt_colours,
-        stage4_vga_pixel_address, stage4_block_colours,
-        on_tetris_surface
-    )
+    DRAW_MULTIPLEX: process (all)
     begin
         -- check if we are on display surface
         if stage4_vga_enable_draw = '0' then
@@ -280,17 +284,12 @@ begin
             display.c.green <= "1000";
             display.c.blue  <= "0111";
         -- check if we have to draw static lines
-        elsif stage4_vga_pixel_address.col = To_SLV (255, stage4_vga_pixel_address.col'length)
-        or    stage4_vga_pixel_address.col = To_SLV (0,   stage4_vga_pixel_address.col'length)
-        or    stage4_vga_pixel_address.col = To_SLV (639, stage4_vga_pixel_address.col'length)
-        or    stage4_vga_pixel_address.row = To_SLV (0,   stage4_vga_pixel_address.row'length)
-        or    stage4_vga_pixel_address.row = To_SLV (479, stage4_vga_pixel_address.row'length)
-        then
+        elsif s4r_draw_frame = '1' then
             display.c.red   <= "1000";
             display.c.green <= "0000";
             display.c.blue  <= "0100";
         -- check if we are on the tetris block surface
-        elsif on_tetris_surface = '1' then
+        elsif s4r_on_tetris_surface = '1' then
             display.c       <= stage4_block_colours;
         elsif stage4_nt_enable_draw then
             display.c       <= stage4_nt_colours;
