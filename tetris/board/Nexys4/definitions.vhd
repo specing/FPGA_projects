@@ -201,11 +201,7 @@ package definitions is
     constant TETRIMINO_SHAPE_T          : tetrimino_shape_type := "110";
     constant TETRIMINO_SHAPE_SQUARE     : tetrimino_shape_type := "111";
 
-    procedure get_colour (
-        shape: tetrimino_shape_type;
-        signal red, green, blue : out std_logic_vector (3 downto 0)
-    );
-
+    procedure get_colour (shape: tetrimino_shape_type; signal colour : out vga.colours.object);
 
     subtype tetrimino_rotation_type     is std_logic_vector (1 downto 0);
     constant TETRIMINO_ROTATION_0       : tetrimino_rotation_type := "00";
@@ -449,10 +445,8 @@ end package definitions;
 
 package body definitions is
 
-    procedure get_colour (
-        shape: tetrimino_shape_type;
-        signal red, green, blue : out std_logic_vector (3 downto 0)
-    ) is
+    procedure get_colour (shape: tetrimino_shape_type; signal colour : out vga.colours.object) is
+        alias red is colour.red; alias green is colour.green; alias blue is colour.blue;
     begin
         case shape is
         when TETRIMINO_SHAPE_NONE       => red <= X"0"; green <= X"0"; blue <= X"0"; -- black #000000

@@ -143,7 +143,7 @@ begin
     end process;
 
     -- obtain colour from tetrimino shape
-    get_colour (stage2_tetrimino_shape, stage2_block_colours.red, stage2_block_colours.green, stage2_block_colours.blue);
+    get_colour (stage2_tetrimino_shape, stage2_block_colours);
 
     -- Stage3: save row, column, hsync, vsync and en_draw + block desc, RGB of block, line remove
     process (clock_i)
@@ -160,11 +160,7 @@ begin
         end if;
     end process;
 
-    get_colour (stage3_nt_shape,
-                stage3_nt_colours.red,
-                stage3_nt_colours.green,
-                stage3_nt_colours.blue
-               );
+    get_colour (stage3_nt_shape, stage3_nt_colours);
 
     -- This process implements the final stage of the row elimination "fade-in" effect
     ROW_ELIM_MERGE: block -- Merge row elimination colours
