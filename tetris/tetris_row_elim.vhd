@@ -73,8 +73,7 @@ architecture Behavioral of tetris_row_elim is
     (
         MUXSEL_ROW_ELIM_RENDER,
         MUXSEL_ROW_ELIM_INCREMENT,
-        MUXSEL_ROW_ELIM_MOVE_DOWN,
-        MUXSEL_ROW_ELIM_ZERO
+        MUXSEL_ROW_ELIM_MOVE_DOWN
     );
     signal row_elim_mode            : row_elim_mode_enum;
 
@@ -108,20 +107,17 @@ begin
     with row_elim_mode select row_elim_write_data <=
       (others => '-')           when MUXSEL_ROW_ELIM_RENDER, -- N/A
       row_elim_read_data + '1'  when MUXSEL_ROW_ELIM_INCREMENT,
-      row_elim_read_data        when MUXSEL_ROW_ELIM_MOVE_DOWN,
-      (others => '-')           when MUXSEL_ROW_ELIM_ZERO;
+      row_elim_read_data        when MUXSEL_ROW_ELIM_MOVE_DOWN;
 
     with row_elim_mode select row_elim_write_address <=
       (others => '-')           when MUXSEL_ROW_ELIM_RENDER, -- N/A
       row_count                 when MUXSEL_ROW_ELIM_INCREMENT,
-      row_count_old             when MUXSEL_ROW_ELIM_MOVE_DOWN,
-      row_count_old             when MUXSEL_ROW_ELIM_ZERO;
+      row_count_old             when MUXSEL_ROW_ELIM_MOVE_DOWN;
 
     with row_elim_mode select row_elim_read_address <=
       row_elim_address_i        when MUXSEL_ROW_ELIM_RENDER,
       row_count                 when MUXSEL_ROW_ELIM_INCREMENT,
-      row_count                 when MUXSEL_ROW_ELIM_MOVE_DOWN,
-      (others => '-')           when MUXSEL_ROW_ELIM_ZERO; -- N/A
+      row_count                 when MUXSEL_ROW_ELIM_MOVE_DOWN;
 
     with ram_write_data_mux select block_o <=
       block_i                   when MUXSEL_MOVE_DOWN,
@@ -229,7 +225,7 @@ begin
 
         -- finaly zero upper row
         when state_zero_upper_row =>
-            row_elim_mode           <= MUXSEL_ROW_ELIM_ZERO;
+            row_elim_mode           <= MUXSEL_ROW_ELIM_MOVE_DOWN;
             row_elim_write_enable   <= '1';
             -- enable writes
             block_write_enable_o    <= '1';
