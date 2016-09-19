@@ -185,7 +185,7 @@ begin
         fsm_ready_o             <= '0';
 
         block_write_enable_o    <= '0';
-        ram_write_data_mux      <= MUXSEL_MOVE_DOWN;
+        ram_write_data_mux      <= MUXSEL_NONE;
 
         column_count_enable     <= '0';
         row_count_enable        <= '0';
@@ -215,6 +215,7 @@ begin
         -- logic that moves blocks down by one
         when state_move_block_down =>
             -- enable writes
+            ram_write_data_mux      <= MUXSEL_MOVE_DOWN;
             block_write_enable_o    <= '1';
             -- activate counter
             column_count_enable     <= '1';
