@@ -226,11 +226,9 @@ begin
 
         -- finaly zero upper row
         when state_zero_upper_row =>
-            row_elim_mode           <= MUXSEL_ROW_ELIM_MOVE_DOWN;
-            row_elim_write_enable   <= '1';
             -- enable writes
-            block_write_enable_o    <= '1';
             ram_write_data_mux      <= MUXSEL_NONE;
+            block_write_enable_o    <= '1';
             -- activate counter
             column_count_enable     <= '1';
         end case;
