@@ -218,14 +218,14 @@ begin
     Inst_text: entity work.tetris_text
     port map
     (
-        clock_i                 => clock_i,
-        reset_i                 => reset_i,
+        clock_i                     => clock_i,
+        reset_i                     => reset_i,
 
-        read_address_i.row      => stage3_vga_pixel_address.row (stage3_vga_pixel_address.row'left downto stage3_vga_pixel_address.row'right + 4),
-        read_address_i.col      => stage3_vga_pixel_address.col (stage3_vga_pixel_address.col'left downto stage3_vga_pixel_address.col'right + 3),
-        read_subaddress_i.row   => stage3_vga_pixel_address.row (stage3_vga_pixel_address.row'right + 3 downto stage3_vga_pixel_address.row'right),
-        read_subaddress_i.col   => stage3_vga_pixel_address.col (stage3_vga_pixel_address.col'right + 2 downto stage3_vga_pixel_address.col'right),
-        read_dot_o              => stage3_text_dot
+        s0_read_address_i.row       => stage3_vga_pixel_address.row (stage3_vga_pixel_address.row'left downto stage3_vga_pixel_address.row'right + 4),
+        s0_read_address_i.col       => stage3_vga_pixel_address.col (stage3_vga_pixel_address.col'left downto stage3_vga_pixel_address.col'right + 3),
+        s0_read_subaddress_i.row    => stage3_vga_pixel_address.row (stage3_vga_pixel_address.row'right + 3 downto stage3_vga_pixel_address.row'right),
+        s0_read_subaddress_i.col    => stage3_vga_pixel_address.col (stage3_vga_pixel_address.col'right + 2 downto stage3_vga_pixel_address.col'right),
+        s0_read_dot_o               => stage3_text_dot
     );
 
     -- column must be from 0 to 16 * 16 - 1 =  0 .. 256 - 1 = 0 .. 255

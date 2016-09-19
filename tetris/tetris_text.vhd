@@ -9,12 +9,12 @@ use work.definitions.all;
 entity tetris_text is
     port
     (
-        clock_i             : in     std_logic;
-        reset_i             : in     std_logic;
+        clock_i                 : in     std_logic;
+        reset_i                 : in     std_logic;
 
-        read_address_i      : in     letters.address.object;
-        read_subaddress_i   : in     font.address.object;
-        read_dot_o          : out    std_logic
+        s0_read_address_i       : in     letters.address.object;
+        s0_read_subaddress_i    : in     font.address.object;
+        s0_read_dot_o           : out    std_logic
     );
 end tetris_text;
 
@@ -26,6 +26,9 @@ architecture Behavioral of tetris_text is
     type storage_object is
       array (0 to 2 ** letters.row.width - 1, 0 to 2 ** letters.col.width - 1) of
       letter.object;
+
+    signal s0_nt_read_letter    : letter.object;
+    signal s0_read_letter       : letter.object;
 
 begin
     Next_Tetrimino: block
@@ -56,10 +59,13 @@ begin
           others => (
             others => letter.space)
         );
-
-        signal nt_read_data : letter.object;
     begin
-        nt_read_data <= ntrom (to_integer (read_address_i.row), to_integer (read_address_i.col));
-        read_dot_o  <= font.get_dot (nt_read_data, read_subaddress_i.row, read_subaddress_i.col);
+        s0_nt_read_letter <= ntrom (to_integer (s0_read_address_i.row), to_integer (s0_read_address_i.col));
     end block;
+
+    -- decide which of the letters to show
+    s0_read_letter <= s0_nt_read_letter;
+    -- finaly assign read dot
+    s0_read_dot_o  <= font.get_dot (s0_read_letter, s0_read_subaddress_i.row, s0_read_subaddress_i.col);
+
 end Behavioral;
