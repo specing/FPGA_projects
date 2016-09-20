@@ -221,11 +221,11 @@ begin
         clock_i                     => clock_i,
         reset_i                     => reset_i,
 
-        s0_read_address_i.row       => stage3_vga_pixel_address.row (stage3_vga_pixel_address.row'left downto stage3_vga_pixel_address.row'right + 4),
-        s0_read_address_i.col       => stage3_vga_pixel_address.col (stage3_vga_pixel_address.col'left downto stage3_vga_pixel_address.col'right + 3),
-        s0_read_subaddress_i.row    => stage3_vga_pixel_address.row (stage3_vga_pixel_address.row'right + 3 downto stage3_vga_pixel_address.row'right),
-        s0_read_subaddress_i.col    => stage3_vga_pixel_address.col (stage3_vga_pixel_address.col'right + 2 downto stage3_vga_pixel_address.col'right),
-        s0_read_dot_o               => stage3_text_dot
+        s0_read_address_i.row       => stage2_vga_pixel_address.row (stage3_vga_pixel_address.row'left downto stage3_vga_pixel_address.row'right + 4),
+        s0_read_address_i.col       => stage2_vga_pixel_address.col (stage3_vga_pixel_address.col'left downto stage3_vga_pixel_address.col'right + 3),
+        s1_read_subaddress_i.row    => stage3_vga_pixel_address.row (stage3_vga_pixel_address.row'right + 3 downto stage3_vga_pixel_address.row'right),
+        s1_read_subaddress_i.col    => stage3_vga_pixel_address.col (stage3_vga_pixel_address.col'right + 2 downto stage3_vga_pixel_address.col'right),
+        s1_read_dot_o               => stage3_text_dot
     );
 
     -- column must be from 0 to 16 * 16 - 1 =  0 .. 256 - 1 = 0 .. 255

@@ -13,8 +13,8 @@ entity tetris_text is
         reset_i                 : in     std_logic;
 
         s0_read_address_i       : in     letters.address.object;
-        s0_read_subaddress_i    : in     font.address.object;
-        s0_read_dot_o           : out    std_logic
+        s1_read_subaddress_i    : in     font.address.object;
+        s1_read_dot_o           : out    std_logic
     );
 end tetris_text;
 
@@ -29,6 +29,7 @@ architecture Behavioral of tetris_text is
 
     signal s0_nt_read_letter    : letter.object;
     signal s0_read_letter       : letter.object;
+    signal s1_read_letter       : letter.object;
 
 begin
     Next_Tetrimino: block
@@ -65,7 +66,17 @@ begin
 
     -- decide which of the letters to show
     s0_read_letter <= s0_nt_read_letter;
+    ---------------------------------------------------------------------------------------------
+    ------------------------------------------ STAGE 1 ------------------------------------------
+    ---------------------------------------------------------------------------------------------
+    STAGE1_SAVE: process (clock_i)
+    begin
+        if rising_edge (clock_i) then
+            s1_read_letter <= s0_read_letter;
+        end if;
+    end process;
+    ---------------------------------------------------------------------------------------------
     -- finaly assign read dot
-    s0_read_dot_o  <= font.get_dot (s0_read_letter, s0_read_subaddress_i.row, s0_read_subaddress_i.col);
+    s1_read_dot_o  <= font.get_dot (s1_read_letter, s1_read_subaddress_i.row, s1_read_subaddress_i.col);
 
 end Behavioral;
