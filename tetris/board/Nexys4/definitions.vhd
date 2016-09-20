@@ -268,16 +268,10 @@ package definitions is
         -- sed -e "s/.*letter.//" < file  | sed -e "s/ .*/ /" | tr '\n' ','
         -- where file is a copy&paste list of font_data below
         type object is (
-          space, exclam, percent,
-          zero, one, two, three, four, five, six, seven, eight, nine,
-          colon,
-          A_upper, B_upper, C_upper, D_upper, E_upper, F_upper, G_upper, H_upper, I_upper,
-          J_upper, K_upper, L_upper, M_upper, N_upper, O_upper, P_upper, Q_upper, R_upper,
-          S_upper, T_upper, U_upper, V_upper, W_upper, X_upper, Y_upper, Z_upper,
-          a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z
+          space,
+          N_upper,
+          a, d, e, i, j, l, m, n, o, r, s, t
         );
-
-
     end package letter;
 
 
@@ -324,74 +318,21 @@ package definitions is
         -- followed by some filling in the blanks
         constant font_data : font_storage := (
           letter.space          => data.glyph_for_20_space,
-          letter.exclam         => data.glyph_for_21_exclam,
-          letter.percent        => data.glyph_for_25_percent,
 
-          letter.zero           => data.glyph_for_30_zero,
-          letter.one            => data.glyph_for_31_one,
-          letter.two            => data.glyph_for_32_two,
-          letter.three          => data.glyph_for_33_three,
-          letter.four           => data.glyph_for_34_four,
-          letter.five           => data.glyph_for_35_five,
-          letter.six            => data.glyph_for_36_six,
-          letter.seven          => data.glyph_for_37_seven,
-          letter.eight          => data.glyph_for_38_eight,
-          letter.nine           => data.glyph_for_39_nine,
-          letter.colon          => data.glyph_for_3a_colon,
-
-          letter.A_upper        => data.glyph_for_41_A,
-          letter.B_upper        => data.glyph_for_42_B,
-          letter.C_upper        => data.glyph_for_43_C,
-          letter.D_upper        => data.glyph_for_44_D,
-          letter.E_upper        => data.glyph_for_45_E,
-          letter.F_upper        => data.glyph_for_46_F,
-          letter.G_upper        => data.glyph_for_47_G,
-          letter.H_upper        => data.glyph_for_48_H,
-          letter.I_upper        => data.glyph_for_49_I,
-          letter.J_upper        => data.glyph_for_4a_J,
-          letter.K_upper        => data.glyph_for_4b_K,
-          letter.L_upper        => data.glyph_for_4c_L,
-          letter.M_upper        => data.glyph_for_4d_M,
           letter.N_upper        => data.glyph_for_4e_N,
-          letter.O_upper        => data.glyph_for_4f_O,
-          letter.P_upper        => data.glyph_for_50_P,
-          letter.Q_upper        => data.glyph_for_51_Q,
-          letter.R_upper        => data.glyph_for_52_R,
-          letter.S_upper        => data.glyph_for_53_S,
-          letter.T_upper        => data.glyph_for_54_T,
-          letter.U_upper        => data.glyph_for_55_U,
-          letter.V_upper        => data.glyph_for_56_V,
-          letter.W_upper        => data.glyph_for_57_W,
-          letter.X_upper        => data.glyph_for_58_X,
-          letter.Y_upper        => data.glyph_for_59_Y,
-          letter.Z_upper        => data.glyph_for_5a_Z,
 
           letter.a              => data.glyph_for_61_a,
-          letter.b              => data.glyph_for_62_b,
-          letter.c              => data.glyph_for_63_c,
           letter.d              => data.glyph_for_64_d,
           letter.e              => data.glyph_for_65_e,
-          letter.f              => data.glyph_for_66_f,
-          letter.g              => data.glyph_for_67_g,
-          letter.h              => data.glyph_for_68_h,
           letter.i              => data.glyph_for_69_i,
           letter.j              => data.glyph_for_6a_j,
-          letter.k              => data.glyph_for_6b_k,
           letter.l              => data.glyph_for_6c_l,
           letter.m              => data.glyph_for_6d_m,
           letter.n              => data.glyph_for_6e_n,
           letter.o              => data.glyph_for_6f_o,
-          letter.p              => data.glyph_for_70_p,
-          letter.q              => data.glyph_for_71_q,
           letter.r              => data.glyph_for_72_r,
           letter.s              => data.glyph_for_73_s,
-          letter.t              => data.glyph_for_74_t,
-          letter.u              => data.glyph_for_75_u,
-          letter.v              => data.glyph_for_76_v,
-          letter.w              => data.glyph_for_77_w,
-          letter.x              => data.glyph_for_78_x,
-          letter.y              => data.glyph_for_79_y,
-          letter.z              => data.glyph_for_7a_z
+          letter.t              => data.glyph_for_74_t
         );
     end package font;
 
