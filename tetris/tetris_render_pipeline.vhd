@@ -54,14 +54,12 @@ architecture Behavioral of tetris_render_pipeline is
     signal stage3_block_colours         : vga.colours.object;
     signal stage3_block_final_colours   : vga.colours.object;
     signal stage3_draw_tetrimino_bb     : std_logic;
-    signal stage3_text_dot              : std_logic;
 
     signal stage4_vga_sync              : vga.sync.object;
     signal stage4_block_colours         : vga.colours.object;
     signal stage4_vga_enable_draw       : std_logic;
     signal stage4_tetrimino_shape       : tetrimino_shape_type;
     signal stage4_draw_tetrimino_bb     : std_logic;
-    signal stage4_text_enable_draw      : std_logic;
 
     signal score_count                  : score_count_type;
 
@@ -71,6 +69,11 @@ architecture Behavioral of tetris_render_pipeline is
 
     signal s3n_draw_frame               : std_logic;
     signal s4r_draw_frame               : std_logic;
+    -- Signals associated with text rendering
+    signal s1n_text_dot                 : std_logic;
+    signal s2r_text_dot                 : std_logic;
+    signal s3r_text_dot                 : std_logic;
+    signal s4r_text_dot                 : std_logic;
 
     signal stage2_nt_shape              : tetrimino_shape_type;
     signal stage3_nt_shape              : tetrimino_shape_type;
@@ -139,6 +142,8 @@ begin
             stage2_vga_enable_draw      <= stage1_vga_enable_draw;
             stage2_tetrimino_shape      <= stage1_tetrimino_shape;
             stage2_row_elim_data_out    <= stage1_row_elim_data_out;
+            -- Selection signals for the drawing multiplexer
+            s2r_text_dot                <= s1n_text_dot;
         end if;
     end process;
 
@@ -157,6 +162,8 @@ begin
             stage3_block_colours        <= stage2_block_colours;
 
             stage3_nt_shape             <= stage2_nt_shape;
+            -- Selection signals for the drawing multiplexer
+            s3r_text_dot                <= s2r_text_dot;
         end if;
     end process;
 
@@ -220,12 +227,11 @@ begin
     (
         clock_i                     => clock_i,
         reset_i                     => reset_i,
-
-        s0_read_address_i.row       => stage2_vga_pixel_address.row (stage3_vga_pixel_address.row'left downto stage3_vga_pixel_address.row'right + 4),
-        s0_read_address_i.col       => stage2_vga_pixel_address.col (stage3_vga_pixel_address.col'left downto stage3_vga_pixel_address.col'right + 3),
-        s1_read_subaddress_i.row    => stage3_vga_pixel_address.row (stage3_vga_pixel_address.row'right + 3 downto stage3_vga_pixel_address.row'right),
-        s1_read_subaddress_i.col    => stage3_vga_pixel_address.col (stage3_vga_pixel_address.col'right + 2 downto stage3_vga_pixel_address.col'right),
-        s1_read_dot_o               => stage3_text_dot
+        s0_read_address_i.row       => vga_pixel_address.row (vga_pixel_address.row'left downto vga_pixel_address.row'right + 4),
+        s0_read_address_i.col       => vga_pixel_address.col (vga_pixel_address.col'left downto vga_pixel_address.col'right + 3),
+        s1_read_subaddress_i.row    => stage1_vga_pixel_address.row (stage1_vga_pixel_address.row'right + 3 downto stage1_vga_pixel_address.row'right),
+        s1_read_subaddress_i.col    => stage1_vga_pixel_address.col (stage1_vga_pixel_address.col'right + 2 downto stage1_vga_pixel_address.col'right),
+        s1_read_dot_o               => s1n_text_dot
     );
 
     -- column must be from 0 to 16 * 16 - 1 =  0 .. 256 - 1 = 0 .. 255
@@ -251,11 +257,12 @@ begin
             stage4_draw_tetrimino_bb    <= stage3_draw_tetrimino_bb;
             s4r_on_tetris_surface       <= s3n_on_tetris_surface;
 
-            stage4_text_enable_draw     <= stage3_text_dot;
             s4r_draw_frame              <= s3n_draw_frame;
 
             stage4_nt_colours           <= stage3_nt_colours;
             stage4_nt_enable_draw       <= stage3_nt_enable_draw;
+            -- Selection signals for the drawing multiplexer
+            s4r_text_dot                <= s3r_text_dot;
         end if;
     end process;
 
@@ -269,8 +276,8 @@ begin
         -- check if we are on display surface
         if stage4_vga_enable_draw = '0' then
             display.c       <= vga.colours.all_off;
-        -- check if we have to draw text
-        elsif stage4_text_enable_draw = '1' then
+        -- check if we have to draw text and if so, pick colours for the dot.
+        elsif s4r_text_dot = '1' then
             display.c.red   <= "1000";
             display.c.green <= "1000";
             display.c.blue  <= "1000";
