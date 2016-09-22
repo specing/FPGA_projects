@@ -24,28 +24,36 @@ end tetris_next_tetrimino;
 
 architecture Behavioral of tetris_next_tetrimino is
 
-    signal tetrimino_shape_next : tetrimino_shape_type := TETRIMINO_SHAPE_L_LEFT;
+    signal tetrimino_shape_random   : tetrimino_shape_type := TETRIMINO_SHAPE_L_RIGHT;
+    signal tetrimino_shape_next     : tetrimino_shape_type := TETRIMINO_SHAPE_L_LEFT;
 
 begin
     -- output asignments
     nt_shape_o <= tetrimino_shape_next;
+    -- crude "random"
+    SAVE_NEXT: process (clock_i)
+    begin
+        if rising_edge (clock_i) then
+            case tetrimino_shape_random is
+            when "000" => tetrimino_shape_random <= "010";
+            when "001" => tetrimino_shape_random <= "010";
+            when "010" => tetrimino_shape_random <= "011";
+            when "011" => tetrimino_shape_random <= "100";
+            when "100" => tetrimino_shape_random <= "101";
+            when "101" => tetrimino_shape_random <= "110";
+            when "110" => tetrimino_shape_random <= "111";
+            when "111" => tetrimino_shape_random <= "001";
+            when others => report "Oops" severity FAILURE;
+            end case;
+        end if;
+    end process;
 
-    -- crude random
-    process (clock_i)
+    -- Save new random value for display and retrieval by the active tetrimino controller
+    SAVE_NEW: process (clock_i)
     begin
         if rising_edge (clock_i) then
             if nt_retrieved_i = '1' then
-                case tetrimino_shape_next is
-                when "000" => tetrimino_shape_next <= "010";
-                when "001" => tetrimino_shape_next <= "010";
-                when "010" => tetrimino_shape_next <= "011";
-                when "011" => tetrimino_shape_next <= "100";
-                when "100" => tetrimino_shape_next <= "101";
-                when "101" => tetrimino_shape_next <= "110";
-                when "110" => tetrimino_shape_next <= "111";
-                when "111" => tetrimino_shape_next <= "001";
-                when others => report "Oops" severity FAILURE;
-                end case;
+                tetrimino_shape_next <= tetrimino_shape_random;
             end if;
         end if;
     end process;
@@ -68,7 +76,7 @@ begin
         next_tetrimino_init_row <= tetrimino_init_rom (to_integer (
           tetrimino_shape_next & TETRIMINO_ROTATION_90));
 
-        process (clock_i)
+        SAVE_ADDRESSES: process (clock_i)
         begin
             if rising_edge (clock_i) then
                 rows (BLOCK0)   <= To_SLV (to_integer (next_tetrimino_init_row (0)), 2);
@@ -83,7 +91,7 @@ begin
             end if;
         end process;
 
-        process (
+        RENDER_NEXT: process (
           render_address_i,
           rows, cols, tetrimino_shape_next )
         is
