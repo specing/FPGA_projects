@@ -108,7 +108,7 @@ begin
         nt_retrieved_i          => nt_retrieved,
         -- render pipeline
         render_shape_o          => stage2_nt_shape,
-        render_address_i        => stage3_vga_pixel_address
+        render_address_i        => stage2_vga_pixel_address
     );
 
     -- obtain the block descriptor given row and column
