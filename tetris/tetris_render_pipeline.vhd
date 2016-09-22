@@ -31,48 +31,42 @@ end tetris_render_pipeline;
 
 
 architecture Behavioral of tetris_render_pipeline is
-    -- pipeline stuff
-    signal stage1_vga_sync              : vga.sync.object;
-    signal stage1_vga_pixel_address     : vga.pixel.address.object;
-    signal stage1_vga_enable_draw       : std_logic;
+    -- Signals from the VGA controller
     signal stage1_vga_off_screen        : std_logic;
-    signal stage1_tetrimino_shape       : tetrimino_shape_type;
-    signal stage1_row_elim_data_out     : tetris.row_elim.vga_compat.object;
-
+    signal stage1_vga_sync              : vga.sync.object;
     signal stage2_vga_sync              : vga.sync.object;
-    signal stage2_vga_pixel_address     : vga.pixel.address.object;
-    signal stage2_vga_enable_draw       : std_logic;
-    signal stage2_tetrimino_shape       : tetrimino_shape_type;
-    signal stage2_row_elim_data_out     : tetris.row_elim.vga_compat.object;
-    signal stage2_block_colours         : vga.colours.object;
-
     signal stage3_vga_sync              : vga.sync.object;
-    signal stage3_vga_pixel_address     : vga.pixel.address.object;
-    signal stage3_vga_enable_draw       : std_logic;
-    signal stage3_row_elim_data_out     : tetris.row_elim.vga_compat.object;
-    signal stage3_block_colours         : vga.colours.object;
-    signal stage3_block_final_colours   : vga.colours.object;
-    signal stage3_draw_tetrimino_bb     : std_logic;
-
     signal stage4_vga_sync              : vga.sync.object;
-    signal stage4_block_colours         : vga.colours.object;
+    signal stage1_vga_pixel_address     : vga.pixel.address.object;
+    signal stage2_vga_pixel_address     : vga.pixel.address.object;
+    signal stage3_vga_pixel_address     : vga.pixel.address.object;
+    signal stage1_vga_enable_draw       : std_logic;
+    signal stage2_vga_enable_draw       : std_logic;
+    signal stage3_vga_enable_draw       : std_logic;
     signal stage4_vga_enable_draw       : std_logic;
-    signal stage4_draw_tetrimino_bb     : std_logic;
-
-    signal score_count                  : score_count_type;
-
     -- s = stage; X = level; r = register, n = next value (comb)
-    signal s3n_on_tetris_surface        : std_logic;
-    signal s4r_on_tetris_surface        : std_logic;
-
     signal s3n_draw_frame               : std_logic;
     signal s4r_draw_frame               : std_logic;
+    -- Signals associated with the playing field
+    signal stage1_tetrimino_shape       : tetrimino_shape_type;
+    signal stage2_tetrimino_shape       : tetrimino_shape_type;
+    signal stage1_row_elim_data_out     : tetris.row_elim.vga_compat.object;
+    signal stage2_row_elim_data_out     : tetris.row_elim.vga_compat.object;
+    signal stage3_row_elim_data_out     : tetris.row_elim.vga_compat.object;
+    signal stage2_block_colours         : vga.colours.object;
+    signal stage3_block_colours         : vga.colours.object;
+    signal stage3_block_final_colours   : vga.colours.object;
+    signal stage4_block_colours         : vga.colours.object;
+    signal s3n_on_tetris_surface        : std_logic;
+    signal s4r_on_tetris_surface        : std_logic;
     -- Signals associated with text rendering
     signal s1n_text_dot                 : std_logic;
     signal s2r_text_dot                 : std_logic;
     signal s3r_text_dot                 : std_logic;
     signal s4r_text_dot                 : std_logic;
-
+    -- Signals associated with next tetrimino rendering
+    signal stage3_draw_tetrimino_bb     : std_logic;
+    signal stage4_draw_tetrimino_bb     : std_logic;
     signal stage2_nt_shape              : tetrimino_shape_type;
     signal stage3_nt_shape              : tetrimino_shape_type;
     signal stage3_nt_colours            : vga.colours.object;
@@ -80,6 +74,8 @@ architecture Behavioral of tetris_render_pipeline is
     signal stage3_nt_enable_draw        : std_logic;
     signal stage4_nt_enable_draw        : std_logic;
 
+    -- Unsorted signals
+    signal score_count                  : score_count_type;
     -- New Tetrimino
     signal nt_shape                     : tetrimino_shape_type;
     signal nt_retrieved                 : std_logic;
