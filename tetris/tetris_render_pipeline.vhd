@@ -49,7 +49,6 @@ architecture Behavioral of tetris_render_pipeline is
     signal stage3_vga_sync              : vga.sync.object;
     signal stage3_vga_pixel_address     : vga.pixel.address.object;
     signal stage3_vga_enable_draw       : std_logic;
-    signal stage3_tetrimino_shape       : tetrimino_shape_type;
     signal stage3_row_elim_data_out     : tetris.row_elim.vga_compat.object;
     signal stage3_block_colours         : vga.colours.object;
     signal stage3_block_final_colours   : vga.colours.object;
@@ -58,7 +57,6 @@ architecture Behavioral of tetris_render_pipeline is
     signal stage4_vga_sync              : vga.sync.object;
     signal stage4_block_colours         : vga.colours.object;
     signal stage4_vga_enable_draw       : std_logic;
-    signal stage4_tetrimino_shape       : tetrimino_shape_type;
     signal stage4_draw_tetrimino_bb     : std_logic;
 
     signal score_count                  : score_count_type;
@@ -87,7 +85,9 @@ architecture Behavioral of tetris_render_pipeline is
     signal nt_retrieved                 : std_logic;
 
 begin
-    -- Stage1: save  row, column, hsync, vsync and en_draw from the VGA module
+    ---------------------------------------------------------------------------------------------
+    ------------------------------------------ Stage 1 ------------------------------------------
+    ---------------------------------------------------------------------------------------------
     process (clock_i)
     begin
         if rising_edge (clock_i) then
@@ -132,8 +132,9 @@ begin
 
         score_count_o               => score_count
     );
-
-    -- Stage2: save row, column, hsync, vsync, en_draw + block desc, line remove
+    ---------------------------------------------------------------------------------------------
+    ------------------------------------------ Stage 2 ------------------------------------------
+    ---------------------------------------------------------------------------------------------
     process (clock_i)
     begin
         if rising_edge (clock_i) then
@@ -146,11 +147,11 @@ begin
             s2r_text_dot                <= s1n_text_dot;
         end if;
     end process;
-
     -- obtain colour from tetrimino shape
     get_colour (stage2_tetrimino_shape, stage2_block_colours);
-
-    -- Stage3: save row, column, hsync, vsync and en_draw + block desc, RGB of block, line remove
+    ---------------------------------------------------------------------------------------------
+    ------------------------------------------ Stage 3 ------------------------------------------
+    ---------------------------------------------------------------------------------------------
     process (clock_i)
     begin
         if rising_edge (clock_i) then
@@ -246,7 +247,9 @@ begin
                  else '1' when stage3_vga_pixel_address.row = To_SLV (0,   stage3_vga_pixel_address.row'length)
                  else '1' when stage3_vga_pixel_address.row = To_SLV (479, stage3_vga_pixel_address.row'length)
                  else '0';
-    -- Stage4: save row, column, hsync, vsync and en_draw + block desc, final RGB of block, line remove
+    ---------------------------------------------------------------------------------------------
+    ------------------------------------------ Stage 4 ------------------------------------------
+    ---------------------------------------------------------------------------------------------
     process (clock_i)
     begin
         if rising_edge (clock_i) then
@@ -265,7 +268,6 @@ begin
             s4r_text_dot                <= s3r_text_dot;
         end if;
     end process;
-
     -- ==========================
     -- figure out what to display
     -- ==========================
