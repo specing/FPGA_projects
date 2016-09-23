@@ -14,12 +14,8 @@ entity top_level is
     (
         clock_i         : in     std_logic;
         reset_low_i     : in     std_logic;
-
-        hsync_o         : out    std_logic;
-        vsync_o         : out    std_logic;
-        vga_red_o       : out    vga.colours.red.object;
-        vga_green_o     : out    vga.colours.green.object;
-        vga_blue_o      : out    vga.colours.blue.object;
+        -- contains colours and sync
+        display_o       : out    vga.display.object;
 
         btnL_i          : in     std_logic;
         btnR_i          : in     std_logic;
@@ -41,8 +37,6 @@ architecture Behavioral of top_level is
 
     -- VGA misc signals
     signal vga_pixel_clock          : std_logic;
-    -- VGA pipelined output signals (sync and colour lines)
-    signal display                  : vga.display.object;
     -- VGA module signals telling us where we are on the screen
     signal vga_pixel_address        : vga.pixel.address.object;
     signal vga_enable_draw          : std_logic;
@@ -50,11 +44,6 @@ architecture Behavioral of top_level is
     signal vga_sync                 : vga.sync.object;
 begin
     -- assign output signals
-    hsync_o     <= display.sync.h;
-    vsync_o     <= display.sync.v;
-    vga_red_o   <= display.c.red;
-    vga_green_o <= display.c.green;
-    vga_blue_o  <= display.c.blue;
 
     -- board reset is active low
     reset_i <= not reset_low_i;
@@ -220,7 +209,7 @@ begin
         vga_off_screen          => vga_off_screen,
         vga_sync                => vga_sync,
         -- VGA pipelined output signals (sync and colour lines)
-        display                 => display,
+        display                 => display_o,
 
         active_operation_i      => tetrimino_operation,
         active_operation_ack_o  => tetrimino_operation_ack,
