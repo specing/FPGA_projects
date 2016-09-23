@@ -37,6 +37,7 @@ architecture Behavioral of tetris_render_pipeline is
     signal stage2_vga_sync              : vga.sync.object;
     signal stage3_vga_sync              : vga.sync.object;
     signal stage4_vga_sync              : vga.sync.object;
+    signal s5r_vga_sync                 : vga.sync.object;
     signal stage1_vga_pixel_address     : vga.pixel.address.object;
     signal stage2_vga_pixel_address     : vga.pixel.address.object;
     signal stage3_vga_pixel_address     : vga.pixel.address.object;
@@ -44,6 +45,7 @@ architecture Behavioral of tetris_render_pipeline is
     signal stage2_vga_enable_draw       : std_logic;
     signal stage3_vga_enable_draw       : std_logic;
     signal stage4_vga_enable_draw       : std_logic;
+    signal s4n_colours                  : vga.colours.object;
     -- s = stage; X = level; r = register, n = next value (comb)
     signal s3n_draw_frame               : std_logic;
     signal s4r_draw_frame               : std_logic;
@@ -267,36 +269,43 @@ begin
     -- ==========================
     -- figure out what to display
     -- ==========================
-    display.sync <= stage4_vga_sync;
     -- main draw multiplexer
     DRAW_MULTIPLEX: process (all)
     begin
         -- check if we are on display surface
         if stage4_vga_enable_draw = '0' then
-            display.c       <= vga.colours.all_off;
+            s4n_colours         <= vga.colours.all_off;
         -- check if we have to draw text and if so, pick colours for the dot.
         elsif s4r_text_dot = '1' then
-            display.c.red   <= "1000";
-            display.c.green <= "1000";
-            display.c.blue  <= "1000";
+            s4n_colours.red     <= "1000";
+            s4n_colours.green   <= "1000";
+            s4n_colours.blue    <= "1000";
         -- check if we have to draw the next tetrimino bounding box
         elsif stage4_draw_tetrimino_bb = '1' then
-            display.c.red   <= "0100";
-            display.c.green <= "1000";
-            display.c.blue  <= "0111";
+            s4n_colours.red     <= "0100";
+            s4n_colours.green   <= "1000";
+            s4n_colours.blue    <= "0111";
         -- check if we have to draw static lines
         elsif s4r_draw_frame = '1' then
-            display.c.red   <= "1000";
-            display.c.green <= "0000";
-            display.c.blue  <= "0100";
+            s4n_colours.red     <= "1000";
+            s4n_colours.green   <= "0000";
+            s4n_colours.blue    <= "0100";
         -- check if we are on the tetris block surface
         elsif s4r_on_tetris_surface = '1' then
-            display.c       <= stage4_block_colours;
+            s4n_colours         <= stage4_block_colours;
         elsif stage4_nt_enable_draw then
-            display.c       <= stage4_nt_colours;
+            s4n_colours         <= stage4_nt_colours;
         -- else don't draw anything.
         else
-            display.c       <= vga.colours.all_off;
+            s4n_colours         <= vga.colours.all_off;
+        end if;
+    end process;
+
+    process (clock_i)
+    begin
+        if rising_edge (clock_i) then
+            display.sync    <= stage4_vga_sync;
+            display.c       <= s4n_colours;
         end if;
     end process;
 
