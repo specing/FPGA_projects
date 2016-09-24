@@ -15,10 +15,11 @@ entity tetris_block is
     (
         clock_i                 : in     std_logic;
         reset_i                 : in     std_logic;
-
+        -- For rendering
+        render_address_i        : in     tetris.storage.address.object;
+        render_active_shape_o   : out    tetrimino_shape_type;
+        render_block_shape_o    : out    tetrimino_shape_type;
         row_elim_data_o         : out    tetris.row_elim.vga_compat.object;
-        tetrimino_shape_o       : out    tetrimino_shape_type;
-        block_render_address_i  : in     tetris.storage.address.object;
         -- for Next Tetrimino selection (random)
         nt_shape_i              : in     tetrimino_shape_type;
         nt_retrieved_o          : out    std_logic;
@@ -111,7 +112,6 @@ architecture Behavioral of tetris_block is
     signal active_start : std_logic;
     signal active_ready : std_logic;
 
-    signal active_tetrimino_shape   : tetrimino_shape_type;
     type active_tetrimino_command_mux_enum is
     (
         ATC_MOVE_DOWN,
@@ -153,9 +153,7 @@ begin
     sc_enables (0) <= active_write_enable; -- temporarily permanent!
 
     -- determine what goes out on screen
-    with active_tetrimino_shape select tetrimino_shape_o <=
-      ram_read_data          when TETRIMINO_SHAPE_NONE,
-      active_tetrimino_shape when others;
+    render_block_shape_o <= ram_read_data;
     -------------------------------------------------------
     --------------- logic for RAM for blocks --------------
     -------------------------------------------------------
@@ -193,7 +191,7 @@ begin
     with ram_access_mux select ram_read_address <=
       ts.address.all_zeros      when MUXSEL_RAM_CLEAR,
       active_read_address       when MUXSEL_ACTIVE_TETRIMINO,
-      block_render_address_i    when MUXSEL_RENDER,
+      render_address_i          when MUXSEL_RENDER,
       row_elim_read_address     when MUXSEL_ROW_ELIM;
     -------------------------------------------------------
     ------------- logic to clear RAM on reset -------------
@@ -235,7 +233,7 @@ begin
         block_read_address_o    => row_elim_read_address,
         block_write_address_o   => row_elim_write_address,
 
-        row_elim_address_i      => block_render_address_i.row,
+        row_elim_address_i      => render_address_i.row,
         row_elim_data_o         => row_elim_data_o,
 
         fsm_start_i             => row_elim_start,
@@ -258,15 +256,14 @@ begin
         nt_retrieved_o          => nt_retrieved_o,
         -- for next tetrimino selection (random)
         -- readout for drawing of active tetrimino
-        active_data_o           => active_tetrimino_shape,
-        active_address_i        => block_render_address_i,
+        active_data_o           => render_active_shape_o,
+        active_address_i        => render_address_i,
         -- communication with the main finite state machine
         operation_i             => active_operation,
         fsm_start_i             => active_start,
         fsm_ready_o             => active_ready,
         fsm_game_over_o         => game_over
     );
-
     with active_tetrimino_command_mux select active_operation <=
       ATO_MOVE_DOWN         when ATC_MOVE_DOWN,
       active_operation_i    when ATC_USER_INPUT;

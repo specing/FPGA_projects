@@ -50,8 +50,11 @@ architecture Behavioral of tetris_render_pipeline is
     signal s3n_draw_frame               : std_logic;
     signal s4r_draw_frame               : std_logic;
     -- Signals associated with the playing field
-    signal stage1_tetrimino_shape       : tetrimino_shape_type;
-    signal stage2_tetrimino_shape       : tetrimino_shape_type;
+    signal s1n_active_shape             : tetrimino_shape_type;
+    signal s2r_active_shape             : tetrimino_shape_type;
+    signal s1n_block_shape              : tetrimino_shape_type;
+    signal s2r_block_shape              : tetrimino_shape_type;
+    signal s2l_tetrimino_shape          : tetrimino_shape_type;
     signal stage1_row_elim_data_out     : tetris.row_elim.vga_compat.object;
     signal stage2_row_elim_data_out     : tetris.row_elim.vga_compat.object;
     signal stage3_row_elim_data_out     : tetris.row_elim.vga_compat.object;
@@ -115,11 +118,12 @@ begin
     (
         clock_i                     => clock_i,
         reset_i                     => reset_i,
-
+        -- For rendering
+        render_address_i.row        => stage1_vga_pixel_address.row (8 downto 4),
+        render_address_i.col        => stage1_vga_pixel_address.col (7 downto 4),
+        render_active_shape_o       => s1n_active_shape,
+        render_block_shape_o        => s1n_block_shape,
         row_elim_data_o             => stage1_row_elim_data_out,
-        tetrimino_shape_o           => stage1_tetrimino_shape,
-        block_render_address_i.row  => stage1_vga_pixel_address.row (8 downto 4),
-        block_render_address_i.col  => stage1_vga_pixel_address.col (7 downto 4),
         -- for Next Tetrimino selection (random)
         nt_shape_i                  => nt_shape,
         nt_retrieved_o              => nt_retrieved,
@@ -139,14 +143,21 @@ begin
             stage2_vga_sync             <= stage1_vga_sync;
             stage2_vga_pixel_address    <= stage1_vga_pixel_address;
             stage2_vga_enable_draw      <= stage1_vga_enable_draw;
-            stage2_tetrimino_shape      <= stage1_tetrimino_shape;
             stage2_row_elim_data_out    <= stage1_row_elim_data_out;
             -- Selection signals for the drawing multiplexer
             s2r_text_dot                <= s1n_text_dot;
+            -- Others
+            s2r_active_shape            <= s1n_active_shape;
+            s2r_block_shape             <= s1n_block_shape;
         end if;
     end process;
+    -- Shape mux before determining colour, hopefully these things merge 3+3 into 12 LUT6
+    -- for colours.
+    with s2r_active_shape select s2l_tetrimino_shape <=
+      s2r_block_shape   when TETRIMINO_SHAPE_NONE,
+      s2r_active_shape  when others;
     -- obtain colour from tetrimino shape
-    get_colour (stage2_tetrimino_shape, stage2_block_colours);
+    get_colour (s2l_tetrimino_shape, stage2_block_colours);
     ---------------------------------------------------------------------------------------------
     ------------------------------------------ Stage 3 ------------------------------------------
     ---------------------------------------------------------------------------------------------
