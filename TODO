@@ -6,8 +6,15 @@ all projects
 
 Tetris
 ======
-- Move address checking to after new addresses are obtained
-- have a counter produce block_select so as to vacuum 4-state groups into one
-- join Move Down and normal check_contentsX states based on operation_i?
-  ^ uses two more LUTs, saved in git stash -- investigate why
-- the 8 constants at the top look weird and there are some hardcoded values in FSM next state.
+- tetris_active_tetrimino.vhd:
+  - move state_ML_addresses and state_MR_addresses address checking
+    into state_check_new_addresses? (tested some time ago ...more LUT...investigate)
+    + Move address checking to after new addresses are obtained
+  - have a counter produce block_select so as to vacuum 4-state groups into one
+  - join Move Down and normal check_contentsX states based on operation_i?
+    ^ uses two more LUTs, saved in git stash -- investigate why
+  - the 8 constants at the top look weird and there are some hardcoded values in FSM next state.
+- definitions.vhd:
+  - UNI-VGA should probably be read by VHDL's text_io,
+    then both this mapping and the constants in uni_vga.vhd automatically generated in memory.
+  - in vga.display.object record, make c be an alias for .colours?
