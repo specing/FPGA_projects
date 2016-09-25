@@ -79,6 +79,7 @@ architecture Behavioral of tetris_block is
         state_active_tetrimino_MD,
         state_active_tetrimino_MD_wait,
         -- user input
+        state_active_tetrimino_input_check,
         state_active_tetrimino_input,
         state_active_tetrimino_input_wait,
         state_active_tetrimino_input_ack,
@@ -335,6 +336,8 @@ begin
             ram_access_mux                  <= MUXSEL_ACTIVE_TETRIMINO;
             active_tetrimino_command_mux    <= ATC_MOVE_DOWN;
         -------------------------------------------------------------
+        when state_active_tetrimino_input_check =>
+            null;
         when state_active_tetrimino_input =>
             active_start                    <= '1';
             ram_access_mux                  <= MUXSEL_ACTIVE_TETRIMINO;
@@ -384,7 +387,7 @@ begin
                 if refresh_count_at_top = '1' then
                     next_state <= state_active_tetrimino_MD;
                 else
-                    next_state <= state_active_tetrimino_input;
+                    next_state <= state_active_tetrimino_input_check;
                 end if;
             end if;
         -------------------------------------------------------------
@@ -394,13 +397,15 @@ begin
             if active_ready = '1' then
                 if game_over = '1' then
                     next_state <= state_game_over;
-                elsif active_operation_i /= ATO_NONE then
-                    next_state <= state_active_tetrimino_input;
                 else
-                    next_state <= state_start;
+                    next_state <= state_active_tetrimino_input_check;
                 end if;
             end if;
         -------------------------------------------------------------
+        when state_active_tetrimino_input_check =>
+            next_state <= state_active_tetrimino_input when active_operation_i /= ATO_NONE
+                     else state_start;
+
         when state_active_tetrimino_input =>
             next_state <= state_active_tetrimino_input_wait;
         when state_active_tetrimino_input_wait =>
