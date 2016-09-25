@@ -317,7 +317,7 @@ begin
             block_select                    <= BLOCK3;
         when state_NT_game_over =>
             fsm_game_over_o                 <= '1';
-            fsm_ready_o                     <= '1';
+            fsm_ready_o                     <= '1'; -- look into the parent fsm for the reason
 
         when state_MD_addresses =>
             corner_row_operation            <= PLUS_ONE;
