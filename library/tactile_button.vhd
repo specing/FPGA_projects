@@ -20,11 +20,12 @@ architecture Behavioral of tactile_button is
 
     type state_type is
     (
-        state_waiting_for_rising_edge,
-        state_rising_edge,
-        state_waiting_for_zero
+        state_wait_for_press,
+        state_wait_for_ack_or_depress,
+        state_wait_for_ack,
+        state_wait_for_depress
     );
-    signal state, next_state : state_type := state_waiting_for_rising_edge;
+    signal state, next_state : state_type := state_wait_for_press;
 
     signal button_sync1 : std_logic := '0';
     signal button_sync  : std_logic := '0';
@@ -49,7 +50,7 @@ begin
     FSM_STATE_CHANGE: process (clock_i)
     begin
         if rising_edge (clock_i) then
-            state <= state_waiting_for_rising_edge when reset_i = '1'
+            state <= state_wait_for_press when reset_i = '1'
                 else next_state;
         end if;
     end process;
@@ -57,9 +58,10 @@ begin
     FSM_OUTPUT: process (state)
     begin
         case state is
-        when state_waiting_for_rising_edge => press_o <= '0';
-        when state_rising_edge             => press_o <= '1';
-        when state_waiting_for_zero        => press_o <= '0';
+        when state_wait_for_press           => press_o <= '0';
+        when state_wait_for_ack_or_depress  => press_o <= '1';
+        when state_wait_for_ack             => press_o <= '1';
+        when state_wait_for_depress         => press_o <= '0';
         end case;
     end process;
 
@@ -68,14 +70,18 @@ begin
         next_state <= state;
 
         case state is
-        when state_waiting_for_rising_edge =>
-            next_state <= state_rising_edge             when button_sync = '1';
+        when state_wait_for_press =>
+            next_state <= state_wait_for_ack_or_depress when button_sync = '1';
 
-        when state_rising_edge =>
-            next_state <= state_waiting_for_zero        when press_ack_i = '1';
+        when state_wait_for_ack_or_depress =>
+            next_state <= state_wait_for_ack            when button_sync = '0'
+                     else state_wait_for_depress        when press_ack_i = '1';
 
-        when state_waiting_for_zero =>
-            next_state <= state_waiting_for_rising_edge when button_sync = '0';
+        when state_wait_for_ack =>
+            next_state <= state_wait_for_press          when press_ack_i = '1';
+
+        when state_wait_for_depress =>
+            next_state <= state_wait_for_press          when button_sync = '0';
         end case;
     end process;
 
