@@ -84,7 +84,6 @@ begin
 
         -- sync & button input logic on tactile buttons
         Inst_button_input: entity work.tactile_buttons
-        generic map ( num_of_buttons => num_of_buttons )
         port map
         (
             clock_i         => clock_i,

@@ -5,28 +5,34 @@ use ieee.std_logic_1164.all;
 
 -- holds button pulse until it is acknowledged by the system
 entity tactile_buttons is
-    generic
-    (
-        num_of_buttons  : positive
-    );
     port
     (
         clock_i         : in     std_logic;
         reset_i         : in     std_logic;
 
-        buttons_i       : in     std_logic_vector (num_of_buttons - 1 downto 0);
-        buttons_ack_i   : in     std_logic_vector (num_of_buttons - 1 downto 0);
-        buttons_o       : out    std_logic_vector (num_of_buttons - 1 downto 0)
+        buttons_i       : in     std_logic_vector;
+        buttons_ack_i   : in     std_logic_vector;
+        buttons_o       : out    std_logic_vector
     );
 end tactile_buttons;
 
 
 
 architecture Behavioral of tactile_buttons is
+    constant vec_low    : natural := buttons_i'Low;
+    constant vec_high   : natural := buttons_i'High;
 begin
+    -- Asserts to check vector shapes
+    assert vec_low = buttons_ack_i'Low and vec_high = buttons_ack_i'High
+      report "buttons_ack_i vector shape does not match that of buttons_i"
+      severity FAILURE;
+
+    assert vec_low = buttons_o'Low and vec_high = buttons_o'High
+      report "buttons_o vector shape does not match that of buttons_i"
+      severity FAILURE;
 
     -- Individual tactile buttons
-    TBUTTONS: for index in 0 to num_of_buttons - 1 generate
+    TBUTTONS: for index in vec_low to vec_high generate
     begin
         Inst_button: entity work.tactile_button
         port map
