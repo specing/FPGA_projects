@@ -35,6 +35,9 @@ end seven_seg_display;
 
 
 architecture Behavioral of seven_seg_display is
+    subtype cathodes_t  is std_logic_vector (6 downto 0); -- no dot
+    subtype anodes_t    is std_logic_vector (num_of_digits - 1 downto 0);
+    subtype bcd_t       is std_logic_vector (3 downto 0);
 
     constant anode_off          : std_logic := not anode_on;
     constant cathode_off        : std_logic := not cathode_on;
@@ -44,9 +47,9 @@ architecture Behavioral of seven_seg_display is
     constant prescaler_width    : natural   := flib.util.compute_width (prescaler_top);
     signal   prescaler_overflow : std_logic;
 
-    signal   bcd                : std_logic_vector (3 downto 0);
-    signal   cathodes           : std_logic_vector (6 downto 0); -- no dot
-    signal   anodes             : std_logic_vector (num_of_digits - 1 downto 0)
+    signal   bcd                : bcd_t;
+    signal   cathodes           : cathodes_t;
+    signal   anodes             : anodes_t
                                 := (0 => anode_on, others => anode_off);
 
     constant dim_width          : natural   := flib.util.compute_width (dim_top + 1);
