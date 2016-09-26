@@ -42,19 +42,16 @@ begin
     -- generate RED
     detectors:
     for index in 0 to num_of_buttons - 1 generate
-        signal button_pulse : std_logic;
     begin
-        buttons_o(index) <= button_pulse;
-
-        -- rising edge detectors on synced input buttons
-        Inst_RED: entity work.rising_edge_detector
+        -- Individual tactile buttons
+        Inst_button: entity work.tactile_button
         port map
         (
-            clock_i     => clock_i,
-            reset_i     => reset_i,
-            input_i     => buttons_sync(index),
-            input_ack_i => buttons_ack_i(index),
-            output_o    => button_pulse
+            clock_i         => clock_i,
+            reset_i         => reset_i,
+            button_sync_i   => buttons_sync (index),
+            press_ack_i     => buttons_ack_i (index),
+            press_o         => buttons_o (index)
         );
     end generate;
 
