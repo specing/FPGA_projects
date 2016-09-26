@@ -93,8 +93,7 @@ begin
             buttons_o       => buttons
         );
 
-        -- FSM state change
-        process (clock_i)
+        FSM_STATE_CHANGE: process (clock_i)
         begin
             if rising_edge (clock_i) then
                 if reset_i = '1' then
@@ -105,8 +104,7 @@ begin
             end if;
         end process;
 
-        -- FSM output
-        process (state)
+        FSM_OUTPUT: process (state)
         begin
             buttons_ack_joined      <= (others => '0');
             tetrimino_operation     <= ATO_NONE;
@@ -132,8 +130,7 @@ begin
             end case;
         end process;
 
-        -- FSM next state
-        process (state, tetrimino_operation_ack, buttons)
+        FSM_NEXT_STATE: process (state, tetrimino_operation_ack, buttons)
         begin
             case state is
             when state_start =>
