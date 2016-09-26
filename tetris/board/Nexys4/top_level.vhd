@@ -55,30 +55,30 @@ begin
         subtype button_vector is std_logic_vector (num_of_buttons - 1 downto 0);
         signal buttons_joined   : button_vector;
         signal buttons          : button_vector;
-        alias button_drop       is buttons (4);
-        alias button_left       is buttons (3);
-        alias button_right      is buttons (2);
-        alias button_up         is buttons (1);
-        alias button_down       is buttons (0);
+        alias drop_down     is buttons (4);
+        alias move_left     is buttons (3);
+        alias move_right    is buttons (2);
+        alias rotate_right  is buttons (1);
+        alias rotate_left   is buttons (0);
 
         type state_type is
         (
             state_start,
-            state_drop,
-            state_left,
-            state_right,
-            state_up,
-            state_down
+            state_drop_down,
+            state_move_left,
+            state_move_right,
+            state_rotate_right,
+            state_rotate_left
         );
         signal state, next_state : state_type := state_start;
 
 
         signal buttons_ack_joined : button_vector;
-        alias button_drop_ack     is buttons_ack_joined(4);
-        alias button_left_ack     is buttons_ack_joined(3);
-        alias button_right_ack    is buttons_ack_joined(2);
-        alias button_up_ack       is buttons_ack_joined(1);
-        alias button_down_ack     is buttons_ack_joined(0);
+        alias drop_down_ack     is buttons_ack_joined(4);
+        alias move_left_ack     is buttons_ack_joined(3);
+        alias move_right_ack    is buttons_ack_joined(2);
+        alias rotate_right_ack  is buttons_ack_joined(1);
+        alias rotate_left_ack   is buttons_ack_joined(0);
     begin
         buttons_joined <= btnC_i & btnL_i & btnR_i & btnU_i & btnD_i;
 
@@ -96,11 +96,8 @@ begin
         FSM_STATE_CHANGE: process (clock_i)
         begin
             if rising_edge (clock_i) then
-                if reset_i = '1' then
-                    state <= state_start;
-                else
-                    state <= next_state;
-                end if;
+                state <= state_start when reset_i = '1'
+                    else next_state;
             end if;
         end process;
 
@@ -112,21 +109,21 @@ begin
             case state is
             when state_start =>
                 null;
-            when state_drop =>
+            when state_drop_down =>
                 tetrimino_operation <= ATO_DROP_DOWN;
-                button_drop_ack     <= '1';
-            when state_left =>
+                drop_down_ack       <= '1';
+            when state_move_left =>
                 tetrimino_operation <= ATO_MOVE_LEFT;
-                button_left_ack     <= '1';
-            when state_right =>
+                move_left_ack       <= '1';
+            when state_move_right =>
                 tetrimino_operation <= ATO_MOVE_RIGHT;
-                button_right_ack    <= '1';
-            when state_up =>
+                move_right_ack      <= '1';
+            when state_rotate_right =>
                 tetrimino_operation <= ATO_ROTATE_CLOCKWISE;
-                button_up_ack       <= '1';
-            when state_down =>
+                rotate_right_ack    <= '1';
+            when state_rotate_left =>
                 tetrimino_operation <= ATO_ROTATE_COUNTER_CLOCKWISE;
-                button_down_ack     <= '1';
+                rotate_left_ack     <= '1';
             end case;
         end process;
 
@@ -134,19 +131,16 @@ begin
         begin
             case state is
             when state_start =>
-                if    button_drop  = '1' then next_state <= state_drop;
-                elsif button_left  = '1' then next_state <= state_left;
-                elsif button_right = '1' then next_state <= state_right;
-                elsif button_up    = '1' then next_state <= state_up;
-                elsif button_down  = '1' then next_state <= state_down;
+                if    drop_down    = '1' then next_state <= state_drop_down;
+                elsif move_left    = '1' then next_state <= state_move_left;
+                elsif move_right   = '1' then next_state <= state_move_right;
+                elsif rotate_right = '1' then next_state <= state_rotate_right;
+                elsif rotate_left  = '1' then next_state <= state_rotate_left;
                 else                          next_state <= state_start;
                 end if;
-            when state_drop | state_left | state_right | state_up | state_down =>
-                if tetrimino_operation_ack = '1' then
-                    next_state <= state_start;
-                else
-                    next_state <= state;
-                end if;
+            when others =>
+                next_state <= state_start when tetrimino_operation_ack = '1'
+                         else state;
             end case;
         end process;
 
