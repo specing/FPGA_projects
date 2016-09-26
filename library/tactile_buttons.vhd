@@ -12,7 +12,7 @@ entity tactile_buttons is
 
         buttons_i       : in     std_logic_vector;
         buttons_ack_i   : in     std_logic_vector;
-        buttons_o       : out    std_logic_vector
+        presses_o       : out    std_logic_vector
     );
 end tactile_buttons;
 
@@ -27,8 +27,8 @@ begin
       report "buttons_ack_i vector shape does not match that of buttons_i"
       severity FAILURE;
 
-    assert vec_low = buttons_o'Low and vec_high = buttons_o'High
-      report "buttons_o vector shape does not match that of buttons_i"
+    assert vec_low = presses_o'Low and vec_high = presses_o'High
+      report "presses_o vector shape does not match that of buttons_i"
       severity FAILURE;
 
     -- Individual tactile buttons
@@ -41,7 +41,7 @@ begin
             reset_i         => reset_i,
             button_i        => buttons_i (index),
             press_ack_i     => buttons_ack_i (index),
-            press_o         => buttons_o (index)
+            press_o         => presses_o (index)
         );
     end generate;
 

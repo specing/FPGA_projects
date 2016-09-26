@@ -90,7 +90,7 @@ begin
             reset_i         => reset_i,
             buttons_i       => buttons_joined,
             buttons_ack_i   => buttons_ack_joined,
-            buttons_o       => buttons
+            presses_o       => buttons
         );
 
         FSM_STATE_CHANGE: process (clock_i)
