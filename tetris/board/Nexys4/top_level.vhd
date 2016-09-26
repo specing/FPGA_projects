@@ -82,8 +82,8 @@ begin
     begin
         buttons_joined <= btnC_i & btnL_i & btnR_i & btnU_i & btnD_i;
 
-        -- sync & rising edge detectors on input buttons
-        Inst_button_input: entity work.button_input
+        -- sync & button input logic on tactile buttons
+        Inst_button_input: entity work.tactile_buttons
         generic map ( num_of_buttons => num_of_buttons )
         port map
         (

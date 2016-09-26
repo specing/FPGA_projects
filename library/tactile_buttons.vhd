@@ -3,8 +3,8 @@ use ieee.std_logic_1164.all;
 
 
 
--- generates a clock_i period pulse when a button is pressed
-entity button_input is
+-- holds button pulse until it is acknowledged by the system
+entity tactile_buttons is
     generic
     (
         num_of_buttons  : positive
@@ -18,11 +18,11 @@ entity button_input is
         buttons_ack_i   : in     std_logic_vector (num_of_buttons - 1 downto 0);
         buttons_o       : out    std_logic_vector (num_of_buttons - 1 downto 0)
     );
-end button_input;
+end tactile_buttons;
 
 
 
-architecture Behavioral of button_input is
+architecture Behavioral of tactile_buttons is
 
     signal buttons_sync : std_logic_vector(num_of_buttons - 1 downto 0);
 
