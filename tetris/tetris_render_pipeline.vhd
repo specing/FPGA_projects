@@ -286,21 +286,21 @@ begin
         -- check if we are on display surface
         if stage4_vga_enable_draw = '0' then
             s4n_colours         <= vga.colours.all_off;
-        -- check if we have to draw text and if so, pick colours for the dot.
-        elsif s4r_text_dot = '1' then
-            s4n_colours.red     <= "1000";
-            s4n_colours.green   <= "1000";
-            s4n_colours.blue    <= "1000";
-        -- check if we have to draw the next tetrimino bounding box
-        elsif stage4_draw_tetrimino_bb = '1' then
-            s4n_colours.red     <= "0100";
-            s4n_colours.green   <= "1000";
-            s4n_colours.blue    <= "0111";
         -- check if we have to draw static lines
         elsif s4r_draw_frame = '1' then
             s4n_colours.red     <= "1000";
             s4n_colours.green   <= "0000";
             s4n_colours.blue    <= "0100";
+        -- check if we have to draw the next tetrimino bounding box
+        elsif stage4_draw_tetrimino_bb = '1' then
+            s4n_colours.red     <= "0100";
+            s4n_colours.green   <= "1000";
+            s4n_colours.blue    <= "0111";
+        -- check if we have to draw text and if so, pick colours for the dot.
+        elsif s4r_text_dot = '1' then
+            s4n_colours.red     <= "1000";
+            s4n_colours.green   <= "1000";
+            s4n_colours.blue    <= "1000";
         -- check if we are on the tetris block surface
         elsif s4r_on_tetris_surface = '1' then
             s4n_colours         <= stage4_block_colours;
