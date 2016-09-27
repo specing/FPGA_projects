@@ -49,8 +49,10 @@ architecture Behavioral of seven_seg_display is
 
     signal   bcd                : bcd_t;
     signal   cathodes           : cathodes_t;
+    signal   cathodes_final     : cathodes_t;
     signal   anodes             : anodes_t
                                 := (0 => anode_on, others => anode_off);
+    signal   anodes_final       : anodes_t;
 
     constant dim_width          : natural   := flib.util.compute_width (dim_top + 1);
     signal   dim_overflow       : std_logic;
@@ -58,7 +60,7 @@ architecture Behavioral of seven_seg_display is
 begin
 
     -- invert cathodes if needed
-    with cathode_on select cathodes_o <=
+    with cathode_on select cathodes_final <=
       not cathodes when '0',
       cathodes     when others;
 
@@ -100,13 +102,12 @@ begin
         overflow_o      => dim_overflow
     );
 
-    with dim_overflow select anodes_o <=
+    with dim_overflow select anodes_final <=
       anodes when '1', -- To_SLV (0, dim_width),
       (others => anode_off) when others;
 
 
-    -- digit selector
-    process (clock_i)
+    DIGIT_SELECTOR: process (clock_i)
     begin
         if rising_edge (clock_i) then
             if reset_i = '1' then
@@ -125,7 +126,7 @@ begin
 
     -- combinatorial selector for which of the incoming digits goes onto the
     -- decoder and subsequently on the display
-    process (bcd_digits_i, anodes)
+    DIGIT_MUX: process (bcd_digits_i, anodes)
     begin
         bcd <= (others => '0');
 
@@ -137,6 +138,20 @@ begin
                 bcd (3) <= bcd_digits_i (4 * i + 3);
             end if;
         end loop;
+    end process;
+
+    -- Synchronise anodes and cathodes before displaying them
+    process (clock_i)
+    begin
+        if rising_edge (clock_i) then
+            if reset_i = '1' then
+                anodes_o    <= (others => anode_off);
+                cathodes_o  <= (others => cathode_off);
+            else
+                anodes_o    <= anodes_final;
+                cathodes_o  <= cathodes_final;
+            end if;
+        end if;
     end process;
 
 end Behavioral;
