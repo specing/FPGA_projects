@@ -46,6 +46,9 @@ architecture Behavioral of top_level is
     signal vga_enable_draw          : std_logic;
     signal vga_off_screen           : std_logic;
     signal vga_sync                 : vga.sync.object;
+    -- Score count
+    signal score_count              : score_count_type;
+
 begin
 
     SYNC_RESET: process (clock_i)
@@ -195,6 +198,28 @@ begin
         enable_draw_o   => vga_enable_draw,
         screen_end_o    => vga_off_screen
     );
+
+    -- show score count
+    Inst_7seg: entity work.seven_seg_display
+    generic map
+    (
+        f_clock         => 100_000_000,
+        num_of_digits   => 8,
+        dim_top         => 3,
+        -- bit values for segment on
+        -- Nexys 4's anodes are active low (have transistors for amplification)
+        anode_on        => '0',
+        -- Nexys 4's cathodes have A on right and inverted, but our seven_seg_digit has A on the left
+        cathode_on      => '0'
+    )
+    port map
+    (
+        clock_i         => clock_i,
+        reset_i         => reset_i,
+        bcd_digits_i    => score_count,
+        anodes_o        => anode_o,
+        cathodes_o      => cathode_o
+    );
     -------------------------------------------------------------------------
     ------------------ include board independent top level ------------------
     -------------------------------------------------------------------------
@@ -210,12 +235,11 @@ begin
         vga_sync                => vga_sync,
         -- VGA pipelined output signals (sync and colour lines)
         display                 => display_o,
+        -- Score count output
+        score_count_o           => score_count,
 
         active_operation_i      => tetrimino_operation,
-        active_operation_ack_o  => tetrimino_operation_ack,
-
-        cathodes_o              => cathode_o,
-        anodes_o                => anode_o
+        active_operation_ack_o  => tetrimino_operation_ack
     );
 
 end Behavioral;

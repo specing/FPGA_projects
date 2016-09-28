@@ -19,12 +19,11 @@ entity tetris_render_pipeline is
         vga_sync                : in     vga.sync.object;
         -- VGA pipelined output signals (sync and colour lines)
         display                 : out    vga.display.object;
+        -- Score count output
+        score_count_o           : out    score_count_type;
 
         active_operation_i      : in     active_tetrimino_operations;
-        active_operation_ack_o  : out    std_logic;
-
-        cathodes_o              : out    std_logic_vector(6 downto 0);
-        anodes_o                : out    std_logic_vector(7 downto 0)
+        active_operation_ack_o  : out    std_logic
     );
 end tetris_render_pipeline;
 
@@ -79,8 +78,6 @@ architecture Behavioral of tetris_render_pipeline is
     signal stage3_nt_enable_draw        : std_logic;
     signal stage4_nt_enable_draw        : std_logic;
 
-    -- Unsorted signals
-    signal score_count                  : score_count_type;
     -- New Tetrimino
     signal nt_shape                     : tetrimino_shape_type;
     signal nt_retrieved                 : std_logic;
@@ -132,7 +129,7 @@ begin
         active_operation_i          => active_operation_i,
         active_operation_ack_o      => active_operation_ack_o,
 
-        score_count_o               => score_count
+        score_count_o               => score_count_o
     );
     ---------------------------------------------------------------------------------------------
     ------------------------------------------ Stage 2 ------------------------------------------
@@ -321,27 +318,5 @@ begin
             display.c       <= s4n_colours;
         end if;
     end process;
-
-    -- show score count
-    Inst_7seg: entity work.seven_seg_display
-    generic map
-    (
-        f_clock         => 100_000_000,
-        num_of_digits   => 8,
-        dim_top         => 3,
-        -- bit values for segment on
-        -- Nexys 4's anodes are active low (have transistors for amplification)
-        anode_on        => '0',
-        -- Nexys 4's cathodes have A on right and inverted, but our seven_seg_digit has A on the left
-        cathode_on      => '0'
-    )
-    port map
-    (
-        clock_i         => clock_i,
-        reset_i         => reset_i,
-        bcd_digits_i    => score_count,
-        anodes_o        => anodes_o,
-        cathodes_o      => cathodes_o
-    );
 
 end Behavioral;
