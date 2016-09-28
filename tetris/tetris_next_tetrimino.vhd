@@ -31,7 +31,7 @@ begin
     -- output asignments
     nt_shape_o <= tetrimino_shape_next;
     -- crude "random"
-    SAVE_NEXT: process (clock_i)
+    CYCLE_SHAPES: process (clock_i)
     begin
         if rising_edge (clock_i) then
             case tetrimino_shape_random is
@@ -49,7 +49,7 @@ begin
     end process;
 
     -- Save new random value for display and retrieval by the active tetrimino controller
-    SAVE_NEW: process (clock_i)
+    SAVE_NEXT: process (clock_i)
     begin
         if rising_edge (clock_i) then
             if nt_retrieved_i = '1' then
