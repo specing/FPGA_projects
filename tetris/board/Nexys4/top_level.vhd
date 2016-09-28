@@ -31,7 +31,11 @@ end top_level;
 
 
 architecture Behavioral of top_level is
-    signal reset_i                  : std_logic;
+    -- Keep system in reset for a few cycles
+    signal reset_low_synced1        : std_logic := '0';
+    signal reset_low_synced         : std_logic := '0';
+    signal reset_i                  : std_logic := '1';
+
     signal tetrimino_operation      : active_tetrimino_operations;
     signal tetrimino_operation_ack  : std_logic;
 
@@ -43,10 +47,16 @@ architecture Behavioral of top_level is
     signal vga_off_screen           : std_logic;
     signal vga_sync                 : vga.sync.object;
 begin
-    -- assign output signals
 
-    -- board reset is active low
-    reset_i <= not reset_low_i;
+    SYNC_RESET: process (clock_i)
+    begin
+        if rising_edge (clock_i) then
+            reset_low_synced1   <= reset_low_i;
+            reset_low_synced    <= reset_low_synced1;
+            -- board reset is active low
+            reset_i             <= not reset_low_synced;
+        end if;
+    end process;
     -------------------------------------------------------
     ------------------------ INPUT ------------------------
     -------------------------------------------------------
