@@ -27,43 +27,41 @@ architecture Behavioral of tetris_text is
       array (0 to 2 ** letters.row.width - 1, 0 to 2 ** letters.col.width - 1) of
       letter.object;
 
+    constant ntrom : storage_object := (
+      1 => (
+        36     => letter.N_upper,
+        37     => letter.a,
+        38     => letter.s,
+        39     => letter.l,
+        40     => letter.e,
+        41     => letter.d,
+        42     => letter.n,
+        43     => letter.j,
+        44     => letter.i,
+        others => letter.space),
+      2 => (
+        36     => letter.t,
+        37     => letter.e,
+        38     => letter.t,
+        39     => letter.r,
+        40     => letter.i,
+        41     => letter.m,
+        42     => letter.i,
+        43     => letter.n,
+        44     => letter.o,
+        others => letter.space),
+      others => (
+        others => letter.space)
+    );
+
     signal s0_nt_read_letter    : letter.object;
     signal s0_read_letter       : letter.object;
     signal s1_read_letter       : letter.object;
 
 begin
-    Next_Tetrimino: block
 
-        constant ntrom : storage_object := (
-          1 => (
-            36     => letter.N_upper,
-            37     => letter.a,
-            38     => letter.s,
-            39     => letter.l,
-            40     => letter.e,
-            41     => letter.d,
-            42     => letter.n,
-            43     => letter.j,
-            44     => letter.i,
-            others => letter.space),
-          2 => (
-            36     => letter.t,
-            37     => letter.e,
-            38     => letter.t,
-            39     => letter.r,
-            40     => letter.i,
-            41     => letter.m,
-            42     => letter.i,
-            43     => letter.n,
-            44     => letter.o,
-            others => letter.space),
-          others => (
-            others => letter.space)
-        );
-    begin
-        s0_nt_read_letter <= ntrom (to_integer (s0_read_address_i.row), to_integer (s0_read_address_i.col));
-    end block;
-
+    s0_nt_read_letter <= ntrom (to_integer (s0_read_address_i.row),
+                                to_integer (s0_read_address_i.col));
     -- decide which of the letters to show
     s0_read_letter <= s0_nt_read_letter;
     ---------------------------------------------------------------------------------------------
