@@ -107,7 +107,7 @@ begin
       vsync_o           => vsync_o,
       col_o             => col,
       row_o             => row,
-      en_draw_o         => en_draw,
+      enable_draw_o     => en_draw,
 
       screen_end_o      => screen_end
    );
@@ -132,16 +132,18 @@ begin
    -- ==========================
    buttons_logic: block
       signal buttons_pulse : std_logic_vector (num_of_buttons - 1 downto 0);
+      signal buttons_i     : std_logic_vector (3 downto 0) := btnL_i & btnR_i & btnU_i & btnD_i;
+      signal buttons_ack_i : std_logic_vector (3 downto 0) := (others => '1');
    begin
-      -- sync & rising edge detectors on input buttons
-      Inst_button_input: entity work.button_input
-      generic map (num_of_buttons => 4)
+      -- sync & button press detectors
+      Inst_tactile_buttons: entity work.tactile_buttons
       port map (
          clock_i        => clock_i,
          reset_i        => reset_i,
-         buttons_i      => btnL_i & btnR_i & btnU_i & btnD_i,
-         buttons_ack_i  => (others => '1'),
-         buttons_o      => buttons_pulse
+
+         buttons_i      => buttons_i,
+         buttons_ack_i  => buttons_ack_i,
+         presses_o      => buttons_pulse
       );
 
       btnL  <= buttons_pulse (0);
