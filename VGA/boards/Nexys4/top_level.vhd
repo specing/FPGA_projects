@@ -5,7 +5,7 @@ use     ieee.numeric_std.all;
 
 
 
-entity nexys4_VGA_demo is
+entity top_level is
 	generic
 	(
 		row_width			: integer := 10;
@@ -33,11 +33,11 @@ entity nexys4_VGA_demo is
 
 		led_o				: out	std_logic_vector(15 downto 0)
 	);
-end nexys4_VGA_demo;
+end top_level;
 
 
 
-architecture Behavioral of nexys4_VGA_demo is
+architecture Behavioral of top_level is
 
 	signal btnL				: std_logic;
 	signal btnR				: std_logic;
