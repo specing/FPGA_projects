@@ -6,7 +6,7 @@ use     ieee.numeric_std.all;
 
 
 
-entity nexys4_ps2_demo is
+entity top_level is
 	port
 	(
 		clock_i		: in	std_logic;
@@ -21,11 +21,11 @@ entity nexys4_ps2_demo is
 
 		JB			: out	std_logic_vector(1 downto 0)
 	);
-end nexys4_ps2_demo;
+end top_level;
 
 
 
-architecture behavioral of nexys4_ps2_demo is
+architecture behavioral of top_level is
 
 	-- actual reset, because board reset is inverted
 	signal reset_i				: std_logic;

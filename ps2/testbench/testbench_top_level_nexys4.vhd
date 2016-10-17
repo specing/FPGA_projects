@@ -3,11 +3,11 @@ use     ieee.std_logic_1164.all;
 
 
 
-entity testbench_nexys4_ps2_demo is
-end testbench_nexys4_ps2_demo;
+entity testbench_top_level_nexys4 is
+end testbench_top_level_nexys4;
 
 
-architecture behavior of testbench_nexys4_ps2_demo is
+architecture behavior of testbench_top_level_nexys4 is
 
 	--Inputs
 	signal clock_i			: std_logic := '0';
@@ -33,7 +33,7 @@ architecture behavior of testbench_nexys4_ps2_demo is
 
 begin
 
-	uut:				entity work.nexys4_ps2_demo
+   uut: entity work.top_level
 	port map
 	(
 		clock_i			=> clock_i,
